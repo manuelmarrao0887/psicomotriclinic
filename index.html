@@ -130,9 +130,13 @@ async function sbGetProfile(userId) {
 
 async function sbEnsureProfile(user) {
   if (!sb || !user) return null;
-  let profile = await sbGetProfile(user.id);
-  if (profile) return profile;
-  // Criar perfil se não existe (fallback caso o trigger não tenha funcionado)
+  // Tentar até 3 vezes (o trigger pode demorar)
+  for (let i = 0; i < 3; i++) {
+    const { data } = await sb.from('profiles').select('*').eq('id', user.id).single();
+    if (data) return data;
+    await new Promise(r => setTimeout(r, 1000));
+  }
+  // Fallback: criar perfil manualmente
   const meta = user.user_metadata || {};
   const { data } = await sb.from('profiles').upsert({
     id: user.id,
@@ -227,40 +231,57 @@ const Login = ({onDemoLogin, onLoading}) => {
         password: pw,
         options: { data: { full_name: name, role: actualRole } }
       });
+
       if (error) {
-        if (error.message.includes("already registered")) setErr("Este email já está registado. Tente fazer login.");
+        if (error.message.includes("already registered")) setErr("Este email já está registado.");
         else setErr("Erro: " + error.message);
         setBusy(false); return;
       }
 
-      // Garantir que o perfil é criado
-      if (data?.user) {
-        await sb.from('profiles').upsert({
-          id: data.user.id, email, full_name: name, role: actualRole
-        });
+      if (!data?.user) { setErr("Erro ao criar conta."); setBusy(false); return; }
 
-        // Se for profissional, criar entrada
-        if (selRole === "professional") {
-          const ini = name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+      // Esperar que o trigger crie o perfil
+      await new Promise(r => setTimeout(r, 1500));
+
+      // Verificar se o perfil foi criado pelo trigger, senão criar manualmente
+      const { data: existingProfile } = await sb.from('profiles').select('id').eq('id', data.user.id).single();
+      if (!existingProfile) {
+        await sb.from('profiles').insert({ id: data.user.id, email, full_name: name, role: actualRole });
+        await new Promise(r => setTimeout(r, 500));
+      } else if (existingProfile) {
+        // Atualizar role caso o trigger tenha usado um valor errado
+        await sb.from('profiles').update({ full_name: name, role: actualRole }).eq('id', data.user.id);
+      }
+
+      // Se for profissional, criar entrada na tabela professionals
+      if (selRole === "professional") {
+        const ini = name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+        try {
           await sb.from('professionals').insert({
             name, role_title: 'Psicomotricista', avatar_initials: ini,
             avatar_color: COLORS[Math.floor(Math.random() * COLORS.length)],
             profile_id: data.user.id
           });
-        }
+        } catch(e) { /* ignora se falhar, pode ser criado depois */ }
       }
 
       if (selRole === "director") {
-        // Abrir email para Manuel aprovar
         const subject = encodeURIComponent("Psicomotriclinic — Pedido de acesso como Diretora");
-        const body = encodeURIComponent(`Olá,\n\nO utilizador ${name} (${email}) pediu acesso como Diretora na app Psicomotriclinic.\n\nPara aprovar, aceda ao painel de gestão da app.\n\nPsicomotriclinic`);
-        window.open(`mailto:${ADMIN_EMAIL}?subject=${subject}&body=${body}`, '_blank');
+        const body = encodeURIComponent("Olá,\n\nO utilizador " + name + " (" + email + ") pediu acesso como Diretora na app Psicomotriclinic.\n\nPara aprovar, aceda ao separador Gestão na app.\n\nPsicomotriclinic");
+        window.open("mailto:" + ADMIN_EMAIL + "?subject=" + subject + "&body=" + body, '_blank');
         setBusy(false);
         setMode("pending");
-      } else {
-        onLoading();
+        return;
       }
-    } catch (e) { setErr("Erro de ligação"); setBusy(false); }
+
+      // Para parent/professional, o signUp já fez auto-login
+      // O auth listener vai detetar a sessão
+      onLoading();
+    } catch (e) {
+      console.error("Register error:", e);
+      setErr("Erro ao criar conta. Tente novamente.");
+      setBusy(false);
+    }
   };
 
   const iSt = {width:"100%",padding:"14px 18px",borderRadius:14,border:"1px solid rgba(255,255,255,.15)",fontSize:15,outline:"none",background:"rgba(255,255,255,.08)",color:"#fff",marginBottom:10};
