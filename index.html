@@ -1,137 +1,87 @@
 <!DOCTYPE html>
 <html lang="pt-PT">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <meta name="theme-color" content="#0E3A5A" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <title>Psicomotriclinic</title>
-  <style>
-    *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F4F7FA;-webkit-font-smoothing:antialiased}
-    input,textarea,button,select{font-family:inherit}
-    ::-webkit-scrollbar{display:none}
-    @keyframes fu{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
-    @keyframes su{from{opacity:0;transform:translateY(100%)}to{opacity:1;transform:translateY(0)}}
-    @keyframes ti{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
-    .fu{animation:fu .4s ease both}
-    .ch{transition:transform .12s ease}
-    .ch:active{transform:scale(.975)!important}
-  </style>
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="theme-color" content="#0E3A5A"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<title>Psicomotriclinic</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F4F7FA;-webkit-font-smoothing:antialiased}
+input,textarea,button,select{font-family:inherit}
+::-webkit-scrollbar{display:none}
+@keyframes fu{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes su{from{opacity:0;transform:translateY(100%)}to{opacity:1;transform:translateY(0)}}
+@keyframes ti{from{opacity:0;transform:translateY(14px) scale(.96)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes spin{to{transform:rotate(360deg)}}
+.fu{animation:fu .4s ease both}
+.ch{transition:transform .12s ease}
+.ch:active{transform:scale(.975)!important}
+</style>
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <div id="root"></div>
 <script type="text/babel">
-const { useState, useEffect, useRef } = React;
+const { useState, useEffect, useRef, useCallback } = React;
 
 /* ╔══════════════════════════════════════════════════════════╗
-   ║  CONFIGURAÇÃO — Preencher com credenciais do Supabase   ║
-   ║  (deixar vazio = modo demo com dados locais)            ║
+   ║  CONFIGURAÇÃO SUPABASE                                  ║
    ╚══════════════════════════════════════════════════════════╝ */
-const SUPABASE_URL = 'https://biowckwcgvgjccnqelmn.supabase.co';   // Ex: 'https://xyzxyz.supabase.co'
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpb3dja3djZ3ZnamNjbnFlbG1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyODE3NTAsImV4cCI6MjA5MDg1Nzc1MH0.rqji9jY4bMWQjBcR_NbDehI2MexhlL9jRuIUZNA6GKA';   // Ex: 'eyJhbGci...'
+const SUPABASE_URL = '';
+const SUPABASE_KEY = '';
 
-const isDemo = !SUPABASE_URL || SUPABASE_URL.includes('xyzxyz');
+const isDemo = !SUPABASE_URL || !SUPABASE_KEY || SUPABASE_URL.includes('XXXX');
 const sb = isDemo ? null : window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-/* ═══ DEMO DATA ═══ */
-const INIT = {
-  profs: [
-    { id:"p1", name:"Ana Martins", role:"Psicomotricista", av:"AM", c:"#AFC9A3" },
-    { id:"p2", name:"João Silva", role:"Psicomotricista", av:"JS", c:"#D3E0EF" },
-    { id:"p3", name:"Sofia Costa", role:"Psicomotricista", av:"SC", c:"#F0B64D" },
-  ],
-  pts: [
-    { id:"c1", name:"Tomás R.", age:12, prof:"p1", type:"individual", day:"Segunda", hour:"10:00", freq:"Semanal", since:"Set 2025", area:"Regulação emocional" },
-    { id:"c2", name:"Marta S.", age:14, prof:"p1", type:"individual", day:"Segunda", hour:"11:00", freq:"Semanal", since:"Out 2025", area:"Organização espacial" },
-    { id:"c3", name:"Pedro L.", age:11, prof:"p1", type:"individual", day:"Terça", hour:"10:00", freq:"Semanal", since:"Jan 2026", area:"Coordenação motora" },
-    { id:"c4", name:"Inês F.", age:15, prof:"p2", type:"individual", day:"Segunda", hour:"14:00", freq:"Semanal", since:"Nov 2025", area:"Regulação tónica" },
-    { id:"c5", name:"Diogo M.", age:13, prof:"p2", type:"individual", day:"Terça", hour:"15:00", freq:"Semanal", since:"Dez 2025", area:"Lateralidade" },
-    { id:"c6", name:"Carolina A.", age:10, prof:"p2", type:"individual", day:"Quarta", hour:"10:00", freq:"Quinzenal", since:"Fev 2026", area:"Esquema corporal" },
-    { id:"c7", name:"Rui P.", age:16, prof:"p3", type:"individual", day:"Quarta", hour:"14:00", freq:"Semanal", since:"Out 2025", area:"Relaxação" },
-    { id:"c8", name:"Beatriz N.", age:11, prof:"p3", type:"individual", day:"Quinta", hour:"10:00", freq:"Semanal", since:"Jan 2026", area:"Motricidade fina" },
-    { id:"c9", name:"Lucas V. + Miguel T.", age:12, prof:"p1", type:"grupo2", day:"Quarta", hour:"11:00", freq:"Semanal", profs:["p1","p2"], since:"Nov 2025", area:"Dinâmica relacional" },
-    { id:"c10", name:"Sara D. + Tiago C.", age:13, prof:"p1", type:"grupo3", day:"Quinta", hour:"14:00", freq:"Semanal", profs:["p1","p3"], since:"Dez 2025", area:"Cooperação corporal" },
-  ],
-  sess: [
-    { id:"s1",pt:"c1",date:"2026-03-02",st:"realizada",notes:"Tomás entrou tenso, relaxou com exercícios de respiração." },
-    { id:"s2",pt:"c1",date:"2026-03-09",st:"realizada",notes:"Regulação tónica melhorou. Trabalhámos equilíbrio." },
-    { id:"s3",pt:"c1",date:"2026-03-16",st:"falta",notes:"" },
-    { id:"s4",pt:"c1",date:"2026-03-23",st:"realizada",notes:"Maior capacidade de ajuste postural." },
-    { id:"s5",pt:"c1",date:"2026-03-30",st:"agendada",notes:"" },
-    { id:"s6",pt:"c2",date:"2026-03-09",st:"realizada",notes:"Orientação espacial com bons resultados." },
-    { id:"s7",pt:"c2",date:"2026-03-16",st:"realizada",notes:"Organização espacial com circuitos." },
-    { id:"s8",pt:"c2",date:"2026-03-23",st:"realizada",notes:"Autonomia na organização dos percursos." },
-    { id:"s9",pt:"c2",date:"2026-03-30",st:"agendada",notes:"" },
-    { id:"s10",pt:"c3",date:"2026-03-10",st:"realizada",notes:"Coordenação óculo-manual." },
-    { id:"s11",pt:"c3",date:"2026-03-17",st:"realizada",notes:"Melhorou cruzamento da linha média." },
-    { id:"s12",pt:"c3",date:"2026-03-24",st:"realizada",notes:"" },
-    { id:"s13",pt:"c4",date:"2026-03-09",st:"realizada",notes:"Sessão de relaxação terapêutica." },
-    { id:"s14",pt:"c4",date:"2026-03-16",st:"realizada",notes:"Manteve relaxação por mais tempo." },
-    { id:"s15",pt:"c4",date:"2026-03-23",st:"falta",notes:"" },
-    { id:"s16",pt:"c5",date:"2026-03-10",st:"realizada",notes:"Progrediu na consciência corporal." },
-    { id:"s17",pt:"c5",date:"2026-03-17",st:"realizada",notes:"" },
-    { id:"s18",pt:"c5",date:"2026-03-31",st:"agendada",notes:"" },
-    { id:"s19",pt:"c6",date:"2026-03-12",st:"realizada",notes:"Explorou espaço com confiança." },
-    { id:"s20",pt:"c6",date:"2026-03-26",st:"realizada",notes:"" },
-    { id:"s21",pt:"c7",date:"2026-03-12",st:"realizada",notes:"Reagiu bem a regulação respiratória." },
-    { id:"s22",pt:"c7",date:"2026-03-19",st:"realizada",notes:"Foco em contenção." },
-    { id:"s23",pt:"c7",date:"2026-03-26",st:"realizada",notes:"" },
-    { id:"s24",pt:"c8",date:"2026-03-13",st:"realizada",notes:"Motricidade fina com materiais diversos." },
-    { id:"s25",pt:"c8",date:"2026-03-20",st:"falta",notes:"" },
-    { id:"s26",pt:"c8",date:"2026-03-27",st:"realizada",notes:"Completou praxia fina com sucesso." },
-    { id:"s27",pt:"c9",date:"2026-03-12",st:"realizada",notes:"Dinâmica relacional com bom envolvimento." },
-    { id:"s28",pt:"c9",date:"2026-03-19",st:"realizada",notes:"Lucas e Miguel cooperaram melhor." },
-    { id:"s29",pt:"c9",date:"2026-03-26",st:"realizada",notes:"" },
-    { id:"s30",pt:"c10",date:"2026-03-13",st:"realizada",notes:"Cooperação corporal com bom ritmo." },
-    { id:"s31",pt:"c10",date:"2026-03-20",st:"realizada",notes:"Co-regulação. Sara liderou." },
-    { id:"s32",pt:"c10",date:"2026-03-27",st:"realizada",notes:"" },
-  ],
-  msgs: [
-    { id:"m1",from:"parent",to:"p1",pt:"c1",text:"O Tomás tem dificuldades em adormecer. Pode ser relevante?",time:"09:12",read:true },
-    { id:"m2",from:"p1",to:"parent",pt:"c1",text:"Obrigada. Vou observar na próxima sessão.",time:"10:30",read:true },
-    { id:"m3",from:"parent",to:"p1",pt:"c1",text:"Ele também está mais irritável.",time:"11:05",read:true },
-    { id:"m4",from:"p1",to:"parent",pt:"c1",text:"Vou incluir no plano de segunda.",time:"11:42",read:true },
-    { id:"m5",from:"parent",to:"p2",pt:"c4",text:"A Inês não vai poder ir segunda.",time:"14:00",read:false },
-  ],
-  pays: [
-    { id:"pay1",pt:"c1",month:"Março 2026",amount:220,st:"pago",date:"2026-03-05" },
-    { id:"pay2",pt:"c2",month:"Março 2026",amount:220,st:"pago",date:"2026-03-05" },
-    { id:"pay3",pt:"c3",month:"Março 2026",amount:220,st:"pago",date:"2026-03-08" },
-    { id:"pay4",pt:"c4",month:"Março 2026",amount:165,st:"pendente",date:null },
-    { id:"pay5",pt:"c5",month:"Março 2026",amount:220,st:"pago",date:"2026-03-06" },
-    { id:"pay6",pt:"c6",month:"Março 2026",amount:110,st:"pago",date:"2026-03-10" },
-    { id:"pay7",pt:"c7",month:"Março 2026",amount:220,st:"pendente",date:null },
-    { id:"pay8",pt:"c8",month:"Março 2026",amount:220,st:"pago",date:"2026-03-09" },
-    { id:"pay9",pt:"c9",month:"Março 2026",amount:150,st:"pago",date:"2026-03-03" },
-    { id:"pay10",pt:"c10",month:"Março 2026",amount:150,st:"pago",date:"2026-03-04" },
-  ],
-  reqs: [
-    { id:"sr1",prof:"p2",pt:"c4",from:"Segunda 14:00",to:"Quarta 14:00",reason:"Pedido da família",st:"pendente" },
-    { id:"sr2",prof:"p3",pt:"c8",from:"Quinta 10:00",to:"Quinta 11:00",reason:"Conflito com outra sessão",st:"pendente" },
-  ],
-  revenue: [{m:"Out",v:1320},{m:"Nov",v:1595},{m:"Dez",v:1430},{m:"Jan",v:1705},{m:"Fev",v:1815},{m:"Mar",v:1895}],
-};
-
+/* ═══ CONSTANTS ═══ */
 const DAYS = ["Segunda","Terça","Quarta","Quinta","Sexta"];
 const HOURS = ["09:00","10:00","11:00","14:00","15:00","16:00","17:00"];
 const AREAS = ["Regulação emocional","Regulação tónica","Organização espacial","Coordenação motora","Lateralidade","Esquema corporal","Relaxação","Motricidade fina","Dinâmica relacional","Cooperação corporal","Atenção e concentração","Grafomotricidade"];
-const COLORS = ["#AFC9A3","#D3E0EF","#F0B64D","#E8A0BF","#A3C9C9","#C9A3AF","#B8D4E3"];
-let _uid = 100;
-const uid = (p) => `${p}${_uid++}`;
+const COLORS = ["#AFC9A3","#D3E0EF","#F0B64D","#E8A0BF","#A3C9C9","#C9A3AF","#B8D4E3","#D4C9A3"];
+const ROLES_MAP = {director:"Diretora",professional:"Profissional",parent:"Pai/Mãe"};
+
+/* ═══ DEMO DATA ═══ */
+const DEMO = {
+  profs:[{id:"p1",name:"Ana Martins",role_title:"Psicomotricista",avatar_initials:"AM",avatar_color:"#AFC9A3"},{id:"p2",name:"João Silva",role_title:"Psicomotricista",avatar_initials:"JS",avatar_color:"#D3E0EF"}],
+  pts:[
+    {id:"c1",name:"Tomás R.",age:12,professional_id:"p1",session_type:"individual",day_of_week:"Segunda",hour:"10:00",periodicity:"Semanal",start_date:"Set 2025",intervention_area:"Regulação emocional"},
+    {id:"c2",name:"Marta S.",age:14,professional_id:"p1",session_type:"individual",day_of_week:"Segunda",hour:"11:00",periodicity:"Semanal",start_date:"Out 2025",intervention_area:"Organização espacial"},
+    {id:"c3",name:"Pedro L.",age:11,professional_id:"p1",session_type:"individual",day_of_week:"Terça",hour:"10:00",periodicity:"Semanal",start_date:"Jan 2026",intervention_area:"Coordenação motora"},
+    {id:"c4",name:"Inês F.",age:15,professional_id:"p2",session_type:"individual",day_of_week:"Segunda",hour:"14:00",periodicity:"Semanal",start_date:"Nov 2025",intervention_area:"Regulação tónica"},
+  ],
+  sess:[
+    {id:"s1",patient_id:"c1",date:"2026-03-09",status:"realizada",notes:"Regulação tónica melhorou."},
+    {id:"s2",patient_id:"c1",date:"2026-03-16",status:"falta",notes:""},
+    {id:"s3",patient_id:"c1",date:"2026-03-23",status:"realizada",notes:"Maior capacidade de ajuste postural."},
+    {id:"s4",patient_id:"c1",date:"2026-03-30",status:"agendada",notes:""},
+    {id:"s5",patient_id:"c2",date:"2026-03-16",status:"realizada",notes:"Organização espacial com circuitos."},
+    {id:"s6",patient_id:"c2",date:"2026-03-23",status:"realizada",notes:"Autonomia nos percursos."},
+    {id:"s7",patient_id:"c3",date:"2026-03-17",status:"realizada",notes:"Melhorou cruzamento da linha média."},
+    {id:"s8",patient_id:"c4",date:"2026-03-16",status:"realizada",notes:"Manteve relaxação por mais tempo."},
+    {id:"s9",patient_id:"c4",date:"2026-03-23",status:"falta",notes:""},
+  ],
+  pays:[
+    {id:"pay1",patient_id:"c1",month:"Março 2026",amount:220,status:"pago",paid_date:"2026-03-05"},
+    {id:"pay2",patient_id:"c2",month:"Março 2026",amount:220,status:"pago",paid_date:"2026-03-05"},
+    {id:"pay3",patient_id:"c4",month:"Março 2026",amount:165,status:"pendente",paid_date:null},
+  ],
+  reqs:[{id:"sr1",professional_id:"p2",patient_id:"c4",from_schedule:"Segunda 14:00",to_schedule:"Quarta 14:00",reason:"Pedido da família"}],
+};
 
 /* ═══ ICONS ═══ */
-const I = {
+const I={
   home:(c="#7B8FA3")=> <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><path d="M3 12l9-8 9 8" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/><path d="M5 10v9a1 1 0 001 1h3v-5h6v5h3a1 1 0 001-1v-9" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
   cal:(c="#7B8FA3")=> <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" stroke={c} strokeWidth="2"/><path d="M16 2v4M8 2v4M3 10h18" stroke={c} strokeWidth="2" strokeLinecap="round"/></svg>,
   msg:(c="#7B8FA3")=> <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
   wal:(c="#7B8FA3")=> <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="14" rx="2" stroke={c} strokeWidth="2"/><path d="M2 10h20" stroke={c} strokeWidth="2"/><circle cx="17" cy="14" r="1.5" fill={c}/></svg>,
   bar:(c="#7B8FA3")=> <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6" stroke={c} strokeWidth="2.5" strokeLinecap="round"/></svg>,
-  usr:(c="#7B8FA3")=> <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke={c} strokeWidth="2"/><circle cx="9" cy="7" r="4" stroke={c} strokeWidth="2"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75" stroke={c} strokeWidth="2"/></svg>,
+  usr:(c="#7B8FA3")=> <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2" stroke={c} strokeWidth="2"/><circle cx="9" cy="7" r="4" stroke={c} strokeWidth="2"/><path d="M23 21v-2a4 4 0 00-3-3.87" stroke={c} strokeWidth="2"/></svg>,
+  gear:(c="#7B8FA3")=> <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" stroke={c} strokeWidth="2"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 01-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 012.83-2.83l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z" stroke={c} strokeWidth="2"/></svg>,
   chk:(c="#fff")=> <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
   clk:(c="#7B8FA3")=> <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" stroke={c} strokeWidth="2"/><path d="M12 6v6l4 2" stroke={c} strokeWidth="2" strokeLinecap="round"/></svg>,
   arr:(c="#B0BEC5")=> <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><path d="M9 18l6-6-6-6" stroke={c} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
@@ -140,54 +90,114 @@ const I = {
   snd:(c="#fff")=> <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
   swp:(c="#7B8FA3")=> <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><path d="M7 16V4m0 12l-3-3m3 3l3-3M17 8v12m0-12l-3 3m3-3l3 3" stroke={c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>,
   srch:(c="#8A9BB0")=> <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" stroke={c} strokeWidth="2"/><path d="M21 21l-4.35-4.35" stroke={c} strokeWidth="2" strokeLinecap="round"/></svg>,
-  note:(c="#0E3A5A")=> <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke={c} strokeWidth="2"/><polyline points="14,2 14,8 20,8" stroke={c} strokeWidth="2"/><line x1="16" y1="13" x2="8" y2="13" stroke={c} strokeWidth="2" strokeLinecap="round"/><line x1="16" y1="17" x2="8" y2="17" stroke={c} strokeWidth="2" strokeLinecap="round"/></svg>,
+  note:(c="#0E3A5A")=> <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" stroke={c} strokeWidth="2"/><polyline points="14,2 14,8 20,8" stroke={c} strokeWidth="2"/></svg>,
+  mail:(c="#0E3A5A")=> <svg width="20" height="20" fill="none" viewBox="0 0 24 24"><rect x="2" y="4" width="20" height="16" rx="2" stroke={c} strokeWidth="2"/><path d="M22 7l-10 7L2 7" stroke={c} strokeWidth="2" strokeLinecap="round"/></svg>,
   plus:(c="#fff")=> <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" stroke={c} strokeWidth="2.5" strokeLinecap="round"/></svg>,
+  copy:(c="#0E3A5A")=> <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" stroke={c} strokeWidth="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke={c} strokeWidth="2"/></svg>,
+  trash:(c="#C62828")=> <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><polyline points="3,6 5,6 21,6" stroke={c} strokeWidth="2"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" stroke={c} strokeWidth="2"/></svg>,
 };
 
-/* ═══ SHARED UI ═══ */
+/* ═══ UI COMPONENTS ═══ */
 const Av = ({t,bg,sz=42}) => ( <div style={{width:sz,height:sz,borderRadius:sz*.33,background:bg||"#D3E0EF",display:"flex",alignItems:"center",justifyContent:"center",fontSize:sz*.31,fontWeight:700,color:"#0E3A5A",flexShrink:0}}>{t}</div> );
-const Tag = ({children,type}) => { const m={realizada:["#E8F5E9","#2E7D32"],falta:["#FFF0F0","#C62828"],agendada:["#E8F0FE","#1565C0"],pago:["#E8F5E9","#2E7D32"],pendente:["#FFF8E1","#E65100"],individual:["#EDF2F7","#2D3748"],grupo:["#FFF3E0","#BF360C"]};const[bg,c]=m[type]||["#F4F7FA","#0E3A5A"]; return ( <span style={{display:"inline-block",padding:"3px 10px",borderRadius:8,fontSize:11.5,fontWeight:650,background:bg,color:c}}>{children}</span> ); };
+const Tag = ({children,type}) => { const m={realizada:["#E8F5E9","#2E7D32"],falta:["#FFF0F0","#C62828"],agendada:["#E8F0FE","#1565C0"],pago:["#E8F5E9","#2E7D32"],pendente:["#FFF8E1","#E65100"],director:["#F3E5F5","#6A1B9A"],professional:["#E8F5E9","#2E7D32"],parent:["#E3F2FD","#1565C0"]}; const [bg,c]=m[type]||["#F4F7FA","#0E3A5A"]; return ( <span style={{display:"inline-block",padding:"3px 10px",borderRadius:8,fontSize:11.5,fontWeight:650,background:bg,color:c}}>{children}</span> ); };
 const TopBar = ({title,onBack}) => ( <div style={{display:"flex",alignItems:"center",padding:"14px 20px",background:"#fff",borderBottom:"1px solid #EDF1F5",position:"sticky",top:0,zIndex:20}}><div onClick={onBack} style={{cursor:"pointer",padding:4,marginRight:10}}>{I.bck()}</div><span style={{fontSize:17,fontWeight:700,color:"#0E3A5A",flex:1}}>{title}</span></div> );
 const Card = ({children,style,onClick,delay=0}) => ( <div className="ch fu" onClick={onClick} style={{background:"#fff",borderRadius:18,padding:"16px 18px",marginBottom:12,boxShadow:"0 2px 10px rgba(14,58,90,.05)",border:"1px solid #EDF1F5",cursor:onClick?"pointer":"default",animationDelay:`${delay}ms`,...style}}>{children}</div> );
 const Stat = ({value,label,bg,accent}) => ( <div style={{flex:1,background:bg||"#F7F9FC",borderRadius:16,padding:"14px 10px",textAlign:"center"}}><div style={{fontSize:22,fontWeight:800,color:accent||"#0E3A5A",lineHeight:1}}>{value}</div><div style={{fontSize:11,color:"#8A9BB0",fontWeight:500,marginTop:5}}>{label}</div></div> );
 const Progress = ({pct,color="#0E3A5A",h=6}) => ( <div style={{height:h,borderRadius:h/2,background:"#EDF1F5",overflow:"hidden"}}><div style={{height:"100%",width:`${Math.min(pct,100)}%`,borderRadius:h/2,background:color,transition:"width .8s cubic-bezier(.4,0,.2,1)"}}/></div> );
 const Section = ({children,right}) => ( <div style={{display:"flex",alignItems:"center",justifyContent:"space-between",margin:"20px 0 10px",padding:"0 2px"}}><span style={{fontSize:15,fontWeight:700,color:"#0E3A5A"}}>{children}</span>{right}</div> );
 const Empty = ({text}) => ( <Card style={{textAlign:"center",padding:24,color:"#8A9BB0",fontSize:14}}>{text}</Card> );
-const Toast = ({msg,type="success"}) => { if(!msg) return null; const bg=type==="success"?"#0E3A5A":type==="error"?"#C62828":"#E65100"; return ( <div style={{position:"fixed",bottom:100,left:"50%",transform:"translateX(-50%)",background:bg,color:"#fff",padding:"12px 24px",borderRadius:14,fontSize:14,fontWeight:600,zIndex:999,boxShadow:"0 8px 24px rgba(0,0,0,.2)",animation:"ti .3s ease",maxWidth:340}}>{msg}</div> ); };
-const BarChart = ({data,h=75}) => { const max=Math.max(...data.map(d=>d.v)); return ( <div style={{display:"flex",alignItems:"flex-end",gap:5,height:h,padding:"0 2px"}}>{data.map((d,i)=> ( <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}><div style={{width:"100%",borderRadius:5,background:i===data.length-1?"#0E3A5A":"#D3E0EF",height:`${(d.v/max)*100}%`,minHeight:3,transition:"height .6s ease",transitionDelay:`${i*70}ms`}}/><span style={{fontSize:10,color:"#8A9BB0"}}>{d.m}</span></div> ))}</div> ); };
-const SearchInput = ({value,onChange,placeholder}) => ( <div style={{position:"relative",marginBottom:14}}><div style={{position:"absolute",left:14,top:"50%",transform:"translateY(-50%)"}}>{I.srch()}</div><input value={value} onChange={e=>onChange(e.target.value)} placeholder={placeholder} style={{width:"100%",padding:"11px 14px 11px 42px",borderRadius:14,border:"1px solid #E0E7EF",fontSize:14,outline:"none",background:"#FAFCFE"}} /></div> );
-const TabPill = ({tabs,active,onChange}) => ( <div style={{display:"flex",gap:6,marginBottom:14,overflowX:"auto"}}>{tabs.map(t=> ( <div key={t.id} onClick={()=>onChange(t.id)} style={{padding:"8px 16px",borderRadius:12,background:active===t.id?"#0E3A5A":"#EDF1F5",color:active===t.id?"#fff":"#4A5568",fontSize:13,fontWeight:600,cursor:"pointer",whiteSpace:"nowrap"}}>{t.label}{t.count!=null?` (${t.count})`:""}</div> ))}</div> );
-const Nav = ({tabs,active,onChange,badges={}}) => ( <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,background:"#fff",borderTop:"1px solid #EDF1F5",display:"flex",justifyContent:"space-around",padding:"6px 0 26px",zIndex:100}}>{tabs.map(t=> ( <div key={t.id} onClick={()=>onChange(t.id)} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,fontSize:11,fontWeight:active===t.id?700:500,color:active===t.id?"#0E3A5A":"#8A9BB0",cursor:"pointer",padding:"4px 14px"}}><div style={{position:"relative"}}>{t.icon(active===t.id?"#0E3A5A":"#8A9BB0")}{badges[t.id]>0&&<div style={{position:"absolute",top:-4,right:-8,background:"#E53935",color:"#fff",fontSize:10,fontWeight:700,borderRadius:99,minWidth:17,height:17,display:"flex",alignItems:"center",justifyContent:"center",border:"2px solid #fff"}}>{badges[t.id]}</div>}</div>{t.label}</div> ))}</div> );
+const Toast = ({msg,type="success"}) => { if(!msg) return null; const bg=type==="success"?"#0E3A5A":type==="error"?"#C62828":"#E65100"; return ( <div style={{position:"fixed",bottom:100,left:"50%",transform:"translateX(-50%)",background:bg,color:"#fff",padding:"12px 24px",borderRadius:14,fontSize:14,fontWeight:600,zIndex:999,boxShadow:"0 8px 24px rgba(0,0,0,.2)",animation:"ti .3s ease",maxWidth:340,textAlign:"center"}}>{msg}</div> ); };
+const BarChart = ({data,h=75}) => { const max=Math.max(...data.map(d=>d.v),1); return ( <div style={{display:"flex",alignItems:"flex-end",gap:5,height:h}}>{data.map((d,i)=> ( <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:3}}><div style={{width:"100%",borderRadius:5,background:i===data.length-1?"#0E3A5A":"#D3E0EF",height:`${(d.v/max)*100}%`,minHeight:3}}/><span style={{fontSize:10,color:"#8A9BB0"}}>{d.m}</span></div> ))}</div> ); };
+const Nav = ({tabs,active,onChange,badges={}}) => ( <div style={{position:"fixed",bottom:0,left:"50%",transform:"translateX(-50%)",width:"100%",maxWidth:430,background:"#fff",borderTop:"1px solid #EDF1F5",display:"flex",justifyContent:"space-around",padding:"6px 0 26px",zIndex:100}}>{tabs.map(t=> ( <div key={t.id} onClick={()=>onChange(t.id)} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,fontSize:11,fontWeight:active===t.id?700:500,color:active===t.id?"#0E3A5A":"#8A9BB0",cursor:"pointer",padding:"4px 12px"}}><div style={{position:"relative"}}>{t.icon(active===t.id?"#0E3A5A":"#8A9BB0")}{badges[t.id]>0&&<div style={{position:"absolute",top:-4,right:-8,background:"#E53935",color:"#fff",fontSize:10,fontWeight:700,borderRadius:99,minWidth:17,height:17,display:"flex",alignItems:"center",justifyContent:"center",border:"2px solid #fff"}}>{badges[t.id]}</div>}</div>{t.label}</div> ))}</div> );
 const Header = ({title,sub,avatar,onAvatar}) => ( <div style={{padding:"14px 20px 18px",display:"flex",alignItems:"center",justifyContent:"space-between"}}><div><div style={{fontSize:24,fontWeight:800,color:"#0E3A5A",letterSpacing:-.5,lineHeight:1.15}}>{title}</div>{sub&&<div style={{fontSize:13,color:"#8A9BB0",fontWeight:500,marginTop:2}}>{sub}</div>}</div>{avatar&&<div onClick={onAvatar} style={{cursor:"pointer"}}>{avatar}</div>}</div> );
 const P = ({children}) => ( <div style={{padding:"0 20px"}}>{children}</div> );
 
-/* Bottom Sheet */
-const Sheet = ({open,onClose,title,children}) => {
-  if (!open) return null;
-  return ( <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.4)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={onClose}><div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:"24px 24px 0 0",padding:"24px 24px 36px",width:"100%",maxWidth:430,maxHeight:"85vh",overflowY:"auto",animation:"su .3s ease"}}><div style={{width:40,height:4,borderRadius:2,background:"#D3E0EF",margin:"0 auto 16px"}}/><div style={{fontSize:17,fontWeight:700,color:"#0E3A5A",marginBottom:18}}>{title}</div>{children}</div></div> );
-};
+/* Sheet + Form helpers */
+const Sheet = ({open,onClose,title,children}) => { if(!open) return null; return ( <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.4)",zIndex:200,display:"flex",alignItems:"flex-end",justifyContent:"center"}} onClick={onClose}><div onClick={e=>e.stopPropagation()} style={{background:"#fff",borderRadius:"24px 24px 0 0",padding:"24px 24px 36px",width:"100%",maxWidth:430,maxHeight:"88vh",overflowY:"auto",animation:"su .3s ease"}}><div style={{width:40,height:4,borderRadius:2,background:"#D3E0EF",margin:"0 auto 16px"}}/><div style={{fontSize:17,fontWeight:700,color:"#0E3A5A",marginBottom:18}}>{title}</div>{children}</div></div> ); };
 const Field = ({label,children}) => ( <div style={{marginBottom:14}}><div style={{fontSize:13,color:"#8A9BB0",marginBottom:5}}>{label}</div>{children}</div> );
 const Inp = (props) => ( <input {...props} style={{width:"100%",padding:"12px 14px",borderRadius:12,border:"1px solid #D3E0EF",fontSize:14,outline:"none",background:"#FAFCFE",...(props.style||{})}} /> );
 const Sel = ({value,onChange,options,placeholder}) => ( <select value={value} onChange={e=>onChange(e.target.value)} style={{width:"100%",padding:"12px 14px",borderRadius:12,border:"1px solid #D3E0EF",fontSize:14,outline:"none",background:"#FAFCFE"}}><option value="">{placeholder||"Selecionar..."}</option>{options.map(o=> ( <option key={o.v} value={o.v}>{o.l}</option> ))}</select> );
-const Btn = ({children,onClick,disabled}) => ( <button onClick={disabled?undefined:onClick} className="ch" style={{width:"100%",padding:"14px 0",borderRadius:14,border:"none",background:disabled?"#8A9BB0":"#0E3A5A",color:"#fff",fontSize:15,fontWeight:700,cursor:disabled?"default":"pointer",opacity:disabled?.6:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>{children}</button> );
+const Btn = ({children,onClick,disabled,secondary}) => ( <button onClick={disabled?undefined:onClick} className="ch" style={{width:"100%",padding:"14px 0",borderRadius:14,border:secondary?"1px solid #D3E0EF":"none",background:secondary?"#fff":disabled?"#8A9BB0":"#0E3A5A",color:secondary?"#0E3A5A":"#fff",fontSize:15,fontWeight:700,cursor:disabled?"default":"pointer",opacity:disabled?.6:1,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}>{children}</button> );
 
-/* ═══ LOGIN ═══ */
-const Login = ({onLogin}) => {
-  const [v,setV] = useState(false);
-  const [email,setEmail] = useState("");
-  const [pw,setPw] = useState("");
-  const [err,setErr] = useState("");
-  const [busy,setBusy] = useState(false);
-  useEffect(()=>{ setTimeout(()=>setV(true),80); },[]);
+/* ═══════════════════════════════════════════
+   SUPABASE HELPERS
+   ═══════════════════════════════════════════ */
+async function sbGetProfile(userId) {
+  if (!sb) return null;
+  const { data } = await sb.from('profiles').select('*').eq('id', userId).single();
+  return data;
+}
 
-  const handleEmail = async () => {
-    if(!email||!pw) return;
+async function sbEnsureProfile(user) {
+  if (!sb || !user) return null;
+  let profile = await sbGetProfile(user.id);
+  if (profile) return profile;
+  // Criar perfil se não existe (fallback caso o trigger não tenha funcionado)
+  const meta = user.user_metadata || {};
+  const { data } = await sb.from('profiles').upsert({
+    id: user.id,
+    email: user.email,
+    full_name: meta.full_name || user.email.split('@')[0],
+    role: meta.role || 'parent',
+  }).select().single();
+  return data;
+}
+
+async function sbFetchProfs() {
+  if (!sb) return DEMO.profs;
+  const { data } = await sb.from('professionals').select('*').eq('active', true).order('name');
+  return data || [];
+}
+
+async function sbFetchPts(profId) {
+  if (!sb) return profId ? DEMO.pts.filter(p => p.professional_id === profId) : DEMO.pts;
+  let q = sb.from('patients').select('*').eq('active', true).order('name');
+  if (profId) q = q.eq('professional_id', profId);
+  const { data } = await q;
+  return data || [];
+}
+
+async function sbFetchSess() {
+  if (!sb) return DEMO.sess;
+  const { data } = await sb.from('sessions').select('*').order('date', { ascending: false });
+  return data || [];
+}
+
+async function sbFetchPays() {
+  if (!sb) return DEMO.pays;
+  const { data } = await sb.from('payments').select('*').order('created_at', { ascending: false });
+  return data || [];
+}
+
+async function sbFetchReqs() {
+  if (!sb) return DEMO.reqs;
+  const { data } = await sb.from('schedule_requests').select('*').eq('status', 'pendente');
+  return data || [];
+}
+
+/* ═══════════════════════════════════════════
+   LOGIN
+   ═══════════════════════════════════════════ */
+const Login = ({onDemoLogin, onLoading}) => {
+  const [v, setV] = useState(false);
+  const [email, setEmail] = useState("");
+  const [pw, setPw] = useState("");
+  const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
+  useEffect(() => { setTimeout(() => setV(true), 80); }, []);
+
+  const handleLogin = async () => {
+    if (!email || !pw) return;
     setBusy(true); setErr("");
-    const { error } = await sb.auth.signInWithPassword({email, password:pw});
-    if(error){ setErr("Email ou password incorretos"); setBusy(false); }
+    try {
+      const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+      if (error) { setErr("Email ou password incorretos"); setBusy(false); return; }
+      // Auth listener no App vai apanhar a sessão
+      onLoading();
+    } catch (e) { setErr("Erro de ligação"); setBusy(false); }
   };
 
-  const roles=[{id:"parent",label:"Pai / Mãe",emoji:"👨‍👩‍👧",desc:"Sessões, notas e pagamentos"},{id:"professional",label:"Profissional",emoji:"🩺",desc:"Check-in, agenda e casos"},{id:"director",label:"Diretora Clínica",emoji:"📊",desc:"Dashboard completo"}];
+  const roles = [{id:"parent",label:"Pai / Mãe",emoji:"👨‍👩‍👧"},{id:"professional",label:"Profissional",emoji:"🩺"},{id:"director",label:"Diretora Clínica",emoji:"📊"}];
   const iSt = {width:"100%",padding:"14px 18px",borderRadius:14,border:"1px solid rgba(255,255,255,.15)",fontSize:15,outline:"none",background:"rgba(255,255,255,.08)",color:"#fff",marginBottom:10};
 
   return (
@@ -195,183 +205,494 @@ const Login = ({onLogin}) => {
       <div style={{textAlign:"center",marginBottom:40}}>
         <div style={{width:72,height:72,borderRadius:22,background:"rgba(240,182,77,.15)",display:"inline-flex",alignItems:"center",justifyContent:"center",marginBottom:20,border:"1px solid rgba(240,182,77,.2)"}}><span style={{fontSize:32,fontWeight:800,color:"#F0B64D"}}>P</span></div>
         <h1 style={{color:"#fff",fontSize:26,fontWeight:800,margin:0,letterSpacing:-.5}}>Psicomotriclinic</h1>
-        <p style={{color:"rgba(255,255,255,.45)",fontSize:13,marginTop:6}}>Gestão Clínica Integrada</p>
+        <p style={{color:"rgba(255,255,255,.45)",fontSize:13,marginTop:6}}>Gestão Clínica</p>
       </div>
-
       {isDemo ? (
         <div style={{display:"flex",flexDirection:"column",gap:10}}>
-          {roles.map((r,i)=> (
-            <button key={r.id} onClick={()=>onLogin(r.id)} className="ch" style={{display:"flex",alignItems:"center",gap:14,width:"100%",padding:"16px 20px",background:"rgba(255,255,255,.07)",color:"#fff",border:"1px solid rgba(255,255,255,.1)",borderRadius:16,cursor:"pointer",fontSize:15,fontWeight:600,textAlign:"left",animation:"fu .45s ease both",animationDelay:`${i*100+200}ms`}}>
-              <span style={{fontSize:28,width:44,textAlign:"center"}}>{r.emoji}</span>
-              <div style={{flex:1}}><div>{r.label}</div><div style={{fontSize:12,fontWeight:400,opacity:.5,marginTop:1}}>{r.desc}</div></div>
-              {I.arr("rgba(255,255,255,.3)")}
+          {roles.map((r,i) => (
+            <button key={r.id} onClick={() => onDemoLogin(r.id)} className="ch" style={{display:"flex",alignItems:"center",gap:14,width:"100%",padding:"16px 20px",background:"rgba(255,255,255,.07)",color:"#fff",border:"1px solid rgba(255,255,255,.1)",borderRadius:16,cursor:"pointer",fontSize:15,fontWeight:600,textAlign:"left",animation:"fu .45s ease both",animationDelay:`${i*100+200}ms`}}>
+              <span style={{fontSize:28,width:44,textAlign:"center"}}>{r.emoji}</span><div>{r.label}</div>{I.arr("rgba(255,255,255,.3)")}
             </button>
           ))}
-          <div style={{textAlign:"center",marginTop:16,padding:"10px 16px",borderRadius:12,background:"rgba(240,182,77,.12)"}}>
-            <p style={{color:"#F0B64D",fontSize:12,fontWeight:600,margin:0}}>Modo demo — dados locais</p>
-          </div>
+          <div style={{textAlign:"center",marginTop:16,padding:"10px 16px",borderRadius:12,background:"rgba(240,182,77,.12)"}}><p style={{color:"#F0B64D",fontSize:12,fontWeight:600,margin:0}}>Modo demo</p></div>
         </div>
       ) : (
         <div style={{animation:"fu .45s ease both",animationDelay:"200ms"}}>
-          <input type="email" placeholder="Email" value={email} onChange={e=>setEmail(e.target.value)} style={iSt} />
-          <input type="password" placeholder="Password" value={pw} onChange={e=>setPw(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleEmail()} style={iSt} />
+          <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} style={iSt} />
+          <input type="password" placeholder="Password" value={pw} onChange={e => setPw(e.target.value)} onKeyDown={e => e.key === "Enter" && handleLogin()} style={iSt} />
           {err && <p style={{color:"#EF9A9A",fontSize:13,marginBottom:10,textAlign:"center"}}>{err}</p>}
-          <button onClick={handleEmail} disabled={busy} className="ch" style={{width:"100%",padding:"15px 0",borderRadius:14,background:busy?"rgba(255,255,255,.1)":"#F0B64D",color:"#0E3A5A",border:"none",fontSize:16,fontWeight:700,cursor:busy?"wait":"pointer",marginTop:4}}>{busy?"A entrar...":"Entrar"}</button>
+          <button onClick={handleLogin} disabled={busy} className="ch" style={{width:"100%",padding:"15px 0",borderRadius:14,background:busy?"rgba(255,255,255,.1)":"#F0B64D",color:"#0E3A5A",border:"none",fontSize:16,fontWeight:700,cursor:busy?"wait":"pointer",marginTop:4}}>{busy ? "A entrar..." : "Entrar"}</button>
         </div>
       )}
-      <p style={{color:"rgba(255,255,255,.2)",fontSize:11,textAlign:"center",marginTop:40}}>v1.3{isDemo?" · Demo":""}</p>
     </div>
   );
 };
 
-/* ═══ PARENT PORTAL ═══ */
-const ParentPortal = ({D:d,setD,onLogout}) => {
-  const [tab,setTab]=useState("home");const [toast,setToast]=useState(null);
-  const pt=d.pts[0],prof=d.profs[0],sess=d.sess.filter(s=>s.pt===pt.id),real=sess.filter(s=>s.st==="realizada"),pays=d.pays.filter(p=>p.pt===pt.id),msgs=d.msgs.filter(m=>m.pt===pt.id);
-  const [lm,setLm]=useState(msgs),[mt,setMt]=useState("");const ce=useRef(null);
-  const show=m=>{setToast(m);setTimeout(()=>setToast(null),2500);};
-  const send=()=>{if(!mt.trim())return;setLm(p=>[...p,{id:uid("m"),from:"parent",to:prof.id,pt:pt.id,text:mt,time:new Date().toLocaleTimeString("pt-PT",{hour:"2-digit",minute:"2-digit"}),read:false}]);setMt("");setTimeout(()=>ce.current?.scrollIntoView({behavior:"smooth"}),50);};
-  const nt=[{id:"home",label:"Início",icon:I.home},{id:"agenda",label:"Sessões",icon:I.cal},{id:"messages",label:"Mensagens",icon:I.msg},{id:"payments",label:"Pagamentos",icon:I.wal}];
+/* ═══════════════════════════════════════════
+   DIRECTOR PORTAL (with full management)
+   ═══════════════════════════════════════════ */
+const DirPortal = ({profile, onLogout}) => {
+  const [tab, setTab] = useState("home");
+  const [sub, setSub] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [modal, setModal] = useState(null);
+  const [form, setForm] = useState({});
+  const [profs, setProfs] = useState([]);
+  const [pts, setPts] = useState([]);
+  const [sess, setSess] = useState([]);
+  const [pays, setPays] = useState([]);
+  const [reqs, setReqs] = useState([]);
+  const [selProf, setSelProf] = useState(null);
+  const [search, setSearch] = useState("");
+  const [inviteResult, setInviteResult] = useState(null);
 
-  return (
-    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#F4F7FA",position:"relative"}}>
-      <div style={{paddingBottom:88}}>
-        <Header title="Olá 👋" sub={`Área de ${pt.name}`} avatar={<Av t="TR" bg="#D3E0EF" sz={38}/>} onAvatar={onLogout}/>
-        {tab==="home"&&<P>
-          <Card style={{background:"linear-gradient(135deg,#0E3A5A,#1A5F8A)",border:"none",color:"#fff"}} delay={0}><div style={{display:"flex",alignItems:"center",gap:14,marginBottom:12}}><Av t={pt.name.split(" ").map(w=>w[0]).join("")} bg="rgba(255,255,255,.15)" sz={48}/><div><div style={{fontSize:18,fontWeight:700}}>{pt.name}</div><div style={{fontSize:13,opacity:.7}}>{pt.age} anos · Desde {pt.since}</div></div></div><div style={{display:"flex",gap:8}}><span style={{padding:"4px 12px",borderRadius:10,background:"rgba(255,255,255,.12)",fontSize:12}}>{pt.area}</span></div></Card>
-          <Card delay={80}><div style={{display:"flex",alignItems:"center",gap:14}}><div style={{width:48,height:48,borderRadius:14,background:"#EDF6FF",display:"flex",alignItems:"center",justifyContent:"center"}}>{I.cal("#1565C0")}</div><div style={{flex:1}}><div style={{fontSize:12,color:"#8A9BB0",marginBottom:2}}>Próxima sessão</div><div style={{fontSize:16,fontWeight:700,color:"#0E3A5A"}}>Segunda, 30 mar · 10:00</div><div style={{fontSize:13,color:"#6B94B8",marginTop:1}}>{prof.name}</div></div></div></Card>
-          <div style={{display:"flex",gap:8,marginBottom:4}}><Stat value={real.length} label="Realizadas" bg="#F0FAF0" accent="#2E7D32"/><Stat value={sess.filter(s=>s.st==="falta").length} label="Faltas" bg="#FFF5F5" accent="#C62828"/><Stat value={sess.filter(s=>s.st==="agendada").length} label="Agendadas" bg="#F0F4FF" accent="#1565C0"/></div>
-          <Section>Últimas notas</Section>
-          {real.filter(s=>s.notes).slice(-3).reverse().map((s,i)=> ( <Card key={s.id} delay={i*60+150}><div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><div style={{display:"flex",alignItems:"center",gap:8}}><Av t={prof.av} bg={prof.c} sz={28}/><span style={{fontSize:12,fontWeight:600,color:"#0E3A5A"}}>{prof.name}</span></div><span style={{fontSize:12,color:"#8A9BB0"}}>{s.date}</span></div><p style={{margin:0,fontSize:14,color:"#4A5568",lineHeight:1.55}}>{s.notes}</p></Card> ))}
-        </P>}
-        {tab==="agenda"&&<P><Section>Agendadas</Section>{sess.filter(s=>s.st==="agendada").map((s,i)=> ( <Card key={s.id} delay={i*60} style={{borderLeft:"4px solid #AFC9A3"}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{fontSize:15,fontWeight:700,color:"#0E3A5A"}}>{s.date}</div><div style={{fontSize:13,color:"#6B94B8",marginTop:2}}>{pt.hour} · {prof.name}</div></div><Tag type="agendada">Agendada</Tag></div></Card> ))}<Section>Histórico</Section>{sess.filter(s=>s.st!=="agendada").reverse().map((s,i)=> ( <Card key={s.id} delay={i*40}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{fontSize:14,fontWeight:600,color:"#0E3A5A"}}>{s.date}</div></div><Tag type={s.st}>{s.st==="realizada"?"Realizada":"Falta"}</Tag></div>{s.notes&&<p style={{margin:"10px 0 0",fontSize:13,color:"#4A5568",lineHeight:1.5,borderTop:"1px solid #F5F7FA",paddingTop:10}}>{s.notes}</p>}</Card> ))}</P>}
-        {tab==="messages"&&<div style={{display:"flex",flexDirection:"column",height:"calc(100vh - 150px)"}}><div style={{padding:"10px 20px",borderBottom:"1px solid #EDF1F5",display:"flex",alignItems:"center",gap:10,background:"#fff"}}><Av t={prof.av} bg={prof.c} sz={36}/><div><div style={{fontWeight:700,fontSize:14,color:"#0E3A5A"}}>{prof.name}</div><div style={{fontSize:12,color:"#8A9BB0"}}>Terapeuta</div></div></div><div style={{flex:1,overflowY:"auto",padding:20,background:"#F7F9FC"}}>{lm.map((m,i)=> ( <div key={m.id} style={{display:"flex",flexDirection:"column",alignItems:m.from==="parent"?"flex-end":"flex-start",marginBottom:10}}><div style={{padding:"10px 14px",borderRadius:m.from==="parent"?"16px 16px 4px 16px":"16px 16px 16px 4px",background:m.from==="parent"?"#0E3A5A":"#fff",color:m.from==="parent"?"#fff":"#243746",maxWidth:"80%",fontSize:14,lineHeight:1.5,boxShadow:m.from!=="parent"?"0 1px 4px rgba(0,0,0,.06)":"none"}}>{m.text}</div><span style={{fontSize:11,color:"#8A9BB0",marginTop:3}}>{m.time}</span></div> ))}<div ref={ce}/></div><div style={{padding:"10px 16px 30px",display:"flex",gap:8,borderTop:"1px solid #EDF1F5",background:"#fff"}}><input style={{flex:1,padding:"11px 16px",borderRadius:24,border:"1px solid #D3E0EF",fontSize:14,outline:"none",background:"#FAFCFE"}} placeholder="Escrever mensagem..." value={mt} onChange={e=>setMt(e.target.value)} onKeyDown={e=>e.key==="Enter"&&send()}/><button onClick={send} style={{width:44,height:44,borderRadius:22,background:"#0E3A5A",border:"none",cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",flexShrink:0}}>{I.snd()}</button></div></div>}
-        {tab==="payments"&&<P><Section>Pagamentos</Section>{pays.map((p,i)=> ( <Card key={p.id} delay={i*60}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div><div style={{fontWeight:700,color:"#0E3A5A",fontSize:15}}>{p.month}</div><div style={{fontSize:12,color:"#8A9BB0",marginTop:2}}>{p.st==="pago"?`Pago a ${p.date}`:"Aguarda pagamento"}</div></div><div style={{textAlign:"right"}}><div style={{fontSize:18,fontWeight:800,color:"#0E3A5A"}}>{p.amount}€</div><Tag type={p.st}>{p.st==="pago"?"Pago":"Pendente"}</Tag></div></div></Card> ))}</P>}
-      </div>
-      <Nav tabs={nt} active={tab} onChange={setTab} badges={{messages:lm.filter(m=>!m.read&&m.from!=="parent").length||0}}/>
-      <Toast msg={toast}/>
-    </div>
-  );
-};
+  const show = (m, t) => { setToast({m, t}); setTimeout(() => setToast(null), 3000); };
 
-/* ═══ PROFESSIONAL PORTAL ═══ */
-const ProfPortal = ({D:d,setD,onLogout}) => {
-  const [tab,setTab]=useState("home"),[sub,setSub]=useState(null),[sel,setSel]=useState(null),[cin,setCin]=useState(false),[ct,setCt]=useState(null),[toast,setToast]=useState(null),[noteText,setNoteText]=useState(""),[search,setSearch]=useState(""),[modal,setModal]=useState(null),[form,setForm]=useState({}),[presence,setPresence]=useState({});
-  const prof=d.profs[0],myPts=d.pts.filter(p=>p.prof===prof.id||(p.profs&&p.profs.includes(prof.id))),mySess=d.sess.filter(s=>myPts.some(p=>p.id===s.pt)),myMsgs=d.msgs.filter(m=>m.to===prof.id||m.from===prof.id),unread=myMsgs.filter(m=>!m.read&&m.to===prof.id).length;
-  const show=(m,t)=>{setToast({m,t});setTimeout(()=>setToast(null),2500);};
-  const earn=()=>{let i=0,g=0;mySess.filter(s=>s.st==="realizada").forEach(s=>{const p=d.pts.find(x=>x.id===s.pt);if(p&&p.type==="individual")i+=55*.8;else g+=150*.4;});return{ind:i.toFixed(0),grp:g.toFixed(0),total:(i+g).toFixed(0)};};const e=earn();
-  const todaySess=myPts.filter(p=>p.day==="Segunda").slice(0,4).map(p=>({time:p.hour,name:p.name,type:p.type==="individual"?"Individual":"Grupo",room:"Sala "+(p.hour<"12:00"?"1":"2"),pid:p.id}));
-  const nt=[{id:"home",label:"Início",icon:I.home},{id:"agenda",label:"Agenda",icon:I.cal},{id:"patients",label:"Casos",icon:I.usr},{id:"messages",label:"Mensagens",icon:I.msg}];
-  const addSession=()=>{if(!form.pt||!form.date)return;setD(prev=>({...prev,sess:[...prev.sess,{id:uid("s"),pt:form.pt,date:form.date,st:"agendada",notes:""}]}));setModal(null);setForm({});show("Sessão agendada","success");};
-  const addPatient=()=>{if(!form.name||!form.age||!form.day||!form.hour||!form.area)return;setD(prev=>({...prev,pts:[...prev.pts,{id:uid("c"),name:form.name,age:parseInt(form.age),prof:prof.id,type:"individual",day:form.day,hour:form.hour,freq:form.freq||"Semanal",since:"Abr 2026",area:form.area}]}));setModal(null);setForm({});show("Caso criado","success");};
+  // Load data
+  useEffect(() => {
+    (async () => {
+      setProfs(await sbFetchProfs());
+      setPts(await sbFetchPts());
+      setSess(await sbFetchSess());
+      setPays(await sbFetchPays());
+      setReqs(await sbFetchReqs());
+    })();
+  }, []);
 
-  return (
-    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#F4F7FA",position:"relative"}}>
-      <div style={{paddingBottom:88}}>
-        <Header title={`Olá, ${prof.name.split(" ")[0]}`} sub={`4 abril 2026 ${cin?"· ✓ "+ct:""}`} avatar={<Av t={prof.av} bg={prof.c} sz={38}/>} onAvatar={onLogout}/>
-        {!sub&&tab==="home"&&<P>
-          <Card delay={0} style={cin?{background:"linear-gradient(135deg,#2E7D32,#43A047)",border:"none",color:"#fff"}:{background:"linear-gradient(135deg,#0E3A5A,#1A5F8A)",border:"none",color:"#fff"}}><div style={{textAlign:"center",padding:"6px 0"}}>{cin? ( <><div style={{display:"inline-flex",alignItems:"center",justifyContent:"center",width:44,height:44,borderRadius:22,background:"rgba(255,255,255,.2)",marginBottom:8}}>{I.chk()}</div><div style={{fontSize:16,fontWeight:700}}>Check-in realizado</div><div style={{fontSize:13,opacity:.7,marginTop:2}}>Entrada às {ct}</div></> ):( <><div style={{fontSize:14,opacity:.7,marginBottom:10}}>Registar entrada</div><button onClick={()=>{const t=new Date().toLocaleTimeString("pt-PT",{hour:"2-digit",minute:"2-digit"});setCin(true);setCt(t);show("Check-in às "+t,"success");}} className="ch" style={{padding:"12px 36px",borderRadius:14,background:"rgba(255,255,255,.15)",color:"#fff",border:"1px solid rgba(255,255,255,.2)",fontSize:15,fontWeight:700,cursor:"pointer",display:"inline-flex",alignItems:"center",gap:8}}>{I.clk("#F0B64D")} Fazer Check-in</button></> )}</div></Card>
-          <div style={{display:"flex",gap:8,marginBottom:4}}><Stat value={todaySess.length} label="Hoje" bg="#EDF6FF" accent="#1565C0"/><Stat value={myPts.length} label="Casos" bg="#F0FAF0" accent="#2E7D32"/><Stat value={`${e.total}€`} label="Março" bg="#FFFAF0" accent="#E65100"/></div>
-          <Card delay={100}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><span style={{fontSize:14,fontWeight:700,color:"#0E3A5A"}}>Ganhos</span><span style={{fontSize:18,fontWeight:800,color:"#0E3A5A"}}>{e.total}€</span></div><div style={{display:"flex",gap:8}}><div style={{flex:Number(e.ind),height:8,borderRadius:4,background:"#AFC9A3"}}/><div style={{flex:Math.max(Number(e.grp),.01),height:8,borderRadius:4,background:"#F0B64D"}}/></div><div style={{display:"flex",justifyContent:"space-between",marginTop:8}}><span style={{fontSize:12,color:"#6B94B8"}}>Individual: {e.ind}€</span><span style={{fontSize:12,color:"#6B94B8"}}>Grupo: {e.grp}€</span></div></Card>
-          <Section right={<span onClick={()=>{setForm({});setModal("addSession");}} style={{cursor:"pointer",color:"#0E3A5A",fontWeight:700}}>+ Agendar</span>}>Sessões de hoje</Section>
-          {todaySess.map((s,i)=> ( <Card key={i} delay={i*60+150} onClick={()=>{setSel(s);setSub("session");}}><div style={{display:"flex",alignItems:"center",gap:14}}><div style={{minWidth:46,textAlign:"center"}}><div style={{fontSize:17,fontWeight:800,color:"#0E3A5A"}}>{s.time}</div></div><div style={{width:4,height:36,borderRadius:2,background:s.type==="Individual"?"#AFC9A3":"#F0B64D"}}/><div style={{flex:1}}><div style={{fontSize:14,fontWeight:600,color:"#0E3A5A"}}>{s.name}</div><div style={{fontSize:12,color:"#8A9BB0"}}>{s.type} · {s.room}</div></div><div style={{display:"flex",gap:4}}>{presence[s.pid]? ( <div style={{padding:"6px 12px",borderRadius:10,background:presence[s.pid]==="presente"?"#E8F5E9":"#FFF0F0",fontSize:12,fontWeight:700,color:presence[s.pid]==="presente"?"#2E7D32":"#C62828"}}>{presence[s.pid]==="presente"?"✓":"✗"}</div> ):["✓","✗"].map((icon,j)=> ( <button key={j} onClick={ev=>{ev.stopPropagation();setPresence(p=>({...p,[s.pid]:j===0?"presente":"falta"}));show(j===0?"✓ Presença":"✗ Falta",j===0?"success":"info");}} className="ch" style={{width:32,height:32,borderRadius:10,border:"none",cursor:"pointer",fontSize:14,display:"flex",alignItems:"center",justifyContent:"center",background:j===0?"#E8F5E9":"#FFF0F0",color:j===0?"#2E7D32":"#C62828",fontWeight:700}}>{icon}</button> ))}</div></div></Card> ))}
-        </P>}
-        {!sub&&tab==="patients"&&<P><Section right={<span onClick={()=>{setForm({});setModal("addPatient");}} style={{cursor:"pointer",color:"#0E3A5A",fontWeight:700}}>+ Novo</span>}>Casos ({myPts.length})</Section><SearchInput value={search} onChange={setSearch} placeholder="Procurar..."/>{myPts.filter(p=>!search||p.name.toLowerCase().includes(search.toLowerCase())).map((p,i)=> ( <Card key={p.id} delay={i*50} onClick={()=>{setSel(p);setSub("patient");}}><div style={{display:"flex",alignItems:"center",gap:12}}><Av t={p.name.split(" ").map(w=>w[0]).join("").slice(0,2)} bg={p.type==="individual"?"#D3E0EF":"#FFF3E0"}/><div style={{flex:1}}><div style={{fontSize:14,fontWeight:600,color:"#0E3A5A"}}>{p.name}</div><div style={{fontSize:12,color:"#8A9BB0"}}>{p.age} anos · {p.area}</div><div style={{fontSize:11,color:"#6B94B8"}}>{p.day} {p.hour} · {p.freq}</div></div>{I.arr()}</div></Card> ))}</P>}
-        {!sub&&tab==="agenda"&&<P><Section right={<span onClick={()=>{setForm({});setModal("addSession");}} style={{cursor:"pointer",color:"#0E3A5A",fontWeight:700}}>+ Agendar</span>}>Agenda</Section>{DAYS.map(day=>{const dp=myPts.filter(p=>p.day===day);return dp.length>0&&( <div key={day} style={{marginBottom:14}}><div style={{fontSize:12,fontWeight:700,color:"#0E3A5A",textTransform:"uppercase",letterSpacing:.8,marginBottom:6}}>{day} <span style={{fontWeight:500,color:"#8A9BB0",textTransform:"none"}}>· {dp.length}</span></div>{dp.map((p,i)=> ( <Card key={p.id} delay={i*40}><div style={{display:"flex",alignItems:"center",gap:12}}><div style={{width:4,height:36,borderRadius:2,background:p.type==="individual"?"#AFC9A3":"#F0B64D"}}/><div style={{minWidth:44}}><div style={{fontSize:16,fontWeight:800,color:"#0E3A5A"}}>{p.hour}</div></div><div style={{flex:1}}><div style={{fontSize:14,fontWeight:600,color:"#0E3A5A"}}>{p.name}</div><div style={{fontSize:12,color:"#8A9BB0"}}>{p.type==="individual"?"Individual":"Grupo"}</div></div></div></Card> ))}</div> );})}</P>}
-        {!sub&&tab==="messages"&&<P><Section>Conversas</Section>{(()=>{const c={};myMsgs.forEach(m=>{if(!c[m.pt])c[m.pt]=[];c[m.pt].push(m);});return Object.entries(c).map(([pid,ms],i)=>{const p=d.pts.find(x=>x.id===pid);const last=ms[ms.length-1]; return ( <Card key={pid} delay={i*60}><div style={{display:"flex",alignItems:"center",gap:12}}><Av t="F" bg="#D3E0EF" sz={42}/><div style={{flex:1,minWidth:0}}><div style={{fontSize:14,fontWeight:600,color:"#0E3A5A"}}>Família de {p?.name}</div><div style={{fontSize:13,color:"#8A9BB0",marginTop:2,whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{last?.text}</div></div><div style={{fontSize:11,color:"#8A9BB0"}}>{last?.time}</div></div></Card> );});})()}</P>}
-        {sub==="session"&&sel&&<div><TopBar title={sel.name} onBack={()=>setSub(null)}/><P><Card style={{marginTop:14}}><div style={{display:"flex",gap:16}}><div><div style={{fontSize:12,color:"#8A9BB0"}}>Horário</div><div style={{fontSize:15,fontWeight:700,color:"#0E3A5A"}}>{sel.time}</div></div><div><div style={{fontSize:12,color:"#8A9BB0"}}>Tipo</div><div style={{fontSize:15,fontWeight:700,color:"#0E3A5A"}}>{sel.type}</div></div><div><div style={{fontSize:12,color:"#8A9BB0"}}>Sala</div><div style={{fontSize:15,fontWeight:700,color:"#0E3A5A"}}>{sel.room}</div></div></div></Card><Section>Notas clínicas</Section><textarea value={noteText} onChange={e=>setNoteText(e.target.value)} placeholder="Observações…" style={{width:"100%",padding:"14px 16px",borderRadius:16,border:"1px solid #D3E0EF",fontSize:14,outline:"none",background:"#FAFCFE",resize:"vertical",minHeight:120,lineHeight:1.6}}/><div style={{marginTop:12}}><Btn onClick={()=>show("Notas guardadas","success")}>{I.note("#fff")} Guardar</Btn></div></P></div>}
-        {sub==="patient"&&sel&&<div><TopBar title={sel.name} onBack={()=>setSub(null)}/><P><Card style={{marginTop:14,textAlign:"center"}}><Av t={sel.name.split(" ").map(w=>w[0]).join("").slice(0,2)} bg="#D3E0EF" sz={56}/><div style={{fontSize:18,fontWeight:700,color:"#0E3A5A",marginTop:10}}>{sel.name}</div><div style={{fontSize:13,color:"#8A9BB0",marginTop:2}}>{sel.age} anos · Desde {sel.since}</div><div style={{display:"inline-block",marginTop:8,padding:"4px 14px",borderRadius:10,background:"#EDF6FF",color:"#1565C0",fontSize:12,fontWeight:600}}>{sel.area}</div></Card>{(()=>{const ps=mySess.filter(s=>s.pt===sel.id),r=ps.filter(s=>s.st==="realizada").length,f=ps.filter(s=>s.st==="falta").length,rate=r+f>0?Math.round((r/(r+f))*100):0; return ( <><div style={{display:"flex",gap:8,marginBottom:4}}><Stat value={r} label="Realizadas" bg="#F0FAF0" accent="#2E7D32"/><Stat value={f} label="Faltas" bg="#FFF5F5" accent="#C62828"/><Stat value={`${rate}%`} label="Assiduidade" bg="#F0F4FF" accent="#1565C0"/></div><Section>Notas</Section>{ps.filter(s=>s.notes).reverse().slice(0,4).map((s,i)=> ( <Card key={s.id} delay={i*50}><div style={{fontSize:12,color:"#8A9BB0",marginBottom:4}}>{s.date}</div><div style={{fontSize:14,color:"#4A5568",lineHeight:1.55}}>{s.notes}</div></Card> ))}</> );})()}</P></div>}
-      </div>
-      {!sub&&<Nav tabs={nt} active={tab} onChange={t=>{setTab(t);setSub(null);}} badges={{messages:unread}}/>}
-      <Toast msg={toast?.m} type={toast?.t}/>
-      <Sheet open={modal==="addSession"} onClose={()=>setModal(null)} title="Agendar sessão"><Field label="Paciente"><Sel value={form.pt||""} onChange={v=>setForm(f=>({...f,pt:v}))} options={myPts.map(p=>({v:p.id,l:p.name}))}/></Field><Field label="Data"><Inp type="date" value={form.date||""} onChange={e=>setForm(f=>({...f,date:e.target.value}))}/></Field><div style={{marginTop:8}}><Btn onClick={addSession} disabled={!form.pt||!form.date}>Agendar</Btn></div></Sheet>
-      <Sheet open={modal==="addPatient"} onClose={()=>setModal(null)} title="Novo caso"><Field label="Nome"><Inp placeholder="Ex: Maria S." value={form.name||""} onChange={e=>setForm(f=>({...f,name:e.target.value}))}/></Field><Field label="Idade"><Inp type="number" placeholder="12" value={form.age||""} onChange={e=>setForm(f=>({...f,age:e.target.value}))}/></Field><Field label="Área"><Sel value={form.area||""} onChange={v=>setForm(f=>({...f,area:v}))} options={AREAS.map(a=>({v:a,l:a}))}/></Field><Field label="Dia"><Sel value={form.day||""} onChange={v=>setForm(f=>({...f,day:v}))} options={DAYS.map(d=>({v:d,l:d}))}/></Field><Field label="Hora"><Sel value={form.hour||""} onChange={v=>setForm(f=>({...f,hour:v}))} options={HOURS.map(h=>({v:h,l:h}))}/></Field><div style={{marginTop:8}}><Btn onClick={addPatient} disabled={!form.name||!form.age||!form.area||!form.day||!form.hour}>Criar caso</Btn></div></Sheet>
-    </div>
-  );
-};
-
-/* ═══ DIRECTOR PORTAL ═══ */
-const DirPortal = ({D:d,setD,onLogout}) => {
-  const [tab,setTab]=useState("home"),[sub,setSub]=useState(null),[selProf,setSelProf]=useState(null),[toast,setToast]=useState(null),[search,setSearch]=useState(""),[modal,setModal]=useState(null),[form,setForm]=useState({});
-  const show=(m,t)=>{setToast({m,t});setTimeout(()=>setToast(null),2500);};
-  const all=d.sess,realized=all.filter(s=>s.st==="realizada"),faltas=all.filter(s=>s.st==="falta"),agendadas=all.filter(s=>s.st==="agendada");
-  const rev=(()=>{let t=0;realized.forEach(s=>{const p=d.pts.find(x=>x.id===s.pt);if(p?.type==="individual")t+=55;else t+=150;});return t;})();
-  const cr=Math.round(rev*.2),pr=Math.round(rev*.8),net=cr-1500,occ=Math.round((realized.length/188)*100);
-  const tp=d.pays.reduce((a,p)=>a+p.amount,0),pp=d.pays.filter(p=>p.st==="pago").reduce((a,p)=>a+p.amount,0),pend=d.pays.filter(p=>p.st==="pendente"),colR=tp>0?Math.round((pp/tp)*100):0;
-  const nt=[{id:"home",label:"Dashboard",icon:I.bar},{id:"agenda",label:"Agenda",icon:I.cal},{id:"cases",label:"Casos",icon:I.usr},{id:"requests",label:"Pedidos",icon:I.swp}];
-  const addProf=()=>{if(!form.name)return;const ini=form.name.split(" ").map(w=>w[0]).join("").slice(0,2).toUpperCase();setD(prev=>({...prev,profs:[...prev.profs,{id:uid("p"),name:form.name,role:form.role||"Psicomotricista",av:ini,c:COLORS[prev.profs.length%COLORS.length]}]}));setModal(null);setForm({});show("Profissional adicionado","success");};
-  const addPatient=()=>{if(!form.name||!form.age||!form.prof||!form.day||!form.hour||!form.area)return;setD(prev=>({...prev,pts:[...prev.pts,{id:uid("c"),name:form.name,age:parseInt(form.age),prof:form.prof,type:form.type||"individual",day:form.day,hour:form.hour,freq:form.freq||"Semanal",since:"Abr 2026",area:form.area}]}));setModal(null);setForm({});show("Caso adicionado","success");};
-  const addPayment=()=>{if(!form.pt||!form.amount)return;setD(prev=>({...prev,pays:[...prev.pays,{id:uid("pay"),pt:form.pt,month:"Abril 2026",amount:parseInt(form.amount),st:form.paySt||"pendente",date:form.paySt==="pago"?"2026-04-04":null}]}));setModal(null);setForm({});show("Pagamento registado","success");};
-
-  return (
-    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#F4F7FA",position:"relative"}}>
-      <div style={{paddingBottom:88}}>
-        <Header title="Dashboard" sub="Rita Palma · Abril 2026" avatar={<div style={{display:"flex",alignItems:"center",gap:10}}><div style={{position:"relative",cursor:"pointer"}}>{I.bel()}{d.reqs.length>0&&<div style={{position:"absolute",top:-2,right:-4,width:10,height:10,borderRadius:5,background:"#E53935",border:"2px solid #F4F7FA"}}/>}</div><div onClick={onLogout} style={{cursor:"pointer"}}><Av t="RP" bg="#F0B64D" sz={38}/></div></div>}/>
-        {!sub&&tab==="home"&&<P>
-          <Card delay={0} style={{background:"linear-gradient(135deg,#0E3A5A,#1A5F8A)",border:"none",color:"#fff"}}><div style={{fontSize:12,opacity:.6,marginBottom:2}}>Receita bruta · Março 2026</div><div style={{fontSize:34,fontWeight:800,letterSpacing:-1,marginBottom:4}}>{rev.toLocaleString("pt-PT")}€</div><div style={{display:"flex",gap:20,marginTop:8}}><div><div style={{fontSize:11,opacity:.5}}>Clínica (20%)</div><div style={{fontSize:17,fontWeight:700}}>{cr}€</div></div><div><div style={{fontSize:11,opacity:.5}}>Prof. (80%)</div><div style={{fontSize:17,fontWeight:700}}>{pr}€</div></div><div><div style={{fontSize:11,opacity:.5}}>Resultado</div><div style={{fontSize:17,fontWeight:800,color:net>=0?"#A5D6A7":"#EF9A9A"}}>{net>=0?"+":""}{net}€</div></div></div></Card>
-          <Card delay={60}><div style={{fontSize:14,fontWeight:700,color:"#0E3A5A",marginBottom:12}}>Evolução de receita</div><BarChart data={d.revenue} h={70}/></Card>
-          <div style={{display:"flex",gap:8,marginBottom:4}}><Stat value={realized.length} label="Realizadas" bg="#F0FAF0" accent="#2E7D32"/><Stat value={faltas.length} label="Faltas" bg="#FFF5F5" accent="#C62828"/><Stat value={agendadas.length} label="Agendadas" bg="#F0F4FF" accent="#1565C0"/></div>
-          <Card delay={120}><div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontSize:14,fontWeight:600,color:"#0E3A5A"}}>Ocupação</span><span style={{fontSize:14,fontWeight:800,color:"#0E3A5A"}}>{occ}%</span></div><Progress pct={occ} color="#AFC9A3"/><div style={{fontSize:12,color:"#8A9BB0",marginTop:6}}>{realized.length} de 188 sessões</div></Card>
-          <Card delay={150}><div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontSize:14,fontWeight:600,color:"#0E3A5A"}}>Cobrança</span><span style={{fontSize:14,fontWeight:800,color:colR>=80?"#2E7D32":"#E65100"}}>{colR}%</span></div><Progress pct={colR} color={colR>=80?"#AFC9A3":"#F0B64D"}/><div style={{display:"flex",justifyContent:"space-between",marginTop:8}}><span style={{fontSize:12,color:"#8A9BB0"}}>Cobrado: {pp}€</span><span style={{fontSize:12,color:"#E65100",fontWeight:600}}>Pendente: {tp-pp}€</span></div></Card>
-          {pend.length>0&&<Card delay={180} style={{borderLeft:"4px solid #F0B64D",background:"#FFFDF7"}}><div style={{fontSize:13,fontWeight:700,color:"#E65100",marginBottom:6}}>Pendentes ({pend.length})</div>{pend.map(p=>{const pt=d.pts.find(x=>x.id===p.pt); return ( <div key={p.id} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid #F5F0E5"}}><span style={{fontSize:13,color:"#4A5568"}}>{pt?.name}</span><span style={{fontSize:13,fontWeight:700,color:"#E65100"}}>{p.amount}€</span></div> );})}</Card>}
-          <Section right={<span onClick={()=>{setForm({});setModal("addProf");}} style={{cursor:"pointer",color:"#0E3A5A",fontWeight:700}}>+ Adicionar</span>}>Profissionais</Section>
-          {d.profs.map((p,i)=>{const pp2=d.pts.filter(pt=>pt.prof===p.id||(pt.profs&&pt.profs.includes(p.id)));const pR=all.filter(s=>pp2.some(pt=>pt.id===s.pt)&&s.st==="realizada").length; return ( <Card key={p.id} delay={i*60+200} onClick={()=>{setSelProf(p);setSub("prof");}}><div style={{display:"flex",alignItems:"center",gap:12}}><Av t={p.av} bg={p.c}/><div style={{flex:1}}><div style={{fontSize:14,fontWeight:600,color:"#0E3A5A"}}>{p.name}</div><div style={{fontSize:12,color:"#8A9BB0"}}>{pp2.length} casos · {pR} sessões</div></div>{I.arr()}</div></Card> );})}
-          <Section>Custos fixos</Section>
-          <Card delay={350}><div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}><span style={{fontSize:14,color:"#4A5568"}}>Renda</span><span style={{fontSize:14,fontWeight:700,color:"#C62828"}}>-1.500€</span></div><div style={{height:1,background:"#EDF1F5",margin:"6px 0"}}/><div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:15,fontWeight:700,color:"#0E3A5A"}}>Resultado líquido</span><span style={{fontSize:18,fontWeight:800,color:net>=0?"#2E7D32":"#C62828"}}>{net>=0?"+":""}{net}€</span></div></Card>
-        </P>}
-        {!sub&&tab==="agenda"&&<P><Section>Visão semanal</Section>{DAYS.map((day,di)=>{const pts=d.pts.filter(p=>p.day===day); return ( <div key={day} style={{marginBottom:14}}><div style={{fontSize:12,fontWeight:700,color:"#0E3A5A",textTransform:"uppercase",letterSpacing:.8,marginBottom:6,display:"flex",alignItems:"center",gap:8}}><div style={{width:6,height:6,borderRadius:3,background:pts.length>0?"#AFC9A3":"#D3E0EF"}}/>{day}<span style={{fontWeight:500,color:"#8A9BB0",textTransform:"none"}}>· {pts.length}</span></div>{pts.length===0? ( <Card style={{padding:12,textAlign:"center",color:"#8A9BB0",fontSize:13}}>Sem sessões</Card> ):pts.map((p,i)=>{const pn=d.profs.find(pr=>pr.id===p.prof)?.av; return ( <Card key={p.id} delay={di*30+i*20}><div style={{display:"flex",alignItems:"center",gap:10}}><span style={{fontSize:14,fontWeight:800,color:"#0E3A5A",minWidth:42}}>{p.hour}</span><div style={{width:4,height:28,borderRadius:2,background:p.type==="individual"?"#AFC9A3":"#F0B64D"}}/><div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,color:"#0E3A5A"}}>{p.name}</div><div style={{fontSize:11,color:"#8A9BB0"}}>{pn} · {p.type==="individual"?"Ind.":"Grupo"}</div></div></div></Card> );})}</div> );})}</P>}
-        {!sub&&tab==="cases"&&<P><Section right={<span onClick={()=>{setForm({});setModal("addPatient");}} style={{cursor:"pointer",color:"#0E3A5A",fontWeight:700}}>+ Novo</span>}>Casos ({d.pts.length})</Section><SearchInput value={search} onChange={setSearch} placeholder="Procurar..."/>{d.pts.filter(p=>!search||p.name.toLowerCase().includes(search.toLowerCase())).map((p,i)=>{const prN=d.profs.find(pr=>pr.id===p.prof)?.name; return ( <Card key={p.id} delay={i*40}><div style={{display:"flex",alignItems:"center",gap:12}}><Av t={p.name.split(" ").map(w=>w[0]).join("").slice(0,2)} bg={p.type==="individual"?"#D3E0EF":"#FFF3E0"} sz={40}/><div style={{flex:1}}><div style={{fontSize:14,fontWeight:600,color:"#0E3A5A"}}>{p.name}</div><div style={{fontSize:12,color:"#8A9BB0"}}>{p.age} anos · {prN} · {p.day} {p.hour}</div><div style={{fontSize:11,color:"#6B94B8"}}>{p.area}</div></div><Tag type={p.type==="individual"?"individual":"grupo"}>{p.type==="individual"?"Ind.":"Grupo"}</Tag></div></Card> );})}</P>}
-        {!sub&&tab==="requests"&&<P><Section right={<span onClick={()=>{setForm({});setModal("addPayment");}} style={{cursor:"pointer",color:"#0E3A5A",fontWeight:700}}>+ Pagamento</span>}>Pedidos ({d.reqs.length})</Section>{d.reqs.length===0&&<Empty text="Sem pedidos pendentes"/>}{d.reqs.map((r,i)=>{const prN=d.profs.find(p=>p.id===r.prof)?.name;const ptN=d.pts.find(p=>p.id===r.pt)?.name; return ( <Card key={r.id} delay={i*80}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><div style={{display:"flex",alignItems:"center",gap:8}}><Av t={d.profs.find(p=>p.id===r.prof)?.av} bg={d.profs.find(p=>p.id===r.prof)?.c} sz={32}/><span style={{fontWeight:700,fontSize:14,color:"#0E3A5A"}}>{prN}</span></div><Tag type="pendente">Pendente</Tag></div><div style={{background:"#F7F9FC",borderRadius:12,padding:"10px 14px",marginBottom:10}}><div style={{fontSize:13,color:"#4A5568",marginBottom:4}}>Paciente: <strong>{ptN}</strong></div><div style={{fontSize:13,display:"flex",alignItems:"center",gap:6}}><span style={{padding:"2px 8px",borderRadius:6,background:"#FFF0F0",color:"#C62828",fontSize:12}}>{r.from}</span><span style={{color:"#8A9BB0"}}>→</span><span style={{padding:"2px 8px",borderRadius:6,background:"#E8F5E9",color:"#2E7D32",fontSize:12}}>{r.to}</span></div><div style={{fontSize:12,color:"#8A9BB0",marginTop:6}}>{r.reason}</div></div><div style={{display:"flex",gap:8}}><button onClick={()=>{setD(prev=>({...prev,reqs:prev.reqs.filter(x=>x.id!==r.id)}));show("Aprovado","success");}} className="ch" style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",background:"#0E3A5A",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>{I.chk()} Aprovar</button><button onClick={()=>{setD(prev=>({...prev,reqs:prev.reqs.filter(x=>x.id!==r.id)}));show("Recusado","error");}} className="ch" style={{flex:1,padding:"12px 0",borderRadius:12,border:"1px solid #D3E0EF",background:"#fff",color:"#0E3A5A",fontSize:14,fontWeight:600,cursor:"pointer"}}>Recusar</button></div></Card> );})}</P>}
-        {sub==="prof"&&selProf&&(()=>{const p=selProf,pp2=d.pts.filter(pt=>pt.prof===p.id||(pt.profs&&pt.profs.includes(p.id))),pR=all.filter(s=>pp2.some(pt=>pt.id===s.pt)&&s.st==="realizada").length;let iE=0,gE=0;all.filter(s=>pp2.some(pt=>pt.id===s.pt)&&s.st==="realizada").forEach(s=>{const pt=d.pts.find(x=>x.id===s.pt);if(pt?.type==="individual")iE+=55*.8;else gE+=150*.4;});const tE=iE+gE; return ( <div><TopBar title={p.name} onBack={()=>setSub(null)}/><P><Card style={{marginTop:14,textAlign:"center"}}><Av t={p.av} bg={p.c} sz={56}/><div style={{fontSize:18,fontWeight:700,color:"#0E3A5A",marginTop:10}}>{p.name}</div><div style={{fontSize:13,color:"#8A9BB0"}}>{p.role||"Psicomotricista"}</div></Card><div style={{display:"flex",gap:8,marginBottom:4}}><Stat value={pp2.length} label="Casos" bg="#F0F4FF" accent="#1565C0"/><Stat value={pR} label="Realizadas" bg="#F0FAF0" accent="#2E7D32"/><Stat value={`${tE.toFixed(0)}€`} label="Ganhos" bg="#FFFAF0" accent="#E65100"/></div><Card><div style={{fontSize:14,fontWeight:700,color:"#0E3A5A",marginBottom:8}}>Ganhos Março</div><div style={{display:"flex",gap:8,marginBottom:6}}><div style={{flex:iE||.01,height:8,borderRadius:4,background:"#AFC9A3"}}/><div style={{flex:gE||.01,height:8,borderRadius:4,background:"#F0B64D"}}/></div><div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:12,color:"#6B94B8"}}>Ind: {iE.toFixed(0)}€</span><span style={{fontSize:12,color:"#6B94B8"}}>Grupo: {gE.toFixed(0)}€</span></div></Card><Section>Casos</Section>{pp2.map((pt,i)=> ( <Card key={pt.id} delay={i*40}><div style={{display:"flex",alignItems:"center",gap:10}}><div style={{width:4,height:32,borderRadius:2,background:pt.type==="individual"?"#AFC9A3":"#F0B64D"}}/><div style={{flex:1}}><div style={{fontSize:14,fontWeight:600,color:"#0E3A5A"}}>{pt.name}</div><div style={{fontSize:12,color:"#8A9BB0"}}>{pt.day} {pt.hour} · {pt.area}</div></div></div></Card> ))}</P></div> );})()}
-      </div>
-      {!sub&&<Nav tabs={nt} active={tab} onChange={t=>{setTab(t);setSub(null);setSearch("");}} badges={{requests:d.reqs.length}}/>}
-      <Toast msg={toast?.m} type={toast?.t}/>
-      <Sheet open={modal==="addProf"} onClose={()=>setModal(null)} title="Adicionar profissional"><Field label="Nome completo"><Inp placeholder="Ex: Maria Santos" value={form.name||""} onChange={e=>setForm(f=>({...f,name:e.target.value}))}/></Field><Field label="Função"><Sel value={form.role||"Psicomotricista"} onChange={v=>setForm(f=>({...f,role:v}))} options={[{v:"Psicomotricista",l:"Psicomotricista"},{v:"Terapeuta Ocupacional",l:"Terapeuta Ocupacional"},{v:"Psicólogo/a",l:"Psicólogo/a"}]}/></Field><div style={{marginTop:8}}><Btn onClick={addProf} disabled={!form.name}>Adicionar</Btn></div></Sheet>
-      <Sheet open={modal==="addPatient"} onClose={()=>setModal(null)} title="Novo caso"><Field label="Nome"><Inp placeholder="Ex: Maria S." value={form.name||""} onChange={e=>setForm(f=>({...f,name:e.target.value}))}/></Field><Field label="Idade"><Inp type="number" placeholder="12" value={form.age||""} onChange={e=>setForm(f=>({...f,age:e.target.value}))}/></Field><Field label="Profissional"><Sel value={form.prof||""} onChange={v=>setForm(f=>({...f,prof:v}))} options={d.profs.map(p=>({v:p.id,l:p.name}))}/></Field><Field label="Área"><Sel value={form.area||""} onChange={v=>setForm(f=>({...f,area:v}))} options={AREAS.map(a=>({v:a,l:a}))}/></Field><Field label="Dia"><Sel value={form.day||""} onChange={v=>setForm(f=>({...f,day:v}))} options={DAYS.map(d=>({v:d,l:d}))}/></Field><Field label="Hora"><Sel value={form.hour||""} onChange={v=>setForm(f=>({...f,hour:v}))} options={HOURS.map(h=>({v:h,l:h}))}/></Field><div style={{marginTop:8}}><Btn onClick={addPatient} disabled={!form.name||!form.age||!form.prof||!form.area||!form.day||!form.hour}>Criar caso</Btn></div></Sheet>
-      <Sheet open={modal==="addPayment"} onClose={()=>setModal(null)} title="Registar pagamento"><Field label="Paciente"><Sel value={form.pt||""} onChange={v=>setForm(f=>({...f,pt:v}))} options={d.pts.map(p=>({v:p.id,l:p.name}))}/></Field><Field label="Valor (€)"><Inp type="number" placeholder="220" value={form.amount||""} onChange={e=>setForm(f=>({...f,amount:e.target.value}))}/></Field><Field label="Estado"><Sel value={form.paySt||"pendente"} onChange={v=>setForm(f=>({...f,paySt:v}))} options={[{v:"pago",l:"Pago"},{v:"pendente",l:"Pendente"}]}/></Field><div style={{marginTop:8}}><Btn onClick={addPayment} disabled={!form.pt||!form.amount}>Registar</Btn></div></Sheet>
-    </div>
-  );
-};
-
-/* ═══ APP ROOT ═══ */
-function App() {
-  const [role,setRole] = useState(null);
-  const [vis,setVis] = useState(true);
-  const [data,setData] = useState(INIT);
-  const [sbUser,setSbUser] = useState(null);
-
-  // Supabase auth listener
-  useEffect(()=>{
-    if(isDemo || !sb) return;
-    sb.auth.getSession().then(({data:{session}})=>{
-      if(session?.user) loadProfile(session.user.id);
-    });
-    const {data:{subscription}} = sb.auth.onAuthStateChange(async(_,session)=>{
-      if(session?.user) await loadProfile(session.user.id);
-      else { setSbUser(null); setRole(null); }
-    });
-    return ()=>subscription.unsubscribe();
-  },[]);
-
-  async function loadProfile(uid) {
-    const {data:p} = await sb.from('profiles').select('*').eq('id',uid).single();
-    if(p){ setSbUser(p); setRole(p.role); }
-  }
-
-  const go = (r) => { setVis(false); setTimeout(()=>{ setRole(r); setTimeout(()=>setVis(true),30); },200); };
-  const logout = () => {
-    setVis(false);
-    if(!isDemo && sb) sb.auth.signOut();
-    setTimeout(()=>{ setRole(null); setSbUser(null); setTimeout(()=>setVis(true),30); },200);
+  const reload = async () => {
+    setProfs(await sbFetchProfs());
+    setPts(await sbFetchPts());
+    setSess(await sbFetchSess());
+    setPays(await sbFetchPays());
+    setReqs(await sbFetchReqs());
   };
 
-  const s = {transition:"opacity .25s ease",opacity:vis?1:0};
+  // Calculations
+  const realized = sess.filter(s => s.status === "realizada");
+  const rev = (() => { let t = 0; realized.forEach(s => { const p = pts.find(x => x.id === s.patient_id); if (p?.session_type === "individual") t += 55; else t += 150; }); return t; })();
+  const cr = Math.round(rev * .2), pr = Math.round(rev * .8), net = cr - 1500;
+  const occ = Math.round((realized.length / 188) * 100);
+  const tp = pays.reduce((a, p) => a + Number(p.amount), 0);
+  const pp = pays.filter(p => p.status === "pago").reduce((a, p) => a + Number(p.amount), 0);
+  const pend = pays.filter(p => p.status === "pendente");
+  const colR = tp > 0 ? Math.round((pp / tp) * 100) : 0;
 
-  if(!role) return ( <div style={s}><Login onLogin={go}/></div> );
-  if(role==="parent") return ( <div style={s}><ParentPortal D={data} setD={setData} onLogout={logout}/></div> );
-  if(role==="professional") return ( <div style={s}><ProfPortal D={data} setD={setData} onLogout={logout}/></div> );
-  if(role==="director") return ( <div style={s}><DirPortal D={data} setD={setData} onLogout={logout}/></div> );
-  return ( <div style={s}><Login onLogin={go}/></div> );
+  // ─── ADD PROFESSIONAL ───
+  const addProf = async () => {
+    if (!form.name) return;
+    const ini = form.name.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+    const color = COLORS[profs.length % COLORS.length];
+    if (sb) {
+      await sb.from('professionals').insert({ name: form.name, role_title: form.role || 'Psicomotricista', avatar_initials: ini, avatar_color: color });
+    }
+    setModal(null); setForm({}); show("Profissional adicionado", "success"); await reload();
+  };
+
+  // ─── ADD PATIENT ───
+  const addPatient = async () => {
+    if (!form.name || !form.age || !form.prof || !form.day || !form.hour || !form.area) return;
+    if (sb) {
+      await sb.from('patients').insert({ name: form.name, age: parseInt(form.age), professional_id: form.prof, session_type: form.type || 'individual', day_of_week: form.day, hour: form.hour, periodicity: form.freq || 'Semanal', intervention_area: form.area, start_date: new Date().toISOString().slice(0, 7) });
+    }
+    setModal(null); setForm({}); show("Caso adicionado", "success"); await reload();
+  };
+
+  // ─── ADD PAYMENT ───
+  const addPayment = async () => {
+    if (!form.pt || !form.amount) return;
+    if (sb) {
+      await sb.from('payments').insert({ patient_id: form.pt, month: 'Abril 2026', amount: parseFloat(form.amount), status: form.paySt || 'pendente', paid_date: form.paySt === 'pago' ? new Date().toISOString().slice(0, 10) : null });
+    }
+    setModal(null); setForm({}); show("Pagamento registado", "success"); await reload();
+  };
+
+  // ─── INVITE USER ───
+  const inviteUser = async () => {
+    if (!form.invEmail || !form.invName || !form.invRole) return;
+    setInviteResult(null);
+    if (!sb) { show("Só funciona com Supabase", "error"); return; }
+    const tempPw = 'Psico' + Math.random().toString(36).slice(2, 8) + '!';
+    const { data, error } = await sb.auth.signUp({
+      email: form.invEmail,
+      password: tempPw,
+      options: { data: { full_name: form.invName, role: form.invRole } }
+    });
+    if (error) { show("Erro: " + error.message, "error"); return; }
+
+    // Se for profissional, criar entrada na tabela professionals
+    if (form.invRole === 'professional' && data?.user) {
+      const ini = form.invName.split(" ").map(w => w[0]).join("").slice(0, 2).toUpperCase();
+      // Garantir perfil existe
+      await sb.from('profiles').upsert({ id: data.user.id, email: form.invEmail, full_name: form.invName, role: 'professional' });
+      await sb.from('professionals').insert({ name: form.invName, role_title: 'Psicomotricista', avatar_initials: ini, avatar_color: COLORS[profs.length % COLORS.length], profile_id: data.user.id });
+    } else if (data?.user) {
+      await sb.from('profiles').upsert({ id: data.user.id, email: form.invEmail, full_name: form.invName, role: form.invRole });
+    }
+
+    setInviteResult({ email: form.invEmail, pw: tempPw, role: form.invRole, name: form.invName });
+    show("Conta criada com sucesso", "success");
+    await reload();
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text).then(() => show("Copiado!", "success")).catch(() => {});
+  };
+
+  // ─── APPROVE / REJECT ───
+  const approveReq = async (rid) => {
+    if (sb) await sb.from('schedule_requests').update({ status: 'aprovado' }).eq('id', rid);
+    show("Aprovado", "success"); await reload();
+  };
+  const rejectReq = async (rid) => {
+    if (sb) await sb.from('schedule_requests').update({ status: 'recusado' }).eq('id', rid);
+    show("Recusado", "error"); await reload();
+  };
+
+  const nt = [
+    {id:"home",label:"Dashboard",icon:I.bar},
+    {id:"cases",label:"Casos",icon:I.usr},
+    {id:"manage",label:"Gestão",icon:I.gear},
+    {id:"requests",label:"Pedidos",icon:I.swp},
+  ];
+
+  return (
+    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#F4F7FA",position:"relative"}}>
+      <div style={{paddingBottom:88}}>
+        <Header title="Dashboard" sub={profile?.full_name || "Diretora"} avatar={<div onClick={onLogout} style={{cursor:"pointer"}}><Av t={profile?.full_name?.split(" ").map(w=>w[0]).join("").slice(0,2)||"RP"} bg="#F0B64D" sz={38}/></div>} />
+
+        {/* ─── HOME TAB ─── */}
+        {!sub && tab === "home" && (
+          <P>
+            <Card delay={0} style={{background:"linear-gradient(135deg,#0E3A5A,#1A5F8A)",border:"none",color:"#fff"}}>
+              <div style={{fontSize:12,opacity:.6}}>Receita bruta</div>
+              <div style={{fontSize:34,fontWeight:800,letterSpacing:-1,marginBottom:4}}>{rev.toLocaleString("pt-PT")}€</div>
+              <div style={{display:"flex",gap:20,marginTop:8}}>
+                <div><div style={{fontSize:11,opacity:.5}}>Clínica (20%)</div><div style={{fontSize:17,fontWeight:700}}>{cr}€</div></div>
+                <div><div style={{fontSize:11,opacity:.5}}>Prof. (80%)</div><div style={{fontSize:17,fontWeight:700}}>{pr}€</div></div>
+                <div><div style={{fontSize:11,opacity:.5}}>Resultado</div><div style={{fontSize:17,fontWeight:800,color:net>=0?"#A5D6A7":"#EF9A9A"}}>{net>=0?"+":""}{net}€</div></div>
+              </div>
+            </Card>
+            <div style={{display:"flex",gap:8,marginBottom:4}}>
+              <Stat value={realized.length} label="Realizadas" bg="#F0FAF0" accent="#2E7D32"/>
+              <Stat value={sess.filter(s=>s.status==="falta").length} label="Faltas" bg="#FFF5F5" accent="#C62828"/>
+              <Stat value={sess.filter(s=>s.status==="agendada").length} label="Agendadas" bg="#F0F4FF" accent="#1565C0"/>
+            </div>
+            <Card delay={80}><div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontSize:14,fontWeight:600,color:"#0E3A5A"}}>Ocupação</span><span style={{fontSize:14,fontWeight:800}}>{occ}%</span></div><Progress pct={occ} color="#AFC9A3"/><div style={{fontSize:12,color:"#8A9BB0",marginTop:6}}>{realized.length} de 188 sessões</div></Card>
+            <Card delay={100}><div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontSize:14,fontWeight:600,color:"#0E3A5A"}}>Cobrança</span><span style={{fontSize:14,fontWeight:800,color:colR>=80?"#2E7D32":"#E65100"}}>{colR}%</span></div><Progress pct={colR} color={colR>=80?"#AFC9A3":"#F0B64D"}/></Card>
+            {pend.length > 0 && (
+              <Card delay={120} style={{borderLeft:"4px solid #F0B64D",background:"#FFFDF7"}}>
+                <div style={{fontSize:13,fontWeight:700,color:"#E65100",marginBottom:6}}>Pendentes ({pend.length})</div>
+                {pend.map(p => { const pt = pts.find(x => x.id === p.patient_id); return ( <div key={p.id} style={{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"1px solid #F5F0E5"}}><span style={{fontSize:13,color:"#4A5568"}}>{pt?.name || "—"}</span><span style={{fontSize:13,fontWeight:700,color:"#E65100"}}>{p.amount}€</span></div> ); })}
+              </Card>
+            )}
+            <Section>Profissionais</Section>
+            {profs.map((p, i) => {
+              const pPts = pts.filter(pt => pt.professional_id === p.id);
+              return (
+                <Card key={p.id} delay={i*60+140} onClick={() => { setSelProf(p); setSub("prof"); }}>
+                  <div style={{display:"flex",alignItems:"center",gap:12}}>
+                    <Av t={p.avatar_initials} bg={p.avatar_color}/>
+                    <div style={{flex:1}}><div style={{fontSize:14,fontWeight:600,color:"#0E3A5A"}}>{p.name}</div><div style={{fontSize:12,color:"#8A9BB0"}}>{pPts.length} casos · {p.role_title}</div></div>
+                    {I.arr()}
+                  </div>
+                </Card>
+              );
+            })}
+            <Section>Custos</Section>
+            <Card delay={300}><div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}><span style={{fontSize:14,color:"#4A5568"}}>Renda</span><span style={{fontSize:14,fontWeight:700,color:"#C62828"}}>-1.500€</span></div><div style={{height:1,background:"#EDF1F5",margin:"6px 0"}}/><div style={{display:"flex",justifyContent:"space-between"}}><span style={{fontSize:15,fontWeight:700,color:"#0E3A5A"}}>Resultado</span><span style={{fontSize:18,fontWeight:800,color:net>=0?"#2E7D32":"#C62828"}}>{net>=0?"+":""}{net}€</span></div></Card>
+          </P>
+        )}
+
+        {/* ─── CASES TAB ─── */}
+        {!sub && tab === "cases" && (
+          <P>
+            <Section right={<span onClick={() => {setForm({});setModal("addPatient");}} style={{cursor:"pointer",color:"#0E3A5A",fontWeight:700}}>+ Novo</span>}>Casos ({pts.length})</Section>
+            {pts.map((p, i) => {
+              const prN = profs.find(pr => pr.id === p.professional_id)?.name;
+              return (
+                <Card key={p.id} delay={i*40}>
+                  <div style={{display:"flex",alignItems:"center",gap:12}}>
+                    <Av t={p.name.split(" ").map(w=>w[0]).join("").slice(0,2)} bg={p.session_type==="individual"?"#D3E0EF":"#FFF3E0"} sz={40}/>
+                    <div style={{flex:1}}><div style={{fontSize:14,fontWeight:600,color:"#0E3A5A"}}>{p.name}</div><div style={{fontSize:12,color:"#8A9BB0"}}>{p.age} anos · {prN || "—"} · {p.day_of_week} {p.hour}</div><div style={{fontSize:11,color:"#6B94B8"}}>{p.intervention_area}</div></div>
+                  </div>
+                </Card>
+              );
+            })}
+          </P>
+        )}
+
+        {/* ─── MANAGE TAB (NEW!) ─── */}
+        {!sub && tab === "manage" && (
+          <P>
+            <Section>Ações rápidas</Section>
+            <Card delay={0} onClick={() => {setForm({});setModal("invite");}}>
+              <div style={{display:"flex",alignItems:"center",gap:14}}>
+                <div style={{width:48,height:48,borderRadius:14,background:"#F3E5F5",display:"flex",alignItems:"center",justifyContent:"center"}}>{I.mail("#6A1B9A")}</div>
+                <div style={{flex:1}}><div style={{fontSize:15,fontWeight:700,color:"#0E3A5A"}}>Convidar utilizador</div><div style={{fontSize:13,color:"#8A9BB0"}}>Criar conta para profissional ou pai/mãe</div></div>
+                {I.arr()}
+              </div>
+            </Card>
+            <Card delay={60} onClick={() => {setForm({});setModal("addProf");}}>
+              <div style={{display:"flex",alignItems:"center",gap:14}}>
+                <div style={{width:48,height:48,borderRadius:14,background:"#E8F5E9",display:"flex",alignItems:"center",justifyContent:"center"}}>{I.usr("#2E7D32")}</div>
+                <div style={{flex:1}}><div style={{fontSize:15,fontWeight:700,color:"#0E3A5A"}}>Adicionar profissional</div><div style={{fontSize:13,color:"#8A9BB0"}}>Novo terapeuta sem conta de acesso</div></div>
+                {I.arr()}
+              </div>
+            </Card>
+            <Card delay={120} onClick={() => {setForm({});setModal("addPatient");}}>
+              <div style={{display:"flex",alignItems:"center",gap:14}}>
+                <div style={{width:48,height:48,borderRadius:14,background:"#E3F2FD",display:"flex",alignItems:"center",justifyContent:"center"}}>{I.usr("#1565C0")}</div>
+                <div style={{flex:1}}><div style={{fontSize:15,fontWeight:700,color:"#0E3A5A"}}>Adicionar paciente</div><div style={{fontSize:13,color:"#8A9BB0"}}>Novo caso clínico</div></div>
+                {I.arr()}
+              </div>
+            </Card>
+            <Card delay={180} onClick={() => {setForm({});setModal("addPayment");}}>
+              <div style={{display:"flex",alignItems:"center",gap:14}}>
+                <div style={{width:48,height:48,borderRadius:14,background:"#FFF8E1",display:"flex",alignItems:"center",justifyContent:"center"}}>{I.wal("#E65100")}</div>
+                <div style={{flex:1}}><div style={{fontSize:15,fontWeight:700,color:"#0E3A5A"}}>Registar pagamento</div><div style={{fontSize:13,color:"#8A9BB0"}}>Adicionar recibo ou marcar pendente</div></div>
+                {I.arr()}
+              </div>
+            </Card>
+
+            <Section>Equipa ({profs.length})</Section>
+            {profs.map((p, i) => (
+              <Card key={p.id} delay={i*40+240}>
+                <div style={{display:"flex",alignItems:"center",gap:12}}>
+                  <Av t={p.avatar_initials} bg={p.avatar_color} sz={38}/>
+                  <div style={{flex:1}}><div style={{fontSize:14,fontWeight:600,color:"#0E3A5A"}}>{p.name}</div><div style={{fontSize:12,color:"#8A9BB0"}}>{p.role_title}</div></div>
+                  <Tag type="professional">Ativo</Tag>
+                </div>
+              </Card>
+            ))}
+          </P>
+        )}
+
+        {/* ─── REQUESTS TAB ─── */}
+        {!sub && tab === "requests" && (
+          <P>
+            <Section>Pedidos pendentes ({reqs.length})</Section>
+            {reqs.length === 0 && <Empty text="Sem pedidos pendentes"/>}
+            {reqs.map((r, i) => {
+              const prN = profs.find(p => p.id === r.professional_id)?.name;
+              const ptN = pts.find(p => p.id === r.patient_id)?.name;
+              return (
+                <Card key={r.id} delay={i*80}>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+                    <span style={{fontWeight:700,fontSize:14,color:"#0E3A5A"}}>{prN}</span>
+                    <Tag type="pendente">Pendente</Tag>
+                  </div>
+                  <div style={{background:"#F7F9FC",borderRadius:12,padding:"10px 14px",marginBottom:10}}>
+                    <div style={{fontSize:13,color:"#4A5568",marginBottom:4}}>Paciente: <b>{ptN}</b></div>
+                    <div style={{fontSize:13,display:"flex",alignItems:"center",gap:6}}>
+                      <span style={{padding:"2px 8px",borderRadius:6,background:"#FFF0F0",color:"#C62828",fontSize:12}}>{r.from_schedule}</span>
+                      <span style={{color:"#8A9BB0"}}>→</span>
+                      <span style={{padding:"2px 8px",borderRadius:6,background:"#E8F5E9",color:"#2E7D32",fontSize:12}}>{r.to_schedule}</span>
+                    </div>
+                    {r.reason && <div style={{fontSize:12,color:"#8A9BB0",marginTop:6}}>{r.reason}</div>}
+                  </div>
+                  <div style={{display:"flex",gap:8}}>
+                    <button onClick={() => approveReq(r.id)} className="ch" style={{flex:1,padding:"12px 0",borderRadius:12,border:"none",background:"#0E3A5A",color:"#fff",fontSize:14,fontWeight:700,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",gap:6}}>{I.chk()} Aprovar</button>
+                    <button onClick={() => rejectReq(r.id)} className="ch" style={{flex:1,padding:"12px 0",borderRadius:12,border:"1px solid #D3E0EF",background:"#fff",color:"#0E3A5A",fontSize:14,fontWeight:600,cursor:"pointer"}}>Recusar</button>
+                  </div>
+                </Card>
+              );
+            })}
+          </P>
+        )}
+
+        {/* ─── PROF DETAIL ─── */}
+        {sub === "prof" && selProf && (() => {
+          const p = selProf;
+          const pPts = pts.filter(pt => pt.professional_id === p.id);
+          const pSess = sess.filter(s => pPts.some(pt => pt.id === s.patient_id) && s.status === "realizada");
+          let iE = 0, gE = 0;
+          pSess.forEach(s => { const pt = pts.find(x => x.id === s.patient_id); if (pt?.session_type === "individual") iE += 55 * .8; else gE += 150 * .4; });
+          return (
+            <div>
+              <TopBar title={p.name} onBack={() => setSub(null)}/>
+              <P>
+                <Card style={{marginTop:14,textAlign:"center"}}>
+                  <Av t={p.avatar_initials} bg={p.avatar_color} sz={56}/>
+                  <div style={{fontSize:18,fontWeight:700,color:"#0E3A5A",marginTop:10}}>{p.name}</div>
+                  <div style={{fontSize:13,color:"#8A9BB0"}}>{p.role_title}</div>
+                </Card>
+                <div style={{display:"flex",gap:8,marginBottom:4}}>
+                  <Stat value={pPts.length} label="Casos" bg="#F0F4FF" accent="#1565C0"/>
+                  <Stat value={pSess.length} label="Realizadas" bg="#F0FAF0" accent="#2E7D32"/>
+                  <Stat value={`${(iE+gE).toFixed(0)}€`} label="Ganhos" bg="#FFFAF0" accent="#E65100"/>
+                </div>
+                <Section>Casos</Section>
+                {pPts.map((pt,i) => (
+                  <Card key={pt.id} delay={i*40}>
+                    <div style={{display:"flex",alignItems:"center",gap:10}}>
+                      <div style={{width:4,height:32,borderRadius:2,background:pt.session_type==="individual"?"#AFC9A3":"#F0B64D"}}/>
+                      <div style={{flex:1}}><div style={{fontSize:14,fontWeight:600,color:"#0E3A5A"}}>{pt.name}</div><div style={{fontSize:12,color:"#8A9BB0"}}>{pt.day_of_week} {pt.hour} · {pt.intervention_area}</div></div>
+                    </div>
+                  </Card>
+                ))}
+              </P>
+            </div>
+          );
+        })()}
+      </div>
+
+      {!sub && <Nav tabs={nt} active={tab} onChange={t => {setTab(t);setSub(null);}} badges={{requests:reqs.length}}/>}
+      <Toast msg={toast?.m} type={toast?.t}/>
+
+      {/* ═══ MODALS ═══ */}
+
+      {/* INVITE USER */}
+      <Sheet open={modal==="invite"} onClose={() => {setModal(null);setInviteResult(null);}} title="Convidar utilizador">
+        {!inviteResult ? (
+          <>
+            <Field label="Nome completo"><Inp placeholder="Ex: João Silva" value={form.invName||""} onChange={e=>setForm(f=>({...f,invName:e.target.value}))}/></Field>
+            <Field label="Email"><Inp type="email" placeholder="joao@email.pt" value={form.invEmail||""} onChange={e=>setForm(f=>({...f,invEmail:e.target.value}))}/></Field>
+            <Field label="Papel"><Sel value={form.invRole||""} onChange={v=>setForm(f=>({...f,invRole:v}))} options={[{v:"professional",l:"Profissional"},{v:"parent",l:"Pai / Mãe"}]}/></Field>
+            <div style={{marginTop:8}}><Btn onClick={inviteUser} disabled={!form.invName||!form.invEmail||!form.invRole}>Criar conta</Btn></div>
+          </>
+        ) : (
+          <div>
+            <div style={{textAlign:"center",marginBottom:20}}>
+              <div style={{width:56,height:56,borderRadius:28,background:"#E8F5E9",display:"inline-flex",alignItems:"center",justifyContent:"center",marginBottom:12}}>{I.chk("#2E7D32")}</div>
+              <div style={{fontSize:16,fontWeight:700,color:"#0E3A5A"}}>Conta criada!</div>
+              <div style={{fontSize:13,color:"#8A9BB0",marginTop:4}}>Partilha estes dados com {inviteResult.name}:</div>
+            </div>
+            <div style={{background:"#F7F9FC",borderRadius:14,padding:16,marginBottom:16}}>
+              <div style={{marginBottom:12}}>
+                <div style={{fontSize:12,color:"#8A9BB0",marginBottom:2}}>Email</div>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <span style={{fontSize:15,fontWeight:600,color:"#0E3A5A"}}>{inviteResult.email}</span>
+                  <div onClick={() => copyToClipboard(inviteResult.email)} style={{cursor:"pointer",padding:4}}>{I.copy()}</div>
+                </div>
+              </div>
+              <div style={{marginBottom:12}}>
+                <div style={{fontSize:12,color:"#8A9BB0",marginBottom:2}}>Password temporária</div>
+                <div style={{display:"flex",alignItems:"center",justifyContent:"space-between"}}>
+                  <span style={{fontSize:15,fontWeight:600,color:"#0E3A5A",fontFamily:"monospace"}}>{inviteResult.pw}</span>
+                  <div onClick={() => copyToClipboard(inviteResult.pw)} style={{cursor:"pointer",padding:4}}>{I.copy()}</div>
+                </div>
+              </div>
+              <div>
+                <div style={{fontSize:12,color:"#8A9BB0",marginBottom:2}}>Papel</div>
+                <Tag type={inviteResult.role}>{ROLES_MAP[inviteResult.role]}</Tag>
+              </div>
+            </div>
+            <Btn onClick={() => copyToClipboard(`Olá ${inviteResult.name}!\n\nJá tens acesso à app Psicomotriclinic.\n\nLink: ${window.location.href}\nEmail: ${inviteResult.email}\nPassword: ${inviteResult.pw}\n\nAltera a password depois de entrar.`)}>Copiar mensagem para enviar</Btn>
+            <div style={{marginTop:8}}><Btn secondary onClick={() => {setModal(null);setInviteResult(null);}}>Fechar</Btn></div>
+          </div>
+        )}
+      </Sheet>
+
+      {/* ADD PROFESSIONAL */}
+      <Sheet open={modal==="addProf"} onClose={() => setModal(null)} title="Adicionar profissional">
+        <Field label="Nome completo"><Inp placeholder="Ex: Maria Santos" value={form.name||""} onChange={e=>setForm(f=>({...f,name:e.target.value}))}/></Field>
+        <Field label="Função"><Sel value={form.role||"Psicomotricista"} onChange={v=>setForm(f=>({...f,role:v}))} options={[{v:"Psicomotricista",l:"Psicomotricista"},{v:"Terapeuta Ocupacional",l:"Terapeuta Ocupacional"},{v:"Psicólogo/a",l:"Psicólogo/a"}]}/></Field>
+        <div style={{marginTop:8}}><Btn onClick={addProf} disabled={!form.name}>Adicionar</Btn></div>
+      </Sheet>
+
+      {/* ADD PATIENT */}
+      <Sheet open={modal==="addPatient"} onClose={() => setModal(null)} title="Novo caso">
+        <Field label="Nome"><Inp placeholder="Ex: Maria S." value={form.name||""} onChange={e=>setForm(f=>({...f,name:e.target.value}))}/></Field>
+        <Field label="Idade"><Inp type="number" placeholder="12" value={form.age||""} onChange={e=>setForm(f=>({...f,age:e.target.value}))}/></Field>
+        <Field label="Profissional"><Sel value={form.prof||""} onChange={v=>setForm(f=>({...f,prof:v}))} options={profs.map(p=>({v:p.id,l:p.name}))}/></Field>
+        <Field label="Área"><Sel value={form.area||""} onChange={v=>setForm(f=>({...f,area:v}))} options={AREAS.map(a=>({v:a,l:a}))}/></Field>
+        <Field label="Dia"><Sel value={form.day||""} onChange={v=>setForm(f=>({...f,day:v}))} options={DAYS.map(d=>({v:d,l:d}))}/></Field>
+        <Field label="Hora"><Sel value={form.hour||""} onChange={v=>setForm(f=>({...f,hour:v}))} options={HOURS.map(h=>({v:h,l:h}))}/></Field>
+        <div style={{marginTop:8}}><Btn onClick={addPatient} disabled={!form.name||!form.age||!form.prof||!form.area||!form.day||!form.hour}>Criar caso</Btn></div>
+      </Sheet>
+
+      {/* ADD PAYMENT */}
+      <Sheet open={modal==="addPayment"} onClose={() => setModal(null)} title="Registar pagamento">
+        <Field label="Paciente"><Sel value={form.pt||""} onChange={v=>setForm(f=>({...f,pt:v}))} options={pts.map(p=>({v:p.id,l:p.name}))}/></Field>
+        <Field label="Valor (€)"><Inp type="number" placeholder="220" value={form.amount||""} onChange={e=>setForm(f=>({...f,amount:e.target.value}))}/></Field>
+        <Field label="Estado"><Sel value={form.paySt||"pendente"} onChange={v=>setForm(f=>({...f,paySt:v}))} options={[{v:"pago",l:"Pago"},{v:"pendente",l:"Pendente"}]}/></Field>
+        <div style={{marginTop:8}}><Btn onClick={addPayment} disabled={!form.pt||!form.amount}>Registar</Btn></div>
+      </Sheet>
+    </div>
+  );
+};
+
+/* ═══════════════════════════════════════════
+   PLACEHOLDER PORTALS (parent + professional)
+   ═══════════════════════════════════════════ */
+const SimplePortal = ({role, profile, onLogout}) => {
+  const title = role === "parent" ? "Portal dos Pais" : "Portal do Profissional";
+  const emoji = role === "parent" ? "👨‍👩‍👧" : "🩺";
+  return (
+    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#F4F7FA"}}>
+      <Header title={`Olá 👋`} sub={profile?.full_name} avatar={<div onClick={onLogout} style={{cursor:"pointer"}}><Av t={profile?.full_name?.split(" ").map(w=>w[0]).join("").slice(0,2)||"?"} bg="#D3E0EF" sz={38}/></div>}/>
+      <P>
+        <Card style={{textAlign:"center",padding:40,marginTop:20}}>
+          <div style={{fontSize:48,marginBottom:16}}>{emoji}</div>
+          <div style={{fontSize:20,fontWeight:700,color:"#0E3A5A",marginBottom:8}}>{title}</div>
+          <div style={{fontSize:14,color:"#8A9BB0",lineHeight:1.6}}>
+            Sessão iniciada como <Tag type={role}>{ROLES_MAP[role]}</Tag>
+          </div>
+          <div style={{fontSize:13,color:"#8A9BB0",marginTop:16}}>Este portal será expandido em breve.</div>
+        </Card>
+        <div style={{marginTop:16}}>
+          <Btn secondary onClick={onLogout}>Terminar sessão</Btn>
+        </div>
+      </P>
+    </div>
+  );
+};
+
+/* ═══════════════════════════════════════════
+   APP ROOT
+   ═══════════════════════════════════════════ */
+function App() {
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (isDemo) { setLoading(false); return; }
+    // Check existing session
+    sb.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        const p = await sbEnsureProfile(session.user);
+        setProfile(p);
+      }
+      setLoading(false);
+    });
+    // Listen for auth changes
+    const { data: { subscription } } = sb.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        const p = await sbEnsureProfile(session.user);
+        setProfile(p);
+        setLoading(false);
+      } else if (event === 'SIGNED_OUT') {
+        setProfile(null);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const handleDemoLogin = (role) => {
+    setProfile({ id: 'demo', full_name: role === 'director' ? 'Rita Palma' : role === 'professional' ? 'Ana Martins' : 'Pai do Tomás', role, email: 'demo@demo' });
+  };
+
+  const handleLogout = async () => {
+    if (sb) await sb.auth.signOut();
+    setProfile(null);
+  };
+
+  // Loading screen
+  if (loading) return (
+    <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#0E3A5A",display:"flex",alignItems:"center",justifyContent:"center"}}>
+      <div style={{textAlign:"center",color:"#fff"}}>
+        <div style={{width:48,height:48,borderRadius:16,background:"rgba(240,182,77,.15)",display:"inline-flex",alignItems:"center",justifyContent:"center",marginBottom:16}}><span style={{fontSize:24,fontWeight:800,color:"#F0B64D"}}>P</span></div>
+        <p style={{fontSize:14,opacity:.6}}>A carregar...</p>
+      </div>
+    </div>
+  );
+
+  // Not logged in
+  if (!profile) return ( <Login onDemoLogin={handleDemoLogin} onLoading={() => setLoading(true)} /> );
+
+  // Logged in — route by role
+  if (profile.role === "director") return ( <DirPortal profile={profile} onLogout={handleLogout}/> );
+  return ( <SimplePortal role={profile.role} profile={profile} onLogout={handleLogout}/> );
 }
 
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
