@@ -32,8 +32,8 @@ const { useState, useEffect, useRef } = React;
    ║  CONFIGURAÇÃO — Preencher com credenciais do Supabase   ║
    ║  (deixar vazio = modo demo com dados locais)            ║
    ╚══════════════════════════════════════════════════════════╝ */
-const SUPABASE_URL = '';   // Ex: 'https://xyzxyz.supabase.co'
-const SUPABASE_KEY = '';   // Ex: 'eyJhbGci...'
+const SUPABASE_URL = 'https://biowckwcgvgjccnqelmn.supabase.co';   // Ex: 'https://xyzxyz.supabase.co'
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpb3dja3djZ3ZnamNjbnFlbG1uIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyODE3NTAsImV4cCI6MjA5MDg1Nzc1MH0.rqji9jY4bMWQjBcR_NbDehI2MexhlL9jRuIUZNA6GKA';   // Ex: 'eyJhbGci...'
 
 const isDemo = !SUPABASE_URL || SUPABASE_URL.includes('xyzxyz');
 const sb = isDemo ? null : window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
