@@ -43,7 +43,7 @@ const DAYS = ["Segunda","Terça","Quarta","Quinta","Sexta"];
 const HOURS = ["09:00","10:00","11:00","14:00","15:00","16:00","17:00"];
 const AREAS = ["Regulação emocional","Regulação tónica","Organização espacial","Coordenação motora","Lateralidade","Esquema corporal","Relaxação","Motricidade fina","Dinâmica relacional","Cooperação corporal","Atenção e concentração","Grafomotricidade"];
 const COLORS = ["#AFC9A3","#D3E0EF","#F0B64D","#E8A0BF","#A3C9C9","#C9A3AF","#B8D4E3","#D4C9A3"];
-const ROLES_MAP = {director:"Diretora",professional:"Profissional",parent:"Pai/Mãe"};
+const ROLES_MAP = {director:"Administração",professional:"Profissional",parent:"Pai/Mãe"};
 
 /* ═══ DEMO DATA ═══ */
 const DEMO = {
@@ -266,8 +266,8 @@ const Login = ({onDemoLogin, onLoading}) => {
       }
 
       if (selRole === "director") {
-        const subject = encodeURIComponent("Psicomotriclinic — Pedido de acesso como Diretora");
-        const body = encodeURIComponent("Olá,\n\nO utilizador " + name + " (" + email + ") pediu acesso como Diretora na app Psicomotriclinic.\n\nPara aprovar, aceda ao separador Gestão na app.\n\nPsicomotriclinic");
+        const subject = encodeURIComponent("Psicomotriclinic — Pedido de acesso como Administração");
+        const body = encodeURIComponent("Olá,\n\nO utilizador " + name + " (" + email + ") pediu acesso como Administração na app Psicomotriclinic.\n\nPara aprovar, aceda ao separador Gestão na app.\n\nPsicomotriclinic");
         window.open("mailto:" + ADMIN_EMAIL + "?subject=" + subject + "&body=" + body, '_blank');
         setBusy(false);
         setMode("pending");
@@ -340,7 +340,7 @@ const Login = ({onDemoLogin, onLoading}) => {
           <div style={{marginBottom:12}}>
             <div style={{fontSize:13,color:"rgba(255,255,255,.5)",marginBottom:8}}>Sou...</div>
             <div style={{display:"flex",gap:8}}>
-              {[{id:"parent",label:"Pai/Mãe",emoji:"👨‍👩‍👧"},{id:"professional",label:"Profissional",emoji:"🩺"},{id:"director",label:"Diretora",emoji:"📊"}].map(r => (
+              {[{id:"parent",label:"Pai/Mãe",emoji:"👨‍👩‍👧"},{id:"professional",label:"Profissional",emoji:"🩺"},{id:"director",label:"Administração",emoji:"📊"}].map(r => (
                 <div key={r.id} onClick={() => setSelRole(r.id)} className="ch" style={{flex:1,padding:"12px 8px",borderRadius:12,background:selRole===r.id?"rgba(240,182,77,.2)":"rgba(255,255,255,.06)",border:selRole===r.id?"1px solid #F0B64D":"1px solid rgba(255,255,255,.1)",cursor:"pointer",textAlign:"center"}}>
                   <div style={{fontSize:22}}>{r.emoji}</div>
                   <div style={{fontSize:11,color:selRole===r.id?"#F0B64D":"rgba(255,255,255,.6)",fontWeight:600,marginTop:4}}>{r.label}</div>
@@ -508,7 +508,7 @@ const DirPortal = ({profile, onLogout}) => {
   return (
     <div style={{maxWidth:430,margin:"0 auto",minHeight:"100vh",background:"#F4F7FA",position:"relative"}}>
       <div style={{paddingBottom:88}}>
-        <Header title="Dashboard" sub={profile?.full_name || "Diretora"} avatar={<div onClick={onLogout} style={{cursor:"pointer"}}><Av t={profile?.full_name?.split(" ").map(w=>w[0]).join("").slice(0,2)||"RP"} bg="#F0B64D" sz={38}/></div>} />
+        <Header title="Dashboard" sub={profile?.full_name || "Administração"} avatar={<div onClick={onLogout} style={{cursor:"pointer"}}><Av t={profile?.full_name?.split(" ").map(w=>w[0]).join("").slice(0,2)||"RP"} bg="#F0B64D" sz={38}/></div>} />
 
         {/* ─── HOME TAB ─── */}
         {!sub && tab === "home" && (
@@ -868,7 +868,7 @@ function App() {
       <div style={{textAlign:"center"}}>
         <div style={{width:64,height:64,borderRadius:32,background:"#FFF8E1",display:"inline-flex",alignItems:"center",justifyContent:"center",marginBottom:16}}>{I.clk("#E65100")}</div>
         <h2 style={{fontSize:20,fontWeight:700,color:"#0E3A5A",marginBottom:8}}>Aprovação pendente</h2>
-        <p style={{fontSize:14,color:"#6B7C93",lineHeight:1.6,marginBottom:24}}>O seu pedido de acesso como Diretora está a aguardar aprovação.</p>
+        <p style={{fontSize:14,color:"#6B7C93",lineHeight:1.6,marginBottom:24}}>O seu pedido de acesso como Administração está a aguardar aprovação.</p>
         <button onClick={handleLogout} className="ch" style={{padding:"14px 32px",borderRadius:14,background:"#EDF1F5",color:"#0E3A5A",border:"none",fontSize:15,fontWeight:600,cursor:"pointer"}}>Terminar sessão</button>
       </div>
     </div>
