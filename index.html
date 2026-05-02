@@ -2181,6 +2181,7 @@ const ProfessionalPortal = ({ profile, onLogout }) => {
         })()}
 
 
+        {tab === "cobranca" && (() => {
           // agregar pendente por paciente
           const byPt = myPts.map(pt => {
             const pendente = myPays.filter(py => py.patient_id===pt.id && py.status==="pendente");
