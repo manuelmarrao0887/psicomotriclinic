@@ -63,12 +63,72 @@ button{background:none;border:none;cursor:pointer}
 .ch:active{transform:scale(.985)}
 input:focus, select:focus, textarea:focus{outline:none;border-color:var(--navy)!important;box-shadow:0 0 0 3px rgba(21,39,65,.08)}
 button:disabled{cursor:not-allowed;opacity:.55}
+
+/* ═════ DARK MODE ═════ */
+/* Approach: filter-style replacements on inline styles + :root overrides */
+html.dark{
+  --navy:#E8E3D7;       /* swap navy text → cream-ish */
+  --navy-2:#F0EBE0;
+  --navy-soft:#C9C2B0;
+  --cream:#0E1A2C;      /* page bg → deep navy */
+  --cream-2:#152741;    /* secondary surface */
+  --paper:#1A2A44;      /* card bg → mid navy */
+  --ink:#E8E3D7;
+  --ink-2:#C9C2B0;
+  --muted:#8A9AAE;
+  --line:#2A3D5C;
+  --line-2:#3A4D6C;
+}
+html.dark body{background:#0E1A2C;color:#E8E3D7}
+html.dark ::-webkit-scrollbar-thumb{background:#3A4D6C;border-color:#0E1A2C}
+
+/* Override the hard-coded inline cream/paper backgrounds → dark surfaces */
+html.dark [style*="background:#F7F4EE"],
+html.dark [style*="background: #F7F4EE"],
+html.dark [style*="background:\"#F7F4EE\""]{background:#0E1A2C !important}
+html.dark [style*="background:#FBF9F4"],
+html.dark [style*="background: #FBF9F4"]{background:#1A2A44 !important}
+html.dark [style*="background:#EFEBE2"],
+html.dark [style*="background: #EFEBE2"]{background:#152741 !important}
+
+/* Navy → cream (text/headings) */
+html.dark [style*="color:#152741"],
+html.dark [style*="color: #152741"]{color:#E8E3D7 !important}
+html.dark [style*="color:#3C3C3B"]{color:#D8D3C7 !important}
+html.dark [style*="color:#5A5A58"]{color:#A9A39A !important}
+html.dark [style*="color:#8A8A86"]{color:#8A9AAE !important}
+
+/* Borders */
+html.dark [style*="border:1px solid #E5E0D4"],
+html.dark [style*="border: 1px solid #E5E0D4"]{border-color:#2A3D5C !important}
+html.dark [style*="border:1px solid #EFEBE2"]{border-color:#22344E !important}
+html.dark [style*="border:1px solid #D9D3C5"]{border-color:#3A4D6C !important}
+html.dark [style*="border-bottom:1px solid #E5E0D4"]{border-bottom-color:#2A3D5C !important}
+html.dark [style*="border-bottom:1px solid #EFEBE2"]{border-bottom-color:#22344E !important}
+html.dark [style*="border-top:1px solid #EFEBE2"]{border-top-color:#22344E !important}
+html.dark [style*="border-right:1px solid #EFEBE2"]{border-right-color:#22344E !important}
+html.dark [style*="border-left:1px solid #EFEBE2"]{border-left-color:#22344E !important}
+
+/* Soft tinted backgrounds — slightly mute em dark */
+html.dark [style*="background:#DCE7F0"]{background:#1F3450 !important}
+html.dark [style*="background:#C7DDCB"]{background:#22442B !important}
+html.dark [style*="background:#F5D9A8"]{background:#5C4520 !important}
+html.dark [style*="background:#DDEADE"]{background:#1E3825 !important}
+html.dark [style*="background:#F4E0E0"]{background:#421C1C !important}
+html.dark [style*="background:#F5E5CD"]{background:#3F3320 !important}
+
+/* Inputs */
+html.dark input, html.dark select, html.dark textarea{color:#E8E3D7}
+
+/* Sidebar (já é navy escuro) — manter, só ajustar text */
+html.dark [style*="background:#152741"]{background:#08111F !important}
 </style>
 
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
 </head>
 <body>
 <div id="root"></div>
@@ -332,6 +392,29 @@ const SearchInput = ({value, onChange, placeholder, style}) => (
   </div>
 );
 
+const CopyField = ({label, value, cols=1}) => {
+  const [done, setDone] = useState(false);
+  const copy = () => {
+    navigator.clipboard.writeText(String(value));
+    setDone(true);
+    setTimeout(()=>setDone(false), 1500);
+  };
+  return (
+    <div style={{gridColumn: cols===2?"1 / -1":"auto", display:"flex",flexDirection:"column",gap:4}}>
+      <div className="mono" style={{fontSize:10.5,color:"#8A8A86",letterSpacing:"0.06em",fontWeight:500}}>{label.toUpperCase()}</div>
+      <button onClick={copy} className="ch" style={{
+        display:"flex",alignItems:"center",justifyContent:"space-between",gap:10,
+        padding:"10px 12px", borderRadius:8,
+        background:"#FBF9F4", border:"1px solid #E5E0D4",
+        fontSize:13, color:"#152741", textAlign:"left", cursor:"pointer", width:"100%"
+      }}>
+        <span style={{flex:1, minWidth:0, overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{value || "—"}</span>
+        <span style={{fontSize:11,color: done?"#3D7A4A":"#8A8A86",fontWeight:500,whiteSpace:"nowrap"}}>{done?"✓ copiado":"copiar"}</span>
+      </button>
+    </div>
+  );
+};
+
 const Modal = ({open, onClose, title, eyebrow, children, width=520}) => {
   if (!open) return null;
   return (
@@ -587,6 +670,42 @@ const HOURS = ["08:00","09:00","10:00","11:00","12:00","13:00","14:00","15:00","
 const AVATAR_BG = ["#DCE7F0","#C7DDCB","#F5D9A8","#EFEBE2","#B9CDE0","#8DBF94","#F5E5CD"];
 const RL = {director:"Diretora",professional:"Profissional",parent:"Responsável",admin:"Admin"};
 const CLINIC_CUT = 0.25;
+
+const WA_TEMPLATES = [
+  (n,v,p) => {
+    const summary = (p && (p.presentes?.length || p.faltas?.length))
+      ? `\n\nO valor é referente aos dias em que ${n} esteve presente:` +
+        (p.presentes?.length ? p.presentes.map(d=>`\n• ${d} ✓`).join("") : "") +
+        (p.faltas?.length ? `\n\nFaltas registadas:` + p.faltas.map(d=>`\n• ${d} ✕`).join("") : "")
+      : "";
+    return `Olá, boa tarde! Espero que estejam bem. Relembro que se encontra por liquidar o valor de ${v}€ referente à intervenção da ${n} na Psicomotriclinic.${summary}\n\nO pagamento pode ser feito via MBWAY. Obrigada!`;
+  },
+  (n,v,p) => {
+    const summary = (p && p.presentes?.length)
+      ? `\n\nResumo de ${n}:` +
+        p.presentes.map(d=>`\n• ${d} — presente`).join("") +
+        (p.faltas?.length ? p.faltas.map(d=>`\n• ${d} — falta`).join("") : "")
+      : "";
+    return `Boa tarde! Aproveito para lembrar que está pendente o valor de ${v}€ das sessões da ${n}.${summary}\n\nSempre que possível pode efetuar o pagamento por MBWAY. Qualquer dúvida diga-me. — Psicomotriclinic`;
+  },
+  (n,v,p) => {
+    const count = p?.presentes?.length || 0;
+    const summary = count
+      ? `\n\n${n} esteve presente em ${count} ${count===1?"sessão":"sessões"}:` +
+        p.presentes.map(d=>`\n  ✓ ${d}`).join("")
+      : "";
+    return `Olá! Tudo bem? Só a relembrar do valor em aberto de ${v}€ referente à intervenção do/a ${n}.${summary}\n\nSe for mais cómodo enviar por MBWAY, fico a aguardar. Obrigada e bom dia!`;
+  },
+  (n,v,p) => {
+    const summary = (p && (p.presentes?.length || p.faltas?.length))
+      ? `\n\nDetalhe das sessões:` +
+        (p.presentes?.length ? `\nPresenças: ${p.presentes.join(", ")}` : "") +
+        (p.faltas?.length ? `\nFaltas: ${p.faltas.join(", ")}` : "")
+      : "";
+    return `Bom dia! Espero que esteja tudo bem por aí. Fica a nota do valor em dívida de ${v}€ na Psicomotriclinic referente a ${n}.${summary}\n\nPode regularizar via MBWAY assim que lhe for possível. Obrigada pela colaboração!`;
+  },
+];
+window.WA_TEMPLATES = WA_TEMPLATES;
 
 const Sidebar = ({active, onChange, profile, onLogout, badges}) => {
   const items = [
@@ -1325,12 +1444,6 @@ const AdminPortal = ({ profile, onLogout, sb, ADMIN_EMAIL }) => {
   };
 
   /* ─── FINANCE ─── */
-  const WA_TEMPLATES = [
-    (n,v) => `Olá, boa tarde! Espero que estejam bem. Relembro que se encontra por liquidar o valor de ${v}€ referente à intervenção na Psicomotriclinic. O pagamento pode ser feito via MBWAY. Obrigada!`,
-    (n,v) => `Boa tarde! Aproveito para lembrar que está pendente o valor de ${v}€ das sessões da ${n}. Sempre que possível pode efetuar o pagamento por MBWAY. Qualquer dúvida diga-me. — Psicomotriclinic`,
-    (n,v) => `Olá! Tudo bem? Só a relembrar do valor em aberto de ${v}€ (intervenção do/a ${n}). Se for mais cómodo enviar por MBWAY, fico a aguardar. Obrigada e bom dia!`,
-    (n,v) => `Bom dia! Espero que esteja tudo bem por aí. Fica a nota do valor em dívida de ${v}€ na Psicomotriclinic. Pode regularizar via MBWAY assim que lhe for possível. Obrigada pela colaboração!`,
-  ];
   const Finance = () => {
     const [filterMonth, setFilterMonth] = React.useState("todos");
     const months = Array.from(new Set(dPays.map(p=>p.month))).sort();
@@ -1615,7 +1728,15 @@ const AdminPortal = ({ profile, onLogout, sb, ADMIN_EMAIL }) => {
         {selPay && (() => {
           const pt = dPts.find(x=>x.id===selPay.patient_id);
           const phone = pt?.parent_phone || "";
-          const msg = WA_TEMPLATES[waVariant](pt?.name || "", selPay.amount);
+          // sessões do paciente no mês da cobrança (ex: "Abril 2026")
+          const monthMap = {"Janeiro":"01","Fevereiro":"02","Março":"03","Abril":"04","Maio":"05","Junho":"06","Julho":"07","Agosto":"08","Setembro":"09","Outubro":"10","Novembro":"11","Dezembro":"12"};
+          const [mName, mYear] = (selPay.month||"").split(" ");
+          const mPrefix = mYear && mName ? `${mYear}-${monthMap[mName]||""}` : "";
+          const sessOfMonth = dSess.filter(s => s.patient_id===selPay.patient_id && s.date.startsWith(mPrefix));
+          const fmtD = (iso) => { const [y,m,d]=iso.split("-"); return `${d}/${m}`; };
+          const presentes = sessOfMonth.filter(s=>s.status==="realizada").map(s=>fmtD(s.date));
+          const faltas = sessOfMonth.filter(s=>s.status==="falta").map(s=>fmtD(s.date));
+          const msg = WA_TEMPLATES[waVariant](pt?.name || "", selPay.amount, {presentes, faltas});
           const waUrl = `https://wa.me/${phone.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(msg)}`;
           return (
             <>
@@ -1718,8 +1839,12 @@ const ProfessionalPortal = ({ profile, onLogout }) => {
   const data = window.getDemoData();
   const myProf = data.profs.find(p => p.id === profile.professional_id) || data.profs[0];
   const myPts = data.pts.filter(p => p.professional_id === myProf.id);
+  const myPays = data.pays.filter(py => myPts.some(p => p.id === py.patient_id));
   const [sessions, setSessions] = useState(data.sess.filter(s => myPts.some(p => p.id === s.patient_id)));
   const [tab, setTab] = useState("calendar");
+  const [waModal, setWaModal] = useState(null); // {pt, amount}
+  const [waVariant, setWaVariant] = useState(0);
+  const [copied, setCopied] = useState(false);
   // weekOffset: 0 = semana actual, -1 anterior, +1 seguinte…
   const [weekOffset, setWeekOffset] = useState(0);
 
@@ -1808,7 +1933,7 @@ const ProfessionalPortal = ({ profile, onLogout }) => {
 
         {/* navtabs */}
         <div style={{display:"flex",gap:6,marginBottom:24,borderBottom:"1px solid #E5E0D4"}}>
-          {[{id:"calendar",l:"Calendário"},{id:"history",l:"Histórico"},{id:"finance",l:"Financeiro"},{id:"patients",l:"Pacientes"}].map(t => (
+          {[{id:"calendar",l:"Calendário"},{id:"history",l:"Histórico"},{id:"finance",l:"Financeiro"},{id:"cobranca",l:"Cobranças"},{id:"recibos",l:"Recibos AT"},{id:"patients",l:"Pacientes"}].map(t => (
             <button key={t.id} onClick={()=>setTab(t.id)} className="ch" style={{
               padding:"12px 18px", border:"none", background:"none", cursor:"pointer",
               fontSize:14, fontWeight:500,
@@ -1836,7 +1961,7 @@ const ProfessionalPortal = ({ profile, onLogout }) => {
               <Stat label="SESSÕES FIXAS" value={thisWeekKeys.length} accent="#152741"/>
               <Stat label="REALIZADAS" value={wkRealizadas} accent="#3D7A4A"/>
               <Stat label="FALTAS" value={wkFaltas} accent="#B83A3A"/>
-              <Stat label="POR PICAR" value={wkPendentes} accent="#E8A13C"/>
+              <Stat label="POR CONFIRMAR" value={wkPendentes} accent="#E8A13C"/>
             </div>
 
             {/* Grelha semanal */}
@@ -1871,7 +1996,7 @@ const ProfessionalPortal = ({ profile, onLogout }) => {
                     const styleByStatus = {
                       realizada: {bg:"#DDEADE", border:"#8DBF94", color:"#3D7A4A", chip:"Realizada"},
                       falta:     {bg:"#F4E0E0", border:"#D9A0A0", color:"#B83A3A", chip:"Falta"},
-                      agendada:  {bg:"#FBF9F4", border:"#D9D3C5", color:"#5A5A58", chip:"Por picar"},
+                      agendada:  {bg:"#FBF9F4", border:"#D9D3C5", color:"#5A5A58", chip:"Por confirmar"},
                     }[status];
                     return (
                       <div key={d} style={{
@@ -1915,7 +2040,7 @@ const ProfessionalPortal = ({ profile, onLogout }) => {
             <div style={{marginTop:12,display:"flex",gap:18,fontSize:12,color:"#5A5A58"}}>
               <span style={{display:"flex",alignItems:"center",gap:6}}><span style={{width:12,height:12,borderRadius:3,background:"#DDEADE",border:"1px solid #8DBF94"}}/>Realizada</span>
               <span style={{display:"flex",alignItems:"center",gap:6}}><span style={{width:12,height:12,borderRadius:3,background:"#F4E0E0",border:"1px solid #D9A0A0"}}/>Falta</span>
-              <span style={{display:"flex",alignItems:"center",gap:6}}><span style={{width:12,height:12,borderRadius:3,background:"#FBF9F4",border:"1px solid #D9D3C5"}}/>Por picar</span>
+              <span style={{display:"flex",alignItems:"center",gap:6}}><span style={{width:12,height:12,borderRadius:3,background:"#FBF9F4",border:"1px solid #D9D3C5"}}/>Por confirmar</span>
               <span style={{marginLeft:"auto",fontStyle:"italic"}}>As sessões fixas são geradas automaticamente a partir do horário recorrente de cada paciente.</span>
             </div>
           </div>
@@ -1980,22 +2105,233 @@ const ProfessionalPortal = ({ profile, onLogout }) => {
           </div>
         )}
 
-        {tab === "patients" && (
-          <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:14}}>
-            {myPts.map(pt => (
-              <Card key={pt.id} pad={20}>
-                <div style={{display:"flex",alignItems:"center",gap:14}}>
-                  <Av t={pt.name.split(" ").map(w=>w[0]).join("").slice(0,2)} bg="#DCE7F0" sz={44}/>
-                  <div style={{flex:1}}>
-                    <div style={{fontSize:15,fontWeight:500,color:"#152741"}}>{pt.name}</div>
-                    <div style={{fontSize:12.5,color:"#8A8A86",marginTop:2}}>{pt.age} anos · {pt.day_of_week} {pt.hour}</div>
-                  </div>
-                  <Tag type={pt.session_type==="individual"?"sage":"amber"}>{pt.session_type==="individual"?"Indiv.":"Grupo"}</Tag>
+        {tab === "recibos" && (() => {
+          // agrupar por paciente: 1 recibo por paciente por mês
+          const fmtPt = (iso) => { const [y,m,d]=iso.split("-"); return `${d}/${m}/${y}`; };
+          const recibos = myPts.map(pt => {
+            const ptKeys = Object.entries(recur).filter(([k,s]) => k.startsWith(pt.id+"|") && s==="realizada");
+            const datas = ptKeys.map(([k]) => k.split("|")[1]).sort();
+            const valor = ptKeys.length * myProf.hourly_rate;
+            const periodo = datas.length ? `${fmtPt(datas[0])} a ${fmtPt(datas[datas.length-1])}` : "";
+            return {pt, datas, valor, periodo, count: ptKeys.length};
+          }).filter(r => r.count > 0);
+          const totalARec = recibos.reduce((a,r)=>a+r.valor,0);
+
+          return (
+            <div>
+              <Card pad={22} style={{marginBottom:18, position:"relative", overflow:"hidden"}}>
+                <Eyebrow>— EMISSÃO DE RECIBOS · AT</Eyebrow>
+                <div className="serif" style={{fontSize:24,fontWeight:300,color:"#152741",marginTop:6,letterSpacing:"-0.02em"}}>Faturas e recibos eletrónicos<span className="serif-it">.</span></div>
+                <div style={{fontSize:13.5,color:"#5A5A58",marginTop:8,lineHeight:1.6,maxWidth:680}}>
+                  Os recibos eletrónicos para profissionais em nome individual (ex-recibos verdes) emitem-se no <strong>Portal das Finanças</strong> · <em>Recibos Verdes Eletrónicos</em>. Esta área pré-prepara os dados de cada recibo para copiar diretamente para o portal.
+                </div>
+                <div style={{marginTop:16,display:"flex",gap:10,flexWrap:"wrap"}}>
+                  <a href="https://www.portaldasfinancas.gov.pt/recibos/portal/emitir/emitirfact.action" target="_blank" rel="noopener" className="ch" style={{
+                    padding:"10px 16px",borderRadius:10,background:"#152741",color:"#F7F4EE",fontSize:13.5,fontWeight:500,textDecoration:"none",display:"inline-flex",alignItems:"center",gap:8
+                  }}>Abrir Portal das Finanças <Icon name="arr" size={14}/></a>
+                  <a href="https://faturas.portaldasfinancas.gov.pt/" target="_blank" rel="noopener" className="ch" style={{
+                    padding:"10px 16px",borderRadius:10,background:"#FBF9F4",border:"1px solid #E5E0D4",color:"#152741",fontSize:13.5,fontWeight:500,textDecoration:"none",display:"inline-flex",alignItems:"center",gap:8
+                  }}>e-Fatura</a>
                 </div>
               </Card>
-            ))}
+
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:18}}>
+                <Stat label="RECIBOS A EMITIR" value={recibos.length} accent="#152741"/>
+                <Stat label="VALOR A FATURAR" value={totalARec.toLocaleString("pt-PT")} suffix="€" accent="#3D7A4A"/>
+                <Stat label="IRS RETENÇÃO · 25%" value={(totalARec*0.25).toFixed(0)} suffix="€" accent="#E8A13C"/>
+              </div>
+
+              {recibos.length === 0 && (
+                <Card pad={40} style={{textAlign:"center"}}>
+                  <div className="serif-it" style={{fontSize:16,color:"#8A8A86",marginBottom:6}}>Sem sessões realizadas registadas.</div>
+                  <div style={{fontSize:13,color:"#8A8A86"}}>Pique sessões no calendário para preparar recibos.</div>
+                </Card>
+              )}
+
+              {recibos.map(({pt, datas, valor, periodo, count}) => {
+                const descricao = `Sessões de ${myProf.role_title.toLowerCase()} · ${pt.name} · ${periodo} · ${count} ${count===1?"sessão":"sessões"}`;
+                const adquirente = `${pt.parent_mother || pt.parent_father || "—"}`;
+                return (
+                  <Card key={pt.id} pad={22} style={{marginBottom:14}}>
+                    <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:14,gap:14,flexWrap:"wrap"}}>
+                      <div>
+                        <Eyebrow>— RECIBO · {pt.name.toUpperCase()}</Eyebrow>
+                        <div style={{fontSize:13,color:"#5A5A58",marginTop:6}}>{count} {count===1?"sessão realizada":"sessões realizadas"} · {periodo}</div>
+                      </div>
+                      <div className="serif" style={{fontSize:30,fontWeight:300,color:"#152741",letterSpacing:"-0.02em",lineHeight:1}}>{valor}€</div>
+                    </div>
+
+                    <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:12,marginBottom:12}}>
+                      <CopyField label="Adquirente" value={adquirente}/>
+                      <CopyField label="Telemóvel" value={pt.parent_phone}/>
+                      <CopyField label="Descrição do serviço" value={descricao} cols={2}/>
+                      <CopyField label="Valor base" value={`${valor.toFixed(2)} €`}/>
+                      <CopyField label="Tipo de importância" value="Honorários (sem IVA · isento art.º 9.º)"/>
+                      <CopyField label="Datas das sessões" value={datas.map(d=>fmtPt(d)).join(", ")} cols={2}/>
+                    </div>
+
+                    <div style={{padding:14,background:"#F7F4EE",borderRadius:10,fontSize:12,color:"#5A5A58",lineHeight:1.6}}>
+                      <strong style={{color:"#152741"}}>Lembrete:</strong> Os profissionais de saúde com atividade aberta normalmente estão isentos de IVA pelo <em>artigo 9.º do CIVA</em>. Confirme o seu enquadramento fiscal e regime de retenção na fonte de IRS antes de emitir.
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          );
+        })()}
+
+
+          // agregar pendente por paciente
+          const byPt = myPts.map(pt => {
+            const pendente = myPays.filter(py => py.patient_id===pt.id && py.status==="pendente");
+            const total = pendente.reduce((a,py)=>a+Number(py.amount),0);
+            return {pt, pendente, total};
+          });
+          const ptsComDivida = byPt.filter(x => x.total > 0);
+          const totalDivida = byPt.reduce((a,x)=>a+x.total,0);
+          return (
+            <div>
+              <div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:12,marginBottom:18}}>
+                <Stat label="EM DÍVIDA · TOTAL" value={totalDivida.toLocaleString("pt-PT")} suffix="€" accent="#B83A3A"/>
+                <Stat label="FAMÍLIAS A COBRAR" value={ptsComDivida.length} accent="#E8A13C"/>
+                <Stat label="PACIENTES EM DIA" value={byPt.length - ptsComDivida.length} accent="#3D7A4A"/>
+              </div>
+              <Card pad={0}>
+                <div style={{padding:"14px 20px",background:"#EFEBE2",borderBottom:"1px solid #E5E0D4",display:"grid",gridTemplateColumns:"2fr 1.4fr 1fr 1fr",gap:10}}>
+                  <Eyebrow>Paciente · Responsável</Eyebrow>
+                  <Eyebrow>Contacto</Eyebrow>
+                  <Eyebrow>Em dívida</Eyebrow>
+                  <Eyebrow style={{textAlign:"right"}}>Mensagem</Eyebrow>
+                </div>
+                {ptsComDivida.length === 0 && <div style={{padding:30,textAlign:"center",color:"#8A8A86",fontSize:13.5}}>Nenhuma família com valores em aberto.</div>}
+                {ptsComDivida.map(({pt, pendente, total}, i) => (
+                  <div key={pt.id} style={{display:"grid",gridTemplateColumns:"2fr 1.4fr 1fr 1fr",padding:"14px 20px",alignItems:"center",borderBottom: i<ptsComDivida.length-1?"1px solid #EFEBE2":"none",gap:10}}>
+                    <div>
+                      <div style={{fontSize:14,fontWeight:500,color:"#152741"}}>{pt.name}</div>
+                      <div style={{fontSize:12,color:"#8A8A86",marginTop:2}}>Mãe: {pt.parent_mother}</div>
+                    </div>
+                    <div>
+                      <div className="mono" style={{fontSize:12,color:"#5A5A58"}}>{pt.parent_phone}</div>
+                      <div style={{fontSize:11,color:"#8A8A86",marginTop:2}}>{pendente.map(p=>p.month).join(" · ")}</div>
+                    </div>
+                    <div className="serif" style={{fontSize:18,fontWeight:300,color:"#B83A3A",letterSpacing:"-0.02em"}}>{total}€</div>
+                    <div style={{justifySelf:"end"}}>
+                      <Btn size="sm" icon={<Icon name="msg" size={14}/>} onClick={()=>{setWaModal({pt, amount: total}); setWaVariant(0); setCopied(false);}}>WhatsApp</Btn>
+                    </div>
+                  </div>
+                ))}
+              </Card>
+              <div style={{marginTop:14,fontSize:12,fontStyle:"italic",color:"#8A8A86"}}>O administrativo da clínica gera as cobranças mensalmente. Esta vista permite-lhe acompanhar e enviar lembretes diretos via WhatsApp.</div>
+            </div>
+          );
+        })()}
+
+        {tab === "patients" && (
+          <div style={{display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:14}}>
+            {myPts.map(pt => {
+              const ptR = Object.entries(recur).filter(([k,s]) => k.startsWith(pt.id+"|") && s==="realizada").length;
+              const ptF = Object.entries(recur).filter(([k,s]) => k.startsWith(pt.id+"|") && s==="falta").length;
+              const pendOpen = myPays.filter(py => py.patient_id===pt.id && py.status==="pendente").reduce((a,py)=>a+Number(py.amount),0);
+              return (
+                <Card key={pt.id} pad={22}>
+                  <div style={{display:"flex",alignItems:"flex-start",gap:14,marginBottom:14}}>
+                    <Av t={pt.name.split(" ").map(w=>w[0]).join("").slice(0,2)} bg="#DCE7F0" sz={48}/>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div className="serif" style={{fontSize:22,fontWeight:300,color:"#152741",letterSpacing:"-0.02em",lineHeight:1.1}}>{pt.name}</div>
+                      <div style={{fontSize:12.5,color:"#8A8A86",marginTop:4}}>{pt.age} anos · {pt.session_type==="individual"?"Individual":"Grupo"}</div>
+                    </div>
+                  </div>
+
+                  <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:0,padding:"12px 0",borderTop:"1px solid #EFEBE2",borderBottom:"1px solid #EFEBE2"}}>
+                    <div>
+                      <div style={{fontSize:10.5,color:"#8A8A86",letterSpacing:"0.06em",fontWeight:500}} className="mono">HORÁRIO</div>
+                      <div style={{fontSize:13.5,color:"#152741",marginTop:4,fontWeight:500}}>{pt.day_of_week} · {pt.hour}</div>
+                    </div>
+                    <div>
+                      <div style={{fontSize:10.5,color:"#8A8A86",letterSpacing:"0.06em",fontWeight:500}} className="mono">VALOR / SESSÃO</div>
+                      <div style={{fontSize:13.5,color:"#152741",marginTop:4,fontWeight:500}}>{myProf.hourly_rate}€</div>
+                    </div>
+                  </div>
+
+                  <div style={{padding:"12px 0",borderBottom:"1px solid #EFEBE2"}}>
+                    <div style={{fontSize:10.5,color:"#8A8A86",letterSpacing:"0.06em",fontWeight:500,marginBottom:6}} className="mono">RESPONSÁVEIS</div>
+                    <div style={{fontSize:13,color:"#152741",lineHeight:1.6}}>
+                      <div>Mãe: <strong style={{fontWeight:500}}>{pt.parent_mother}</strong></div>
+                      <div>Pai: <strong style={{fontWeight:500}}>{pt.parent_father}</strong></div>
+                    </div>
+                  </div>
+
+                  <div style={{padding:"12px 0",borderBottom:"1px solid #EFEBE2",display:"flex",alignItems:"center",justifyContent:"space-between",gap:10}}>
+                    <div>
+                      <div style={{fontSize:10.5,color:"#8A8A86",letterSpacing:"0.06em",fontWeight:500}} className="mono">CONTACTO</div>
+                      <div className="mono" style={{fontSize:13,color:"#152741",marginTop:4}}>{pt.parent_phone}</div>
+                    </div>
+                    <a href={`tel:${pt.parent_phone.replace(/\s/g,'')}`} className="ch" style={{padding:"6px 10px",borderRadius:8,background:"#FBF9F4",border:"1px solid #E5E0D4",fontSize:12,color:"#5A5A58",textDecoration:"none",display:"flex",alignItems:"center",gap:4}}>Ligar</a>
+                  </div>
+
+                  <div style={{paddingTop:14,display:"flex",alignItems:"center",justifyContent:"space-between",gap:8}}>
+                    <div style={{display:"flex",gap:14,fontSize:12}}>
+                      <span style={{color:"#3D7A4A"}}>● {ptR} realizadas</span>
+                      <span style={{color:"#B83A3A"}}>● {ptF} faltas</span>
+                    </div>
+                    {pendOpen > 0 ? (
+                      <button onClick={()=>{setWaModal({pt, amount: pendOpen}); setWaVariant(0); setCopied(false);}} className="ch" style={{padding:"6px 10px",borderRadius:8,background:"#F4E0E0",border:"1px solid #D9A0A0",fontSize:12,color:"#B83A3A",cursor:"pointer",fontWeight:500}}>{pendOpen}€ em dívida →</button>
+                    ) : (
+                      <span style={{fontSize:12,color:"#3D7A4A",fontWeight:500}}>✓ Em dia</span>
+                    )}
+                  </div>
+                </Card>
+              );
+            })}
           </div>
         )}
+
+        {/* Modal WhatsApp */}
+        <Modal open={!!waModal} onClose={()=>setWaModal(null)} eyebrow="— LEMBRETE DE PAGAMENTO" title={waModal ? `WhatsApp · ${waModal.pt.name}` : ""} width={620}>
+          {waModal && (() => {
+            const phone = waModal.pt.parent_phone || "";
+            // resumo a partir do recur do profissional, todas as datas registadas para este paciente
+            const ptKeys = Object.entries(recur).filter(([k]) => k.startsWith(waModal.pt.id+"|"));
+            const fmtD = (iso) => { const [y,m,d]=iso.split("-"); return `${d}/${m}`; };
+            const presentes = ptKeys.filter(([_,s]) => s==="realizada").map(([k]) => fmtD(k.split("|")[1])).sort();
+            const faltas = ptKeys.filter(([_,s]) => s==="falta").map(([k]) => fmtD(k.split("|")[1])).sort();
+            const msg = window.WA_TEMPLATES[waVariant](waModal.pt.name, waModal.amount, {presentes, faltas});
+            const waUrl = `https://wa.me/${phone.replace(/[^0-9]/g,'')}?text=${encodeURIComponent(msg)}`;
+            return (
+              <>
+                <div style={{padding:14,background:"#F7F4EE",borderRadius:10,marginBottom:14,display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                  <div>
+                    <div style={{fontSize:11,color:"#8A8A86",letterSpacing:"0.06em"}} className="mono">PARA</div>
+                    <div style={{fontSize:14,color:"#152741",fontWeight:500,marginTop:2}}>{waModal.pt.parent_mother}</div>
+                    <div className="mono" style={{fontSize:12,color:"#5A5A58",marginTop:2}}>{waModal.pt.parent_phone}</div>
+                  </div>
+                  <div style={{textAlign:"right"}}>
+                    <div style={{fontSize:11,color:"#8A8A86",letterSpacing:"0.06em"}} className="mono">VALOR</div>
+                    <div className="serif" style={{fontSize:24,fontWeight:300,color:"#B83A3A",letterSpacing:"-0.02em",marginTop:2}}>{waModal.amount}€</div>
+                  </div>
+                </div>
+
+                <Eyebrow>— VARIANTE DE MENSAGEM</Eyebrow>
+                <div style={{display:"flex",gap:6,margin:"8px 0 12px"}}>
+                  {window.WA_TEMPLATES.map((_,i) => (
+                    <button key={i} onClick={()=>setWaVariant(i)} className="ch" style={{
+                      flex:1, padding:"8px 6px", borderRadius:8, fontSize:12,
+                      background: waVariant===i ? "#152741" : "#FBF9F4",
+                      color: waVariant===i ? "#F7F4EE" : "#5A5A58",
+                      border: "1px solid "+(waVariant===i ? "#152741" : "#E5E0D4"),
+                      cursor:"pointer", fontWeight:500
+                    }}>Variante {i+1}</button>
+                  ))}
+                </div>
+                <div style={{padding:14,background:"#FBF9F4",border:"1px solid #E5E0D4",borderRadius:10,fontSize:13.5,lineHeight:1.6,color:"#152741",minHeight:90,whiteSpace:"pre-wrap"}}>{msg}</div>
+                <div style={{marginTop:14,display:"flex",gap:10,justifyContent:"flex-end"}}>
+                  <Btn variant="secondary" onClick={()=>{navigator.clipboard.writeText(msg);setCopied(true);setTimeout(()=>setCopied(false),2000);}}>{copied?"✓ Copiado":"Copiar texto"}</Btn>
+                  <Btn icon={<Icon name="msg" size={14}/>} onClick={()=>{window.open(waUrl,"_blank");}}>Abrir WhatsApp</Btn>
+                </div>
+              </>
+            );
+          })()}
+        </Modal>
       </div>
     </div>
   );
@@ -2106,6 +2442,20 @@ function App() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // ─── Tweaks: theme + acentos ───
+  const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+    "theme": "light",
+    "accent": "amber"
+  }/*EDITMODE-END*/;
+  const [tweaks, setTweak] = window.useTweaks ? window.useTweaks(TWEAK_DEFAULTS) : [TWEAK_DEFAULTS, ()=>{}];
+
+  // aplica classe ao <html> em função do tema
+  useEffect(() => {
+    const cls = "dark";
+    if (tweaks.theme === "dark") document.documentElement.classList.add(cls);
+    else document.documentElement.classList.remove(cls);
+  }, [tweaks.theme]);
+
   // Demo mode — perfil simulado via localStorage
   const readDemo = () => {
     try {
@@ -2172,16 +2522,60 @@ function App() {
     </div>
   );
 
-  if (!profile) return <Login sb={sb} ADMIN_EMAIL={ADMIN_EMAIL}/>;
+  if (!profile) return (
+    <>
+      <Login sb={sb} ADMIN_EMAIL={ADMIN_EMAIL}/>
+      <TweaksUI tweaks={tweaks} setTweak={setTweak}/>
+    </>
+  );
 
-  if (profile.role === "director" || profile.email === ADMIN_EMAIL)
-    return <AdminPortal profile={profile} onLogout={logout} sb={sb} ADMIN_EMAIL={ADMIN_EMAIL}/>;
+  const portal =
+    (profile.role === "director" || profile.email === ADMIN_EMAIL)
+      ? <AdminPortal profile={profile} onLogout={logout} sb={sb} ADMIN_EMAIL={ADMIN_EMAIL}/>
+      : profile.role === "professional"
+        ? <ProfessionalPortal profile={profile} onLogout={logout}/>
+        : <ParentPortal profile={profile} onLogout={logout}/>;
 
-  if (profile.role === "professional")
-    return <ProfessionalPortal profile={profile} onLogout={logout}/>;
-
-  return <ParentPortal profile={profile} onLogout={logout}/>;
+  return (
+    <>
+      {portal}
+      <TweaksUI tweaks={tweaks} setTweak={setTweak}/>
+    </>
+  );
 }
+
+const TweaksUI = ({ tweaks, setTweak }) => {
+  const TweaksPanel = window.TweaksPanel;
+  const TweakSection = window.TweakSection;
+  const TweakRadio = window.TweakRadio;
+  const TweakSelect = window.TweakSelect;
+  if (!TweaksPanel) return null;
+  return (
+    <TweaksPanel title="Tweaks" subtitle="Aspeto e tema">
+      <TweakSection title="Tema">
+        <TweakRadio
+          label="Modo"
+          value={tweaks.theme}
+          onChange={v => setTweak("theme", v)}
+          options={[{value:"light", label:"Claro"}, {value:"dark", label:"Escuro"}]}
+        />
+      </TweakSection>
+      <TweakSection title="Acento">
+        <TweakSelect
+          label="Cor de destaque"
+          value={tweaks.accent}
+          onChange={v => setTweak("accent", v)}
+          options={[
+            {value:"amber", label:"Âmbar (padrão)"},
+            {value:"sage", label:"Verde-sálvia"},
+            {value:"sky", label:"Azul-céu"},
+            {value:"navy", label:"Marinho"},
+          ]}
+        />
+      </TweakSection>
+    </TweaksPanel>
+  );
+};
 
 ReactDOM.createRoot(document.getElementById('root')).render(React.createElement(App));
 
