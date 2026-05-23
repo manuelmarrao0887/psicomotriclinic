@@ -1,7 +1,9 @@
 import { NavLink, Outlet, useLocation } from "react-router-dom";
 import { Mark, Icon } from "../lib/icons.jsx";
-import { Eyebrow, Av } from "../lib/ui.jsx";
+import { Eyebrow, Av, Toast } from "../lib/ui.jsx";
 import { APP_VERSION } from "../lib/constants.js";
+import { StoreProvider, useStore } from "../lib/store.jsx";
+import ModalsHost from "../components/ModalsHost.jsx";
 
 const items = [
   { id: "dashboard",    label: "Dashboard",        icon: "home",      to: "/dashboard" },
@@ -25,13 +27,19 @@ const titles = {
   "/definicoes":   { e: "— PREFERÊNCIAS", t: "Definições", s: "" },
 };
 
-export default function AdminLayout({ profile, onLogout, theme, setTheme }) {
+function pickTitle(pathname) {
+  // título da página atual (suporta sub-rotas como /pacientes/abc)
+  const base = "/" + (pathname.split("/")[1] || "");
+  return titles[base] || { t: "", s: "" };
+}
+
+function LayoutInner({ profile, onLogout, theme, setTheme }) {
   const location = useLocation();
-  const title = titles[location.pathname] || { t: "—", s: "" };
+  const title = pickTitle(location.pathname);
+  const { toast } = useStore();
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", minHeight: "100vh", background: "#F7F4EE" }}>
-      {/* SIDEBAR */}
       <aside style={{
         background: "#152741", color: "#F7F4EE",
         display: "flex", flexDirection: "column",
@@ -89,19 +97,27 @@ export default function AdminLayout({ profile, onLogout, theme, setTheme }) {
         </div>
       </aside>
 
-      {/* MAIN */}
       <main>
-        <div style={{
-          padding: "32px 40px 24px",
-          borderBottom: "1px solid #E5E0D4",
-          background: "#F7F4EE",
-        }}>
-          {title.e && <div style={{ marginBottom: 8 }}><Eyebrow>{title.e}</Eyebrow></div>}
-          <h1 className="serif" style={{ fontSize: 36, fontWeight: 300, color: "#152741", letterSpacing: "-0.025em", lineHeight: 1.05 }}>{title.t}</h1>
-          {title.s && <p style={{ fontSize: 14.5, color: "#8A8A86", marginTop: 6 }}>{title.s}</p>}
-        </div>
+        {title.t && (
+          <div style={{ padding: "32px 40px 24px", borderBottom: "1px solid #E5E0D4", background: "#F7F4EE" }}>
+            {title.e && <div style={{ marginBottom: 8 }}><Eyebrow>{title.e}</Eyebrow></div>}
+            <h1 className="serif" style={{ fontSize: 36, fontWeight: 300, color: "#152741", letterSpacing: "-0.025em", lineHeight: 1.05 }}>{title.t}</h1>
+            {title.s && <p style={{ fontSize: 14.5, color: "#8A8A86", marginTop: 6 }}>{title.s}</p>}
+          </div>
+        )}
         <Outlet />
       </main>
+
+      <ModalsHost />
+      {toast && <Toast msg={toast.m} type={toast.t} />}
     </div>
+  );
+}
+
+export default function AdminLayout(props) {
+  return (
+    <StoreProvider profile={props.profile}>
+      <LayoutInner {...props} />
+    </StoreProvider>
   );
 }

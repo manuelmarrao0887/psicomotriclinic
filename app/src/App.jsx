@@ -6,6 +6,10 @@ import Login from "./pages/Login.jsx";
 import AdminLayout from "./pages/AdminLayout.jsx";
 import Dashboard from "./pages/admin/Dashboard.jsx";
 import Placeholder from "./pages/admin/Placeholder.jsx";
+import Users, { UserDetail } from "./pages/admin/Users.jsx";
+import Team, { ProfDetail } from "./pages/admin/Team.jsx";
+import Patients, { PatientDetail } from "./pages/admin/Patients.jsx";
+import Settings from "./pages/admin/Settings.jsx";
 
 const themeKey = "psm.theme";
 
@@ -127,13 +131,16 @@ export default function App() {
           <Route path="/" element={<AdminLayout profile={profile} onLogout={logout} theme={theme} setTheme={setTheme} />}>
             <Route index element={<Navigate to="/dashboard" replace />} />
             <Route path="dashboard" element={<Dashboard />} />
-            <Route path="utilizadores" element={<Placeholder title="Utilizadores" />} />
-            <Route path="equipa" element={<Placeholder title="Equipa" />} />
-            <Route path="pacientes" element={<Placeholder title="Pacientes" />} />
+            <Route path="utilizadores" element={<Users />} />
+            <Route path="utilizadores/:uid" element={<UserDetail />} />
+            <Route path="equipa" element={<Team />} />
+            <Route path="equipa/:profId" element={<ProfDetail />} />
+            <Route path="pacientes" element={<Patients />} />
+            <Route path="pacientes/:patientId" element={<PatientDetail />} />
             <Route path="agenda" element={<Placeholder title="Agenda" />} />
             <Route path="financeiro" element={<Placeholder title="Financeiro" />} />
             <Route path="pedidos" element={<Placeholder title="Pedidos de troca" />} />
-            <Route path="definicoes" element={<Placeholder title="Definições" theme={theme} setTheme={setTheme} />} />
+            <Route path="definicoes" element={<Settings theme={theme} setTheme={setTheme} />} />
           </Route>
         ) : (
           <Route path="*" element={<NonAdminLanding profile={profile} onLogout={logout} />} />
