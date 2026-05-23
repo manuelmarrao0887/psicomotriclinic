@@ -30,6 +30,8 @@ service cloud.firestore {
     match /anamnesis/{id}          { allow read: if isStaff(); allow write: if isStaff(); }
     match /session_notes/{id}      { allow read: if isStaff(); allow write: if isStaff(); }
     match /intervention_plans/{id} { allow read: if isStaff(); allow write: if isStaff(); }
+    // Auditoria: staff escreve (registo de ações), só direção lê e nada se atualiza/apaga.
+    match /audit_log/{id}          { allow read: if isDirector(); allow create: if isStaff(); allow update, delete: if false; }
 
     // Lembretes: escritos só pela Cloud Function (Admin SDK ignora regras). Direção lê.
     match /reminders/{id}          { allow read: if isDirector(); allow write: if false; }

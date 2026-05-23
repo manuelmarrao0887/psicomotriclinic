@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { sb } from "../lib/firebase.js";
 import { Mark, Icon } from "../lib/icons.jsx";
 import { Eyebrow, Field, Btn } from "../lib/ui.jsx";
@@ -23,6 +23,7 @@ export default function Login() {
   const [selRole, setSelRole] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   useEffect(() => { setTimeout(() => setV(true), 60); }, []);
 
@@ -37,6 +38,7 @@ export default function Login() {
 
   const doRegister = async () => {
     if (!name || !email || !pw || !selRole) return;
+    if (!acceptedTerms) { setErr("É necessário aceitar a Política de Privacidade."); return; }
     if (pw.length < 6) { setErr("Password: mínimo 6 caracteres."); return; }
     setBusy(true); setErr("");
     const { data, error } = await sb.auth.signUp({ email, password: pw, options: { data: { full_name: name, role: selRole } } });
@@ -165,9 +167,16 @@ export default function Login() {
                 ))}
               </div>
 
+              <label style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 12, fontSize: 12.5, color: "#5A5A58", lineHeight: 1.5, cursor: "pointer" }}>
+                <input type="checkbox" checked={acceptedTerms} onChange={(e) => setAcceptedTerms(e.target.checked)} style={{ marginTop: 3 }} />
+                <span>
+                  Li e aceito a <Link to="/privacidade" target="_blank" style={{ color: "#152741", textDecoration: "underline" }}>Política de Privacidade</Link> e o tratamento dos dados de acordo com o RGPD.
+                </span>
+              </label>
+
               {err && <div style={{ padding: "10px 12px", borderRadius: 10, background: "#F4E0E0", color: "#B83A3A", fontSize: 13, marginBottom: 12 }}>{err}</div>}
 
-              <Btn onClick={doRegister} disabled={busy || !name || !email || !pw || !selRole} style={{ width: "100%", padding: "13px 0" }}>{busy ? "A criar..." : "Criar conta"}</Btn>
+              <Btn onClick={doRegister} disabled={busy || !name || !email || !pw || !selRole || !acceptedTerms} style={{ width: "100%", padding: "13px 0" }}>{busy ? "A criar..." : "Criar conta"}</Btn>
 
               <div style={{ textAlign: "center", marginTop: 24, fontSize: 13.5, color: "#8A8A86" }}>
                 Já tem conta?{" "}

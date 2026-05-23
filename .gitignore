@@ -19,6 +19,24 @@ firebase-debug.log
 firebase-debug.*.log
 .firebaserc
 
+# CRÍTICO: chaves de serviço Firebase — NUNCA commitar
+serviceAccountKey*.json
+*-firebase-adminsdk-*.json
+google-services.json
+GoogleService-Info.plist
+
+# Dados locais de pacientes / importação (sensível)
+utentes.json
+sessoes.json
+financeiro_mensal.json
+firestore_import.json
+files.zip
+
+# Scripts de importação local + suas deps na raiz (mantém em /app)
+/package.json
+/package-lock.json
+/importar_firestore.js
+
 # macOS
 .DS_Store
 .AppleDouble

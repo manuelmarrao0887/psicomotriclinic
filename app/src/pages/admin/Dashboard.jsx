@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { sb } from "../../lib/firebase.js";
-import { Eyebrow, Card, Stat, Section } from "../../lib/ui.jsx";
+import { useNavigate } from "react-router-dom";
+import { useStore } from "../../lib/store.jsx";
+import { Eyebrow, Card, Stat, Section, Av } from "../../lib/ui.jsx";
 
 const PERIODS = [
   { l: "Última hora",  ms: 36e5 },
@@ -13,32 +13,43 @@ const PERIODS = [
   { l: "1 ano",        ms: 365 * 24 * 36e5 },
 ];
 
-export default function Dashboard() {
-  const [users, setUsers] = useState([]);
-  const [visits, setVisits] = useState([]);
-  const [profs, setProfs] = useState([]);
-  const [pts, setPts] = useState([]);
+function daysUntilBirthday(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (isNaN(d)) return null;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const next = new Date(today.getFullYear(), d.getMonth(), d.getDate());
+  if (next < today) next.setFullYear(next.getFullYear() + 1);
+  return Math.round((next - today) / 86400000);
+}
 
-  useEffect(() => {
-    (async () => {
-      const [u, v, p, pa] = await Promise.all([
-        sb.from("profiles").select("*"),
-        sb.from("visits").select("*").order("created_at", { ascending: false }).limit(2000),
-        sb.from("professionals").select("*").eq("active", true),
-        sb.from("patients").select("*").eq("active", true),
-      ]);
-      setUsers(u.data || []);
-      setVisits(v.data || []);
-      setProfs(p.data || []);
-      setPts(pa.data || []);
-    })();
-  }, []);
+function ageOnNext(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (isNaN(d)) return null;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  let age = today.getFullYear() - d.getFullYear() + 1;
+  const next = new Date(today.getFullYear(), d.getMonth(), d.getDate());
+  if (next < today) age = today.getFullYear() - d.getFullYear() + 1;
+  return age;
+}
+
+export default function Dashboard() {
+  const { users, visits, profs, pts } = useStore();
+  const navigate = useNavigate();
 
   const now = Date.now();
   const ts = (v) => new Date(v.ts || v.created_at || 0).getTime();
   const since = (ms) => visits.filter((v) => now - ts(v) <= ms);
   const activeUsers = users.filter((u) => u.active !== false).length;
   const active24 = new Set(since(24 * 36e5).map((v) => v.profile_id)).size;
+
+  // Aniversários — pacientes nos próximos 30 dias
+  const birthdays = pts
+    .map((p) => ({ p, days: daysUntilBirthday(p.birth_date), age: ageOnNext(p.birth_date) }))
+    .filter((x) => x.days != null && x.days <= 30)
+    .sort((a, b) => a.days - b.days)
+    .slice(0, 6);
 
   return (
     <div style={{ padding: "28px 40px 60px" }}>
@@ -63,13 +74,33 @@ export default function Dashboard() {
         </div>
       </Card>
 
-      <Section eyebrow="— EM CONSTRUÇÃO" title="Mais widgets a caminho" sub="P&L mensal, aniversários, alertas, KPI por profissional…" />
+      <Section eyebrow="— PESSOAS" title="Aniversários nos próximos 30 dias" sub="Pacientes que fazem anos em breve" />
       <Card pad={22}>
-        <div style={{ fontSize: 13.5, color: "#8A8A86", lineHeight: 1.6 }}>
-          Esta é a nova versão do Hub (Vite + React Router) — está a ser construída em paralelo com a versão atual.
-          As próximas iterações vão migrar as restantes páginas (Utilizadores, Equipa, Pacientes, Agenda, Financeiro, Pedidos, Definições) e adicionar
-          o conjunto completo de funcionalidades clínicas (notas de sessão, plano de intervenção, anamnese), compliance (RGPD, auditoria) e plataforma (PWA, lembretes, MB WAY).
-        </div>
+        {birthdays.length === 0 ? (
+          <div style={{ fontSize: 13.5, color: "#8A8A86" }}>Sem aniversários nos próximos 30 dias.</div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 }}>
+            {birthdays.map(({ p, days, age }) => {
+              const ini = p.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+              const d = p.birth_date ? new Date(p.birth_date) : null;
+              const label = d ? `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}` : "";
+              return (
+                <div key={p.id} className="ch" onClick={() => navigate(`/pacientes/${p.id}`)} style={{
+                  display: "flex", alignItems: "center", gap: 12,
+                  padding: 12, borderRadius: 10, background: "#FBF9F4", border: "1px solid #EFEBE2", cursor: "pointer",
+                }}>
+                  <Av t={ini} bg="#F5D9A8" sz={40} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 500, color: "#152741" }}>{p.name}</div>
+                    <div style={{ fontSize: 12, color: "#8A8A86", marginTop: 2 }}>
+                      {label} · faz {age} anos · {days === 0 ? "hoje" : days === 1 ? "amanhã" : `em ${days} dias`}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </Card>
     </div>
   );

@@ -20,6 +20,7 @@ export function StoreProvider({ profile, children }) {
   const [anamneses, setAnamneses] = useState([]);
   const [notes, setNotes]     = useState([]);
   const [plans, setPlans]     = useState([]);
+  const [auditLog, setAuditLog] = useState([]);
   const [toast, setToast]   = useState(null);
   const [modal, setModal]   = useState(null);
   const [form, setForm]     = useState({});
@@ -31,7 +32,7 @@ export function StoreProvider({ profile, children }) {
 
   const load = useCallback(async () => {
     try {
-      const [r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12] = await Promise.all([
+      const [r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13] = await Promise.all([
         sb.from("profiles").select("*").order("created_at", { ascending: false }),
         sb.from("professionals").select("*").eq("active", true).order("name"),
         sb.from("patients").select("*").eq("active", true).order("name"),
@@ -44,6 +45,7 @@ export function StoreProvider({ profile, children }) {
         sb.from("anamnesis").select("*"),
         sb.from("session_notes").select("*").order("date", { ascending: false }).limit(500),
         sb.from("intervention_plans").select("*"),
+        sb.from("audit_log").select("*").order("ts", { ascending: false }).limit(500),
       ]);
       setUsers(r1.data || []);
       setProfs(r2.data || []);
@@ -57,27 +59,47 @@ export function StoreProvider({ profile, children }) {
       setAnamneses(r10.data || []);
       setNotes(r11.data || []);
       setPlans(r12.data || []);
+      setAuditLog(r13.data || []);
     } catch (e) { console.error(e); }
   }, []);
+
+  // Audit helper — escreve no audit_log sem nunca quebrar a UI em caso de falha.
+  const audit = useCallback(async (action, target, summary) => {
+    try {
+      await sb.from("audit_log").insert({
+        who_id: profile?.id || null,
+        who_name: profile?.full_name || "",
+        who_role: profile?.role || "",
+        action, target: target || "", summary: summary || "",
+        ts: new Date().toISOString(),
+      });
+    } catch (_) { /* não quebrar UI */ }
+  }, [profile]);
 
   useEffect(() => { load(); }, [load]);
 
   // ────────── Acções ──────────
 
   const changeRole = async (uid, r) => {
+    const u = users.find((x) => x.id === uid);
     await sb.from("profiles").update({ role: r }).eq("id", uid);
+    await audit("change_role", `profiles:${uid}`, `${u?.full_name || uid} → ${r}`);
     show("Papel atualizado");
     await load();
   };
 
   const removeUser = async (uid) => {
+    const u = users.find((x) => x.id === uid);
     await sb.from("profiles").delete().eq("id", uid);
+    await audit("delete_user", `profiles:${uid}`, u?.full_name || uid);
     show("Utilizador removido");
     await load();
   };
 
   const toggleUserActive = async (uid, makeActive) => {
+    const u = users.find((x) => x.id === uid);
     await sb.from("profiles").update({ active: makeActive }).eq("id", uid);
+    await audit(makeActive ? "activate_user" : "deactivate_user", `profiles:${uid}`, u?.full_name || uid);
     show(makeActive ? "Utilizador reativado" : "Utilizador desativado");
     await load();
   };
@@ -92,11 +114,14 @@ export function StoreProvider({ profile, children }) {
       avatar_color: AVATAR_BG[profs.length % AVATAR_BG.length],
       active: true,
     });
+    await audit("add_professional", "professionals", form.name);
     setModal(null); setForm({}); show("Profissional adicionado"); await load();
   };
 
   const deleteProfessional = async (id) => {
+    const p = profs.find((x) => x.id === id);
     await sb.from("professionals").delete().eq("id", id);
+    await audit("delete_professional", `professionals:${id}`, p?.name || id);
     show("Profissional eliminado"); await load();
   };
 
@@ -145,13 +170,20 @@ export function StoreProvider({ profile, children }) {
       insurance_name: form.insName || null,
       insurance_number: form.insNum || null,
     };
-    if (form.editingId) await sb.from("patients").update(payload).eq("id", form.editingId);
-    else await sb.from("patients").insert(payload);
+    if (form.editingId) {
+      await sb.from("patients").update(payload).eq("id", form.editingId);
+      await audit("update_patient", `patients:${form.editingId}`, form.name);
+    } else {
+      await sb.from("patients").insert(payload);
+      await audit("add_patient", "patients", form.name);
+    }
     setModal(null); setForm({}); show(form.editingId ? "Paciente atualizado" : "Paciente criado"); await load();
   };
 
   const deletePatient = async (id) => {
+    const pt = pts.find((x) => x.id === id);
     await sb.from("patients").delete().eq("id", id);
+    await audit("delete_patient", `patients:${id}`, pt?.name || id);
     show("Paciente eliminado"); await load();
   };
 
@@ -188,6 +220,8 @@ export function StoreProvider({ profile, children }) {
       status: form.paySt || "pendente",
       paid_date: form.paySt === "pago" ? new Date().toISOString().slice(0, 10) : null,
     });
+    const pt = pts.find((x) => x.id === form.pt);
+    await audit("add_payment", "payments", `${pt?.name || form.pt} · ${form.amount}€ · ${form.payMonth || "—"}`);
     setModal(null); setForm({}); show("Pagamento registado"); await load();
   };
 
@@ -197,6 +231,8 @@ export function StoreProvider({ profile, children }) {
       status: newSt,
       paid_date: newSt === "pago" ? new Date().toISOString().slice(0, 10) : null,
     }).eq("id", p.id);
+    const pt = pts.find((x) => x.id === p.patient_id);
+    await audit("toggle_payment", `payments:${p.id}`, `${pt?.name || ""} · ${p.amount}€ → ${newSt}`);
     show(newSt === "pago" ? "Marcado como pago" : "Marcado como pendente");
     await load();
   };
@@ -223,6 +259,7 @@ export function StoreProvider({ profile, children }) {
         });
       }
     }
+    await audit("invite_user", "profiles", `${form.invName} · ${form.invRole}`);
     setForm({ ...form, inviteResult: { email: form.invEmail, pw: tempPw, role: form.invRole, name: form.invName } });
     show("Conta criada");
     await load();
@@ -235,6 +272,7 @@ export function StoreProvider({ profile, children }) {
       garage_spots: parseInt(form.garageSpots) || 0,
       garage_per_spot: parseFloat(form.garagePerSpot) || 0,
     });
+    await audit("save_overheads", "overheads", `renda ${form.rent}€ · garagem ${form.garageSpots}×${form.garagePerSpot}€`);
     setModal(null); setForm({}); show("Custos fixos atualizados"); await load();
   };
 
@@ -247,6 +285,7 @@ export function StoreProvider({ profile, children }) {
       water: parseFloat(form.water) || 0,
       telecom: parseFloat(form.telecom) || 0,
     });
+    await audit("save_variable_cost", `variable_costs:${id}`, `${form.vcMonth} · luz ${form.power}€ · água ${form.water}€ · telecom ${form.telecom}€`);
     setModal(null); setForm({}); show("Custos do mês registados"); await load();
   };
 
@@ -273,6 +312,8 @@ export function StoreProvider({ profile, children }) {
       updated_at: new Date().toISOString(),
       updated_by: profile?.id || null,
     });
+    const pt = pts.find((x) => x.id === id);
+    await audit("save_anamnesis", `anamnesis:${id}`, pt?.name || id);
     setModal(null); setForm({}); show("Anamnese guardada"); await load();
   };
 
@@ -290,11 +331,14 @@ export function StoreProvider({ profile, children }) {
       professional_id: form.snProf || null,
       created_by: profile?.id || null,
     });
+    const pt = pts.find((x) => x.id === form.snPatientId);
+    await audit("add_session_note", `session_notes:${form.snPatientId}`, `${pt?.name || ""} · ${form.snDate}`);
     setModal(null); setForm({}); show("Nota de sessão guardada"); await load();
   };
 
   const deleteSessionNote = async (id) => {
     await sb.from("session_notes").delete().eq("id", id);
+    await audit("delete_session_note", `session_notes:${id}`, "");
     show("Nota eliminada"); await load();
   };
 
@@ -311,16 +355,20 @@ export function StoreProvider({ profile, children }) {
       updated_at: new Date().toISOString(),
       updated_by: profile?.id || null,
     });
+    const pt = pts.find((x) => x.id === id);
+    await audit("save_intervention_plan", `intervention_plans:${id}`, `${pt?.name || id} · ${(form.planObjectives || []).length} objetivos`);
     setModal(null); setForm({}); show("Plano de intervenção guardado"); await load();
   };
 
   const approveRequest = async (id) => {
     await sb.from("schedule_requests").update({ status: "aprovado" }).eq("id", id);
+    await audit("approve_request", `schedule_requests:${id}`, "");
     show("Pedido aprovado"); await load();
   };
 
   const rejectRequest = async (id) => {
     await sb.from("schedule_requests").update({ status: "recusado" }).eq("id", id);
+    await audit("reject_request", `schedule_requests:${id}`, "");
     show("Pedido recusado", "error"); await load();
   };
 
@@ -340,7 +388,7 @@ export function StoreProvider({ profile, children }) {
   const value = {
     profile,
     users, profs, pts, sess, pays, reqs, over, vcosts, visits,
-    anamneses, notes, plans,
+    anamneses, notes, plans, auditLog,
     toast, show,
     modal, setModal, form, setForm,
     load,

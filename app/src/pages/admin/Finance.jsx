@@ -120,6 +120,58 @@ export default function Finance() {
         )}
       </Card>
 
+      {/* P&L mensal — receitas - custos = resultado líquido por mês */}
+      {(() => {
+        // Por mês: receita = sessões pagas + garagem fixa; custos = renda + variáveis do mês; comissão = 80% das sessões pagas para profissionais.
+        const allMonths = Array.from(new Set([
+          ...pays.map((p) => p.month),
+          ...vcosts.map((v) => v.month),
+        ])).sort((a, b) => MONTHS_2026.indexOf(b) - MONTHS_2026.indexOf(a)).slice(0, 12);
+        if (allMonths.length === 0) return null;
+        return (
+          <Card pad={22} style={{ marginBottom: 24 }}>
+            <Eyebrow>— RESULTADO DA CLÍNICA · MÊS A MÊS</Eyebrow>
+            <p style={{ fontSize: 12, color: "#8A8A86", marginTop: 4, marginBottom: 14, lineHeight: 1.6 }}>
+              Resultado líquido = clínica (sessões {Math.round(CLINIC_CUT * 100)}%) + garagem − renda − custos variáveis.
+              Os {Math.round((1 - CLINIC_CUT) * 100)}% das sessões pagas vão para os profissionais (não contam para a clínica).
+            </p>
+            <div className="mono" style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr 1fr 1fr 1fr 1fr", fontSize: 10.5, color: "#8A8A86", padding: "2px 0" }}>
+              <span>MÊS</span>
+              <span style={{ textAlign: "right" }}>SESSÕES PAGAS</span>
+              <span style={{ textAlign: "right" }}>CLÍNICA {Math.round(CLINIC_CUT * 100)}%</span>
+              <span style={{ textAlign: "right" }}>GARAGEM</span>
+              <span style={{ textAlign: "right" }}>RENDA</span>
+              <span style={{ textAlign: "right" }}>VAR.</span>
+              <span style={{ textAlign: "right" }}>RESULTADO</span>
+            </div>
+            {allMonths.map((m) => {
+              const monthPays = pays.filter((p) => p.month === m && p.status === "pago").reduce((a, p) => a + Number(p.amount), 0);
+              const clinicShare = monthPays * CLINIC_CUT;
+              const vc = vcosts.find((v) => v.month === m) || {};
+              const varTot = (Number(vc.power) || 0) + (Number(vc.water) || 0) + (Number(vc.telecom) || 0);
+              const garage = gar;
+              const result = clinicShare + garage - rent - varTot;
+              return (
+                <div key={m} style={{
+                  display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr 1fr 1fr 1fr 1fr",
+                  fontSize: 13.5, padding: "8px 0", borderTop: "1px solid #F2EEE5", alignItems: "center",
+                }}>
+                  <span style={{ color: "#152741", fontWeight: 500 }}>{m}</span>
+                  <span style={{ textAlign: "right", color: "#5A5A58" }}>{eur(monthPays)}€</span>
+                  <span style={{ textAlign: "right", color: "#5A5A58" }}>{eur(clinicShare)}€</span>
+                  <span style={{ textAlign: "right", color: "#3D7A4A" }}>+{eur(garage)}€</span>
+                  <span style={{ textAlign: "right", color: "#B83A3A" }}>−{eur(rent)}€</span>
+                  <span style={{ textAlign: "right", color: "#B83A3A" }}>−{eur(varTot)}€</span>
+                  <span style={{ textAlign: "right", color: result >= 0 ? "#3D7A4A" : "#B83A3A", fontWeight: 600 }}>
+                    {result >= 0 ? "+" : "−"}{eur(Math.abs(result))}€
+                  </span>
+                </div>
+              );
+            })}
+          </Card>
+        );
+      })()}
+
       {/* Split */}
       <Card pad={22} style={{ marginBottom: 24 }}>
         <Eyebrow>— DISTRIBUIÇÃO DO RECEBIDO</Eyebrow>

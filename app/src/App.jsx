@@ -12,6 +12,8 @@ import Agenda from "./pages/admin/Agenda.jsx";
 import Finance from "./pages/admin/Finance.jsx";
 import Requests from "./pages/admin/Requests.jsx";
 import Settings from "./pages/admin/Settings.jsx";
+import AuditPage from "./pages/admin/AuditPage.jsx";
+import Privacy from "./pages/Privacy.jsx";
 
 const themeKey = "psm.theme";
 
@@ -117,6 +119,7 @@ export default function App() {
     return (
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/privacidade" element={<Privacy />} />
         <Route path="*" element={<Navigate to="/login" replace state={{ from: location }} />} />
       </Routes>
     );
@@ -143,6 +146,8 @@ export default function App() {
             <Route path="financeiro" element={<Finance />} />
             <Route path="pedidos" element={<Requests />} />
             <Route path="definicoes" element={<Settings theme={theme} setTheme={setTheme} />} />
+            <Route path="auditoria" element={<AuditPage />} />
+            <Route path="privacidade" element={<Privacy />} />
           </Route>
         ) : (
           <Route path="*" element={<NonAdminLanding profile={profile} onLogout={logout} />} />
