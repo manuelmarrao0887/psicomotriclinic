@@ -17,6 +17,9 @@ export function StoreProvider({ profile, children }) {
   const [over, setOver]     = useState({});
   const [vcosts, setVcosts] = useState([]);
   const [visits, setVisits] = useState([]);
+  const [anamneses, setAnamneses] = useState([]);
+  const [notes, setNotes]     = useState([]);
+  const [plans, setPlans]     = useState([]);
   const [toast, setToast]   = useState(null);
   const [modal, setModal]   = useState(null);
   const [form, setForm]     = useState({});
@@ -28,7 +31,7 @@ export function StoreProvider({ profile, children }) {
 
   const load = useCallback(async () => {
     try {
-      const [r1, r2, r3, r4, r5, r6, r7, r8, r9] = await Promise.all([
+      const [r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12] = await Promise.all([
         sb.from("profiles").select("*").order("created_at", { ascending: false }),
         sb.from("professionals").select("*").eq("active", true).order("name"),
         sb.from("patients").select("*").eq("active", true).order("name"),
@@ -38,6 +41,9 @@ export function StoreProvider({ profile, children }) {
         sb.from("overheads").select("*"),
         sb.from("variable_costs").select("*"),
         sb.from("visits").select("*").order("created_at", { ascending: false }).limit(2000),
+        sb.from("anamnesis").select("*"),
+        sb.from("session_notes").select("*").order("date", { ascending: false }).limit(500),
+        sb.from("intervention_plans").select("*"),
       ]);
       setUsers(r1.data || []);
       setProfs(r2.data || []);
@@ -48,6 +54,9 @@ export function StoreProvider({ profile, children }) {
       setOver((r7.data && r7.data[0]) || {});
       setVcosts(r8.data || []);
       setVisits(r9.data || []);
+      setAnamneses(r10.data || []);
+      setNotes(r11.data || []);
+      setPlans(r12.data || []);
     } catch (e) { console.error(e); }
   }, []);
 
@@ -246,6 +255,65 @@ export function StoreProvider({ profile, children }) {
     setForm((f) => ({ ...f, newPw: p }));
   };
 
+  // ───── Clínico ─────
+
+  const saveAnamnesis = async () => {
+    if (!form.anamnesisPatientId) return;
+    const id = form.anamnesisPatientId;
+    await sb.from("anamnesis").upsert({
+      id, patient_id: id,
+      birth_history: form.birth_history || "",
+      developmental_milestones: form.developmental_milestones || "",
+      school_context: form.school_context || "",
+      family_context: form.family_context || "",
+      previous_interventions: form.previous_interventions || "",
+      referral_reason: form.referral_reason || "",
+      chief_complaints: form.chief_complaints || "",
+      general_notes: form.general_notes || "",
+      updated_at: new Date().toISOString(),
+      updated_by: profile?.id || null,
+    });
+    setModal(null); setForm({}); show("Anamnese guardada"); await load();
+  };
+
+  const addSessionNote = async () => {
+    if (!form.snDate || !form.snPatientId) return;
+    await sb.from("session_notes").insert({
+      patient_id: form.snPatientId,
+      date: form.snDate,
+      status: form.snStatus || "realizada",
+      domains: form.snDomains || [],
+      work_done: form.snWork || "",
+      observations: form.snObs || "",
+      progress: form.snProgress || "",
+      next_plan: form.snNext || "",
+      professional_id: form.snProf || null,
+      created_by: profile?.id || null,
+    });
+    setModal(null); setForm({}); show("Nota de sessão guardada"); await load();
+  };
+
+  const deleteSessionNote = async (id) => {
+    await sb.from("session_notes").delete().eq("id", id);
+    show("Nota eliminada"); await load();
+  };
+
+  const savePlan = async () => {
+    if (!form.planPatientId) return;
+    const id = form.planPatientId;
+    await sb.from("intervention_plans").upsert({
+      id, patient_id: id,
+      area: form.planArea || "",
+      objectives: form.planObjectives || [],
+      start_date: form.planStart || null,
+      review_date: form.planReview || null,
+      notes: form.planNotes || "",
+      updated_at: new Date().toISOString(),
+      updated_by: profile?.id || null,
+    });
+    setModal(null); setForm({}); show("Plano de intervenção guardado"); await load();
+  };
+
   const approveRequest = async (id) => {
     await sb.from("schedule_requests").update({ status: "aprovado" }).eq("id", id);
     show("Pedido aprovado"); await load();
@@ -272,6 +340,7 @@ export function StoreProvider({ profile, children }) {
   const value = {
     profile,
     users, profs, pts, sess, pays, reqs, over, vcosts, visits,
+    anamneses, notes, plans,
     toast, show,
     modal, setModal, form, setForm,
     load,
@@ -282,6 +351,7 @@ export function StoreProvider({ profile, children }) {
     saveOverheads, saveVarCost,
     inviteUser,
     approveRequest, rejectRequest,
+    saveAnamnesis, addSessionNote, deleteSessionNote, savePlan,
     genPassword, changeMyPassword,
   };
 

@@ -3,6 +3,23 @@ import { Btn, Field, Inp, Sel, Modal, Eyebrow } from "../lib/ui.jsx";
 import { Icon } from "../lib/icons.jsx";
 import { DAYS, HOURS, MONTHS_2026 } from "../lib/constants.js";
 
+// Domínios de psicomotricidade — usados nas notas de sessão e plano.
+const PSM_DOMAINS = [
+  "Coordenação motora",
+  "Esquema corporal",
+  "Lateralidade",
+  "Equilíbrio",
+  "Regulação emocional",
+  "Atenção",
+  "Função executiva",
+  "Tónus muscular",
+  "Praxias",
+  "Cooperação / social",
+];
+
+const taStyle = { width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FBF9F4", color: "#3C3C3B", fontFamily: "inherit", resize: "vertical", minHeight: 70 };
+const Ta = (props) => <textarea {...props} style={{ ...taStyle, ...(props.style || {}) }} />;
+
 export default function ModalsHost() {
   const s = useStore();
   const { modal, setModal, form, setForm, profs } = s;
@@ -169,6 +186,139 @@ export default function ModalsHost() {
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 14 }}>
           <Btn variant="secondary" onClick={() => setModal(null)}>Cancelar</Btn>
           <Btn onClick={s.saveVarCost} disabled={!form.vcMonth}>Registar</Btn>
+        </div>
+      </Modal>
+
+      {/* ───────── ANAMNESE ───────── */}
+      <Modal open={modal === "anamnesis"} onClose={() => setModal(null)} title="Anamnese" eyebrow="— FICHA DE ADMISSÃO" width={720}>
+        <p style={{ fontSize: 13, color: "#8A8A86", marginBottom: 12, lineHeight: 1.6 }}>
+          Informação clínica de base do caso. Preencha o que tiver — pode atualizar depois.
+        </p>
+        <Field label="Motivo do encaminhamento">
+          <Ta value={form.referral_reason || ""} onChange={(e) => set("referral_reason", e.target.value)} placeholder="Quem encaminhou, por que razão e que objetivo inicial." />
+        </Field>
+        <Field label="Queixas principais">
+          <Ta value={form.chief_complaints || ""} onChange={(e) => set("chief_complaints", e.target.value)} placeholder="O que a família refere — dificuldades motoras, regulação, atenção, escola..." />
+        </Field>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <Field label="Gestação / nascimento">
+            <Ta value={form.birth_history || ""} onChange={(e) => set("birth_history", e.target.value)} placeholder="Tipo de parto, prematuridade, complicações, peso à nascença..." />
+          </Field>
+          <Field label="Marcos do desenvolvimento">
+            <Ta value={form.developmental_milestones || ""} onChange={(e) => set("developmental_milestones", e.target.value)} placeholder="Idade primeiras palavras, marcha, controlo de esfíncteres, alimentação..." />
+          </Field>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <Field label="Contexto escolar">
+            <Ta value={form.school_context || ""} onChange={(e) => set("school_context", e.target.value)} placeholder="Ano de escolaridade, desempenho, relação com pares e professores." />
+          </Field>
+          <Field label="Contexto familiar">
+            <Ta value={form.family_context || ""} onChange={(e) => set("family_context", e.target.value)} placeholder="Composição, rotinas, dinâmica relacional, sono, alimentação." />
+          </Field>
+        </div>
+        <Field label="Intervenções anteriores / em curso">
+          <Ta value={form.previous_interventions || ""} onChange={(e) => set("previous_interventions", e.target.value)} placeholder="Terapia da fala, psicologia, terapia ocupacional, medicação..." />
+        </Field>
+        <Field label="Notas gerais">
+          <Ta value={form.general_notes || ""} onChange={(e) => set("general_notes", e.target.value)} placeholder="Outras observações relevantes." />
+        </Field>
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 14 }}>
+          <Btn variant="secondary" onClick={() => setModal(null)}>Cancelar</Btn>
+          <Btn onClick={s.saveAnamnesis}>Guardar anamnese</Btn>
+        </div>
+      </Modal>
+
+      {/* ───────── NOTA DE SESSÃO ───────── */}
+      <Modal open={modal === "sessionNote"} onClose={() => setModal(null)} title="Nota de sessão" eyebrow="— REGISTO CLÍNICO" width={720}>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+          <Field label="Data"><Inp type="date" value={form.snDate || ""} onChange={(e) => set("snDate", e.target.value)} /></Field>
+          <Field label="Estado da sessão">
+            <Sel value={form.snStatus || "realizada"} onChange={(v) => set("snStatus", v)} options={[
+              { v: "realizada", l: "Realizada" },
+              { v: "falta", l: "Falta" },
+              { v: "cancelada", l: "Cancelada" },
+            ]} />
+          </Field>
+          <Field label="Profissional">
+            <Sel value={form.snProf || ""} onChange={(v) => set("snProf", v)} options={s.profs.map((p) => ({ v: p.id, l: p.name }))} />
+          </Field>
+        </div>
+
+        <Field label="Domínios trabalhados" hint="Seleciona um ou mais">
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {PSM_DOMAINS.map((d) => {
+              const sel = (form.snDomains || []).includes(d);
+              return (
+                <button key={d} type="button" className="ch" onClick={() => setForm((f) => { const cur = f.snDomains || []; return { ...f, snDomains: cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d] }; })} style={{
+                  padding: "7px 12px", borderRadius: 8, fontSize: 12.5, fontWeight: 500, cursor: "pointer",
+                  background: sel ? "#152741" : "#FBF9F4", color: sel ? "#F7F4EE" : "#3C3C3B",
+                  border: `1px solid ${sel ? "#152741" : "#D9D3C5"}`,
+                }}>{sel ? "✓ " : ""}{d}</button>
+              );
+            })}
+          </div>
+        </Field>
+
+        <Field label="Trabalho realizado"><Ta value={form.snWork || ""} onChange={(e) => set("snWork", e.target.value)} placeholder="Atividades, materiais, sequência da sessão..." /></Field>
+        <Field label="Observações clínicas"><Ta value={form.snObs || ""} onChange={(e) => set("snObs", e.target.value)} placeholder="Comportamento, respostas, dificuldades, momentos significativos por domínio..." /></Field>
+        <Field label="Evolução observada"><Ta value={form.snProgress || ""} onChange={(e) => set("snProgress", e.target.value)} placeholder="Progresso face à sessão anterior, objetivos atingidos..." /></Field>
+        <Field label="Plano para a próxima sessão"><Ta value={form.snNext || ""} onChange={(e) => set("snNext", e.target.value)} placeholder="O que trabalhar a seguir, materiais a preparar..." /></Field>
+
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 14 }}>
+          <Btn variant="secondary" onClick={() => setModal(null)}>Cancelar</Btn>
+          <Btn onClick={s.addSessionNote} disabled={!form.snDate || !form.snPatientId}>Guardar nota</Btn>
+        </div>
+      </Modal>
+
+      {/* ───────── PLANO DE INTERVENÇÃO ───────── */}
+      <Modal open={modal === "plan"} onClose={() => setModal(null)} title="Plano de intervenção" eyebrow="— OBJETIVOS TERAPÊUTICOS" width={720}>
+        <p style={{ fontSize: 13, color: "#8A8A86", marginBottom: 12, lineHeight: 1.6 }}>
+          Objetivos terapêuticos mensuráveis. O progresso pode ser atualizado ao longo do tempo.
+        </p>
+        <Field label="Área de intervenção"><Inp placeholder="Ex: Psicomotricidade — coordenação e regulação" value={form.planArea || ""} onChange={(e) => set("planArea", e.target.value)} /></Field>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+          <Field label="Data de início"><Inp type="date" value={form.planStart || ""} onChange={(e) => set("planStart", e.target.value)} /></Field>
+          <Field label="Próxima revisão"><Inp type="date" value={form.planReview || ""} onChange={(e) => set("planReview", e.target.value)} /></Field>
+        </div>
+
+        <div style={{ fontSize: 12, color: "#5A5A58", marginBottom: 6, fontWeight: 500 }}>Objetivos</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 10 }}>
+          {(form.planObjectives || []).map((o, idx) => (
+            <div key={idx} style={{ padding: 12, borderRadius: 10, background: "#FBF9F4", border: "1px solid #E5E0D4" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10, alignItems: "start" }}>
+                <Ta rows={2} value={o.text} onChange={(e) => {
+                  const arr = [...(form.planObjectives || [])]; arr[idx] = { ...arr[idx], text: e.target.value };
+                  set("planObjectives", arr);
+                }} placeholder="Ex: Melhorar coordenação óculo-manual em tarefas de precisão" />
+                <button onClick={() => set("planObjectives", (form.planObjectives || []).filter((_, i) => i !== idx))}
+                  className="ch" style={{ color: "#B83A3A", padding: 6 }} title="Remover"><Icon name="trash" size={16} /></button>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginTop: 10, alignItems: "center" }}>
+                <Sel value={o.domain || ""} onChange={(v) => { const arr = [...(form.planObjectives || [])]; arr[idx] = { ...arr[idx], domain: v }; set("planObjectives", arr); }}
+                  options={PSM_DOMAINS.map((d) => ({ v: d, l: d }))} placeholder="Domínio" />
+                <Sel value={o.status || "ativo"} onChange={(v) => { const arr = [...(form.planObjectives || [])]; arr[idx] = { ...arr[idx], status: v }; set("planObjectives", arr); }}
+                  options={[{ v: "ativo", l: "Ativo" }, { v: "atingido", l: "Atingido" }, { v: "em_pausa", l: "Em pausa" }]} />
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <input type="range" min="0" max="100" value={o.progress ?? 0} onChange={(e) => { const arr = [...(form.planObjectives || [])]; arr[idx] = { ...arr[idx], progress: Number(e.target.value) }; set("planObjectives", arr); }}
+                    style={{ flex: 1 }} />
+                  <span className="mono" style={{ fontSize: 12, color: "#5A5A58", minWidth: 36, textAlign: "right" }}>{o.progress ?? 0}%</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <Btn size="sm" variant="secondary" icon={<Icon name="plus" size={14} />}
+          onClick={() => set("planObjectives", [...(form.planObjectives || []), { text: "", domain: "", status: "ativo", progress: 0 }])}>
+          Adicionar objetivo
+        </Btn>
+
+        <Field label="Notas do plano" hint="Estratégias, materiais, periodicidade, observações para a equipa">
+          <Ta value={form.planNotes || ""} onChange={(e) => set("planNotes", e.target.value)} />
+        </Field>
+
+        <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 14 }}>
+          <Btn variant="secondary" onClick={() => setModal(null)}>Cancelar</Btn>
+          <Btn onClick={s.savePlan}>Guardar plano</Btn>
         </div>
       </Modal>
 

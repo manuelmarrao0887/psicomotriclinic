@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useStore } from "../../lib/store.jsx";
-import { Btn, Card, Eyebrow, Section, Av, Tag } from "../../lib/ui.jsx";
+import { Btn, Card, Eyebrow, Section, Av, Tag, Progress } from "../../lib/ui.jsx";
 import { Icon } from "../../lib/icons.jsx";
 
 const Row = ({ label, value }) => (
@@ -61,8 +61,11 @@ export default function Patients() {
 export function PatientDetail() {
   const { patientId } = useParams();
   const navigate = useNavigate();
-  const { pts, profs, pays, deletePatient, setForm, setModal } = useStore();
+  const { pts, profs, pays, anamneses, notes, plans, deletePatient, deleteSessionNote, setForm, setModal } = useStore();
   const pt = pts.find((x) => x.id === patientId);
+  const anam = anamneses.find((a) => a.patient_id === patientId);
+  const ptNotes = notes.filter((n) => n.patient_id === patientId).sort((a, b) => (a.date < b.date ? 1 : -1));
+  const plan = plans.find((p) => p.patient_id === patientId);
 
   if (!pt) return (
     <div style={{ padding: "28px 40px" }}>
@@ -141,6 +144,160 @@ export function PatientDetail() {
               <Row label="Periodicidade" value={pt.periodicity || "Semanal"} />
             </div>
           </Card>
+          {/* ─── ANAMNESE ─── */}
+          <Card pad={28}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <Eyebrow>— ANAMNESE</Eyebrow>
+              <Btn size="sm" variant="secondary" icon={<Icon name="edit" size={13} />}
+                onClick={() => {
+                  setForm({
+                    anamnesisPatientId: pt.id,
+                    referral_reason: anam?.referral_reason || "",
+                    chief_complaints: anam?.chief_complaints || "",
+                    birth_history: anam?.birth_history || "",
+                    developmental_milestones: anam?.developmental_milestones || "",
+                    school_context: anam?.school_context || "",
+                    family_context: anam?.family_context || "",
+                    previous_interventions: anam?.previous_interventions || "",
+                    general_notes: anam?.general_notes || "",
+                  });
+                  setModal("anamnesis");
+                }}>{anam ? "Editar anamnese" : "Criar anamnese"}</Btn>
+            </div>
+            {!anam ? (
+              <div style={{ fontSize: 13.5, color: "#8A8A86", lineHeight: 1.6 }}>Ainda sem anamnese registada. Clica em <b>Criar anamnese</b> para preencher.</div>
+            ) : (
+              <div style={{ marginTop: 6 }}>
+                {[
+                  { l: "Motivo do encaminhamento", v: anam.referral_reason },
+                  { l: "Queixas principais", v: anam.chief_complaints },
+                  { l: "Gestação / nascimento", v: anam.birth_history },
+                  { l: "Marcos do desenvolvimento", v: anam.developmental_milestones },
+                  { l: "Contexto escolar", v: anam.school_context },
+                  { l: "Contexto familiar", v: anam.family_context },
+                  { l: "Intervenções anteriores", v: anam.previous_interventions },
+                  { l: "Notas gerais", v: anam.general_notes },
+                ].filter((x) => x.v && x.v.trim()).map((x) => (
+                  <div key={x.l} style={{ padding: "10px 0", borderTop: "1px solid #EFEBE2" }}>
+                    <div className="mono" style={{ fontSize: 10.5, color: "#8A8A86", marginBottom: 4 }}>{x.l.toUpperCase()}</div>
+                    <div style={{ fontSize: 13.5, color: "#3C3C3B", whiteSpace: "pre-wrap", lineHeight: 1.55 }}>{x.v}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+
+          {/* ─── PLANO DE INTERVENÇÃO ─── */}
+          <Card pad={28}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <Eyebrow>— PLANO DE INTERVENÇÃO</Eyebrow>
+              <Btn size="sm" variant="secondary" icon={<Icon name="edit" size={13} />}
+                onClick={() => {
+                  setForm({
+                    planPatientId: pt.id,
+                    planArea: plan?.area || "",
+                    planObjectives: plan?.objectives || [],
+                    planStart: plan?.start_date || "",
+                    planReview: plan?.review_date || "",
+                    planNotes: plan?.notes || "",
+                  });
+                  setModal("plan");
+                }}>{plan ? "Editar plano" : "Criar plano"}</Btn>
+            </div>
+            {!plan ? (
+              <div style={{ fontSize: 13.5, color: "#8A8A86", lineHeight: 1.6 }}>Ainda sem plano de intervenção. Define objetivos terapêuticos mensuráveis.</div>
+            ) : (
+              <div style={{ marginTop: 6 }}>
+                {plan.area && <div style={{ fontSize: 14, color: "#152741", fontWeight: 500, marginBottom: 12 }}>{plan.area}</div>}
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {(plan.objectives || []).map((o, i) => (
+                    <div key={i} style={{ padding: 14, borderRadius: 10, background: "#FBF9F4", border: "1px solid #EFEBE2" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, marginBottom: 8 }}>
+                        <div style={{ fontSize: 13.5, color: "#152741", lineHeight: 1.5 }}>{o.text}</div>
+                        <Tag type={o.status === "atingido" ? "sage" : o.status === "em_pausa" ? "pendente" : "default"}>
+                          {o.status === "atingido" ? "Atingido" : o.status === "em_pausa" ? "Em pausa" : "Ativo"}
+                        </Tag>
+                      </div>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        {o.domain && <span className="mono" style={{ fontSize: 10.5, color: "#8A8A86" }}>{o.domain.toUpperCase()}</span>}
+                        <div style={{ flex: 1 }}>
+                          <Progress pct={o.progress || 0} color={o.status === "atingido" ? "#3D7A4A" : "#152741"} />
+                        </div>
+                        <span className="mono" style={{ fontSize: 11, color: "#5A5A58", minWidth: 36, textAlign: "right" }}>{o.progress || 0}%</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {plan.notes && (
+                  <div style={{ marginTop: 14, padding: 12, borderTop: "1px solid #EFEBE2", fontSize: 13, color: "#5A5A58", whiteSpace: "pre-wrap", lineHeight: 1.55 }}>{plan.notes}</div>
+                )}
+                {plan.review_date && (
+                  <div style={{ marginTop: 10, fontSize: 12, color: "#8A8A86" }}>Próxima revisão: <b>{new Date(plan.review_date).toLocaleDateString("pt-PT")}</b></div>
+                )}
+              </div>
+            )}
+          </Card>
+
+          {/* ─── NOTAS DE SESSÃO ─── */}
+          <Card pad={28}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <Eyebrow>— NOTAS DE SESSÃO · {ptNotes.length}</Eyebrow>
+              <Btn size="sm" variant="primary" icon={<Icon name="plus" size={13} />}
+                onClick={() => {
+                  setForm({
+                    snPatientId: pt.id,
+                    snDate: new Date().toISOString().slice(0, 10),
+                    snStatus: "realizada",
+                    snProf: pt.professional_id || "",
+                    snDomains: [],
+                    snWork: "", snObs: "", snProgress: "", snNext: "",
+                  });
+                  setModal("sessionNote");
+                }}>Nova nota</Btn>
+            </div>
+            {ptNotes.length === 0 ? (
+              <div style={{ fontSize: 13.5, color: "#8A8A86", lineHeight: 1.6 }}>Ainda sem notas de sessão registadas.</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 14, marginTop: 6 }}>
+                {ptNotes.map((n) => {
+                  const pr = profs.find((x) => x.id === n.professional_id);
+                  return (
+                    <div key={n.id} style={{ padding: 14, borderRadius: 10, background: "#FBF9F4", border: "1px solid #EFEBE2" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                          <span className="mono" style={{ fontSize: 11, color: "#152741", fontWeight: 600 }}>{n.date && new Date(n.date).toLocaleDateString("pt-PT")}</span>
+                          <Tag type={n.status === "realizada" ? "realizada" : n.status === "falta" ? "falta" : "default"}>
+                            {n.status === "realizada" ? "Realizada" : n.status === "falta" ? "Falta" : "Cancelada"}
+                          </Tag>
+                          {pr && <span style={{ fontSize: 12, color: "#8A8A86" }}>· {pr.name}</span>}
+                        </div>
+                        <button onClick={() => { if (confirm("Eliminar esta nota?")) deleteSessionNote(n.id); }} className="ch" style={{ color: "#B83A3A", padding: 6, display: "flex" }} title="Eliminar"><Icon name="trash" size={14} /></button>
+                      </div>
+                      {n.domains && n.domains.length > 0 && (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
+                          {n.domains.map((d) => (
+                            <span key={d} style={{ padding: "3px 9px", borderRadius: 99, background: "#DCE7F0", color: "#1E3556", fontSize: 11, fontWeight: 500 }}>{d}</span>
+                          ))}
+                        </div>
+                      )}
+                      {[
+                        { l: "Trabalho realizado", v: n.work_done },
+                        { l: "Observações clínicas", v: n.observations },
+                        { l: "Evolução observada", v: n.progress },
+                        { l: "Plano para a próxima sessão", v: n.next_plan },
+                      ].filter((x) => x.v && x.v.trim()).map((x) => (
+                        <div key={x.l} style={{ marginTop: 8 }}>
+                          <div className="mono" style={{ fontSize: 10, color: "#8A8A86", marginBottom: 2 }}>{x.l.toUpperCase()}</div>
+                          <div style={{ fontSize: 13, color: "#3C3C3B", whiteSpace: "pre-wrap", lineHeight: 1.5 }}>{x.v}</div>
+                        </div>
+                      ))}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
+
           {myPays.length > 0 && (
             <Card pad={28}>
               <Eyebrow>— PAGAMENTOS</Eyebrow>

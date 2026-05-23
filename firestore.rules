@@ -26,6 +26,10 @@ service cloud.firestore {
     match /variable_costs/{id}     { allow read: if isSignedIn(); allow write: if isDirector(); }
     // Visitas: qualquer autenticado regista a sua; só a direção lê as métricas.
     match /visits/{id}             { allow read: if isDirector(); allow create: if isSignedIn(); allow update, delete: if false; }
+    // Clínico: dados sensíveis — leitura e escrita só a staff (direção + profissionais).
+    match /anamnesis/{id}          { allow read: if isStaff(); allow write: if isStaff(); }
+    match /session_notes/{id}      { allow read: if isStaff(); allow write: if isStaff(); }
+    match /intervention_plans/{id} { allow read: if isStaff(); allow write: if isStaff(); }
 
     // Lembretes: escritos só pela Cloud Function (Admin SDK ignora regras). Direção lê.
     match /reminders/{id}          { allow read: if isDirector(); allow write: if false; }
