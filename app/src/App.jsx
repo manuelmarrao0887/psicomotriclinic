@@ -5,10 +5,12 @@ import { Mark } from "./lib/icons.jsx";
 import Login from "./pages/Login.jsx";
 import AdminLayout from "./pages/AdminLayout.jsx";
 import Dashboard from "./pages/admin/Dashboard.jsx";
-import Placeholder from "./pages/admin/Placeholder.jsx";
 import Users, { UserDetail } from "./pages/admin/Users.jsx";
 import Team, { ProfDetail } from "./pages/admin/Team.jsx";
 import Patients, { PatientDetail } from "./pages/admin/Patients.jsx";
+import Agenda from "./pages/admin/Agenda.jsx";
+import Finance from "./pages/admin/Finance.jsx";
+import Requests from "./pages/admin/Requests.jsx";
 import Settings from "./pages/admin/Settings.jsx";
 
 const themeKey = "psm.theme";
@@ -137,9 +139,9 @@ export default function App() {
             <Route path="equipa/:profId" element={<ProfDetail />} />
             <Route path="pacientes" element={<Patients />} />
             <Route path="pacientes/:patientId" element={<PatientDetail />} />
-            <Route path="agenda" element={<Placeholder title="Agenda" />} />
-            <Route path="financeiro" element={<Placeholder title="Financeiro" />} />
-            <Route path="pedidos" element={<Placeholder title="Pedidos de troca" />} />
+            <Route path="agenda" element={<Agenda />} />
+            <Route path="financeiro" element={<Finance />} />
+            <Route path="pedidos" element={<Requests />} />
             <Route path="definicoes" element={<Settings theme={theme} setTheme={setTheme} />} />
           </Route>
         ) : (

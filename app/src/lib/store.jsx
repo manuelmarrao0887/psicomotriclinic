@@ -246,6 +246,16 @@ export function StoreProvider({ profile, children }) {
     setForm((f) => ({ ...f, newPw: p }));
   };
 
+  const approveRequest = async (id) => {
+    await sb.from("schedule_requests").update({ status: "aprovado" }).eq("id", id);
+    show("Pedido aprovado"); await load();
+  };
+
+  const rejectRequest = async (id) => {
+    await sb.from("schedule_requests").update({ status: "recusado" }).eq("id", id);
+    show("Pedido recusado", "error"); await load();
+  };
+
   const changeMyPassword = async () => {
     const pw = (form.newPw || "").trim();
     if (pw.length < 6) { show("Password: mínimo 6 caracteres", "error"); return; }
@@ -271,6 +281,7 @@ export function StoreProvider({ profile, children }) {
     addPayment, togglePayment,
     saveOverheads, saveVarCost,
     inviteUser,
+    approveRequest, rejectRequest,
     genPassword, changeMyPassword,
   };
 
