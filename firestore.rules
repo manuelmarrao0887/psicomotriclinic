@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isSignedIn() { return request.auth != null; }
+    function profile()    { return get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data; }
+    function role()       { return isSignedIn() ? profile().role : 'none'; }
+    function isDirector() { return isSignedIn() && role() == 'director'; }
+    function isStaff()    { return isSignedIn() && (role() == 'director' || role() == 'professional'); }
+
+    // Perfis: qualquer autenticado lê (listas de equipa/utilizadores).
+    // Cada um cria/edita o próprio doc; a direção edita qualquer um.
+    match /profiles/{uid} {
+      allow read: if isSignedIn();
+      allow create, update: if isDirector() || request.auth.uid == uid;
+      allow delete: if isDirector();
+    }
+
+    // Dados clínicos e financeiros: leitura a autenticados; escrita a staff.
+    match /professionals/{id}      { allow read: if isSignedIn(); allow write: if isStaff(); }
+    match /patients/{id}           { allow read: if isSignedIn(); allow write: if isStaff(); }
+    match /sessions/{id}           { allow read: if isSignedIn(); allow write: if isStaff(); }
+    match /payments/{id}           { allow read: if isSignedIn(); allow write: if isDirector(); }
+    match /schedule_requests/{id}  { allow read: if isSignedIn(); allow write: if isStaff(); }
+    match /overheads/{id}          { allow read: if isSignedIn(); allow write: if isDirector(); }
+    match /variable_costs/{id}     { allow read: if isSignedIn(); allow write: if isDirector(); }
+    // Visitas: qualquer autenticado regista a sua; só a direção lê as métricas.
+    match /visits/{id}             { allow read: if isDirector(); allow create: if isSignedIn(); allow update, delete: if false; }
+
+    // Lembretes: escritos só pela Cloud Function (Admin SDK ignora regras). Direção lê.
+    match /reminders/{id}          { allow read: if isDirector(); allow write: if false; }
+  }
+}
