@@ -1,7 +1,7 @@
 import { useStore } from "../lib/store.jsx";
 import { Btn, Field, Inp, Sel, Modal, Eyebrow } from "../lib/ui.jsx";
 import { Icon } from "../lib/icons.jsx";
-import { DAYS, HOURS, MONTHS_2026 } from "../lib/constants.js";
+import { DAYS, HOURS, MONTHS_2026, INSURANCES, INSURANCE_LABEL } from "../lib/constants.js";
 
 // Domínios de psicomotricidade — usados nas notas de sessão e plano.
 const PSM_DOMAINS = [
@@ -84,13 +84,42 @@ export default function ModalsHost() {
         </div>
       </Modal>
 
-      <Modal open={modal === "bulkPatient"} onClose={() => setModal(null)} title="Importar pacientes" eyebrow="— EM MASSA">
-        <p style={{ fontSize: 13.5, color: "#8A8A86", marginBottom: 10, lineHeight: 1.6 }}>
-          Uma linha por paciente. Formato: <b>Nome, Idade, Profissional, Dia, Hora, Tipo</b>.<br />
-          O <b>Profissional</b> tem de existir (pelo nome). Dias: {DAYS.join(" · ")}. Tipo: individual/grupo (opcional).
-        </p>
+      <Modal open={modal === "bulkPatient"} onClose={() => setModal(null)} title="Importar pacientes" eyebrow="— EM MASSA" width={620}>
+        {/* Toggle de formato */}
+        <div style={{ display: "flex", gap: 6, marginBottom: 14, padding: 4, background: "#FBF9F4", border: "1px solid #E5E0D4", borderRadius: 10 }}>
+          {[
+            { v: "schedule", l: "Com horário", h: "Nome, Idade, Profissional, Dia, Hora, Tipo" },
+            { v: "admin", l: "Só dados administrativos", h: "Nome, NIF, Seguro, Nº seguro" },
+          ].map((opt) => {
+            const active = (form.bulkMode || "schedule") === opt.v;
+            return (
+              <button key={opt.v} type="button" className="ch" onClick={() => set("bulkMode", opt.v)} style={{
+                flex: 1, padding: "8px 10px", borderRadius: 8, fontSize: 13, fontWeight: 500,
+                background: active ? "#152741" : "transparent",
+                color: active ? "#F7F4EE" : "#5A5A58",
+                border: "none", cursor: "pointer",
+              }}>{opt.l}</button>
+            );
+          })}
+        </div>
+
+        {(form.bulkMode || "schedule") === "admin" ? (
+          <p style={{ fontSize: 13.5, color: "#8A8A86", marginBottom: 10, lineHeight: 1.6 }}>
+            Uma linha por paciente. Formato: <b>Nome, NIF, Seguro, Nº seguro</b>.<br />
+            <b>Seguro</b> aceita: <b>ADSE</b>, <b>SAMS</b>, ou <b>ADM</b> (Assistência de Doença Militares). Pode ficar vazio.
+            Os pacientes ficam <i>sem horário</i> atribuído — depois editas para definir profissional e horário.
+          </p>
+        ) : (
+          <p style={{ fontSize: 13.5, color: "#8A8A86", marginBottom: 10, lineHeight: 1.6 }}>
+            Uma linha por paciente. Formato: <b>Nome, Idade, Profissional, Dia, Hora, Tipo</b>.<br />
+            O <b>Profissional</b> tem de existir (pelo nome). Dias: {DAYS.join(" · ")}. Tipo: individual/grupo (opcional).
+          </p>
+        )}
+
         <textarea value={form.bulk || ""} onChange={(e) => set("bulk", e.target.value)} rows={8}
-          placeholder={"Maria S., 12, Maria Santos, Segunda, 17:00, individual\nTiago R., 8, João Lopes, Terça, 10:00, grupo"}
+          placeholder={(form.bulkMode || "schedule") === "admin"
+            ? "Maria Silva, 245678901, ADSE, M-4421889\nJoão Pereira, 267781234, SAMS, S-9921003\nAna Costa, 289112344, ADM, ADM-553219"
+            : "Maria S., 12, Maria Santos, Segunda, 17:00, individual\nTiago R., 8, João Lopes, Terça, 10:00, grupo"}
           style={{ width: "100%", boxSizing: "border-box", padding: "12px 14px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FBF9F4", color: "#3C3C3B", fontFamily: "inherit", resize: "vertical" }} />
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 14 }}>
           <Btn variant="secondary" onClick={() => setModal(null)}>Cancelar</Btn>
@@ -112,8 +141,16 @@ export default function ModalsHost() {
         <Field label="Médico que segue o caso"><Inp placeholder="Ex: Dr. Pedro Almeida (Pediatria)" value={form.doctor || ""} onChange={(e) => set("doctor", e.target.value)} /></Field>
         <Field label="Outros profissionais que seguem o caso" hint="Separe vários com vírgula"><Inp placeholder="Ex: Terapia da fala · Inês Castro" value={form.others || ""} onChange={(e) => set("others", e.target.value)} /></Field>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
-          <Field label="Seguro de saúde"><Inp placeholder="Ex: Médis" value={form.insName || ""} onChange={(e) => set("insName", e.target.value)} /></Field>
-          <Field label="Número do seguro"><Inp placeholder="Ex: M-4421889" value={form.insNum || ""} onChange={(e) => set("insNum", e.target.value)} /></Field>
+          <Field label="Seguro de saúde">
+            <Sel value={INSURANCES.includes(form.insName) ? form.insName : ""} onChange={(v) => set("insName", v || null)}
+              options={INSURANCES.map((k) => ({ v: k, l: INSURANCE_LABEL[k] }))} placeholder="— Sem seguro / Outro —" />
+            {form.insName && !INSURANCES.includes(form.insName) && (
+              <div style={{ fontSize: 11.5, color: "#8A8A86", marginTop: 6 }}>
+                Valor atual: <b>{form.insName}</b> (não está nas opções; selecione um para substituir).
+              </div>
+            )}
+          </Field>
+          <Field label="Número do seguro"><Inp placeholder="Ex: 4421889" value={form.insNum || ""} onChange={(e) => set("insNum", e.target.value)} /></Field>
         </div>
 
         {((form.sessionType || "individual") === "grupo") ? (

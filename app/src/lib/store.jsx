@@ -2,7 +2,7 @@
 // Vive ao nível do AdminLayout — todas as páginas filhas usam `useStore()`.
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { sb } from "./firebase.js";
-import { AVATAR_BG } from "./constants.js";
+import { AVATAR_BG, normalizeInsurance, INSURANCES } from "./constants.js";
 
 const Ctx = createContext(null);
 export const useStore = () => useContext(Ctx);
@@ -190,21 +190,47 @@ export function StoreProvider({ profile, children }) {
   const addPatientsBulk = async () => {
     const lines = (form.bulk || "").split("\n").map((l) => l.trim()).filter(Boolean);
     if (!lines.length) return;
+    const mode = form.bulkMode || "schedule"; // "schedule" | "admin"
     let ok = 0; const errs = [];
     for (const line of lines) {
-      const [name, age, profName, day, hour, type] = line.split(/[,;\t]/).map((s) => (s || "").trim());
-      if (!name || !age || !profName || !day || !hour) { errs.push(`"${line}" — campos em falta`); continue; }
-      const prof = profs.find((p) => p.name.toLowerCase() === profName.toLowerCase());
-      if (!prof) { errs.push(`"${name}" — profissional "${profName}" não encontrado`); continue; }
-      const st = (type || "").toLowerCase().startsWith("grupo") ? "grupo" : "individual";
-      await sb.from("patients").insert({
-        name, age: parseInt(age) || null,
-        professional_id: prof.id, professional_ids: [prof.id],
-        session_type: st, day_of_week: day, hour,
-        periodicity: "Semanal", active: true,
-      });
-      ok++;
+      const cols = line.split(/[,;\t]/).map((s) => (s || "").trim());
+
+      if (mode === "admin") {
+        // Formato: Nome, NIF, Seguro, Nº seguro
+        const [name, nif, seguro, nrSeguro] = cols;
+        if (!name) { errs.push(`"${line}" — nome em falta`); continue; }
+        const insurance = seguro ? normalizeInsurance(seguro) : null;
+        if (seguro && !insurance) {
+          errs.push(`"${name}" — seguro "${seguro}" inválido. Aceita: ${INSURANCES.join(", ")}`);
+          continue;
+        }
+        await sb.from("patients").insert({
+          name,
+          nif: nif || null,
+          insurance_name: insurance,
+          insurance_number: nrSeguro || null,
+          session_type: "individual",
+          periodicity: "Semanal",
+          active: true,
+        });
+        ok++;
+      } else {
+        // Formato com horário: Nome, Idade, Profissional, Dia, Hora, Tipo
+        const [name, age, profName, day, hour, type] = cols;
+        if (!name || !age || !profName || !day || !hour) { errs.push(`"${line}" — campos em falta`); continue; }
+        const prof = profs.find((p) => p.name.toLowerCase() === profName.toLowerCase());
+        if (!prof) { errs.push(`"${name}" — profissional "${profName}" não encontrado`); continue; }
+        const st = (type || "").toLowerCase().startsWith("grupo") ? "grupo" : "individual";
+        await sb.from("patients").insert({
+          name, age: parseInt(age) || null,
+          professional_id: prof.id, professional_ids: [prof.id],
+          session_type: st, day_of_week: day, hour,
+          periodicity: "Semanal", active: true,
+        });
+        ok++;
+      }
     }
+    await audit("bulk_import_patients", "patients", `modo:${mode} · ${ok} ok · ${errs.length} ignorados`);
     setModal(null); setForm({});
     show(`${ok} paciente(s) importado(s)${errs.length ? ` · ${errs.length} ignorado(s)` : ""}`, errs.length ? "error" : "success");
     if (errs.length) console.warn("Importação de pacientes — ignorados:\n" + errs.join("\n"));

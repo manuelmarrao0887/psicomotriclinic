@@ -10,5 +10,20 @@ export const MES_PT = [
 ];
 export const MONTHS_2026 = MES_PT.map((m) => `${m} 2026`);
 export const RL = { director: "Diretor", professional: "Profissional", parent: "Responsável", admin: "Admin" };
+export const INSURANCES = ["ADSE", "SAMS", "ADM"];
+export const INSURANCE_LABEL = {
+  ADSE: "ADSE",
+  SAMS: "SAMS",
+  ADM: "Assistência de Doença Militares (ADM)",
+};
+// Normaliza: aceita variantes (acentos, caixa, nome longo) e devolve o código curto.
+export function normalizeInsurance(s) {
+  if (!s) return null;
+  const v = s.normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+  if (v === "adse") return "ADSE";
+  if (v === "sams") return "SAMS";
+  if (v === "adm" || v.startsWith("assistencia de doenca militares") || v.includes("militares")) return "ADM";
+  return null;
+}
 export const CLINIC_CUT = 0.2;
-export const APP_VERSION = "v2.0.0-alpha.1";
+export const APP_VERSION = "v2.0.0-alpha.5";

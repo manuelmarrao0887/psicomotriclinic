@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useStore } from "../../lib/store.jsx";
 import { Btn, Card, Eyebrow, Section, Av, Tag, Progress } from "../../lib/ui.jsx";
 import { Icon } from "../../lib/icons.jsx";
+import { INSURANCE_LABEL } from "../../lib/constants.js";
 
 const Row = ({ label, value }) => (
   <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", padding: "8px 0", borderTop: "1px solid #EFEBE2", fontSize: 13.5 }}>
@@ -131,7 +132,7 @@ export function PatientDetail() {
             <div style={{ marginTop: 10 }}>
               <Row label="Médico" value={pt.doctor} />
               <Row label="Outros profissionais" value={pt.other_profs} />
-              <Row label="Seguro de saúde" value={pt.insurance_name} />
+              <Row label="Seguro de saúde" value={INSURANCE_LABEL[pt.insurance_name] || pt.insurance_name} />
               <Row label="Nº de seguro" value={pt.insurance_number} />
             </div>
           </Card>
