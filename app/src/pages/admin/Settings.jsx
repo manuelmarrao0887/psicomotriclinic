@@ -3,7 +3,7 @@ import { useStore } from "../../lib/store.jsx";
 import { Btn, Card, Eyebrow, Section } from "../../lib/ui.jsx";
 import { Icon } from "../../lib/icons.jsx";
 import { ADMIN_EMAIL } from "../../lib/firebase.js";
-import { APP_VERSION } from "../../lib/constants.js";
+import { APP_VERSION, formatBuildDate } from "../../lib/constants.js";
 import { downloadCsv } from "../../lib/csv.js";
 
 export default function Settings({ theme, setTheme }) {
@@ -70,9 +70,9 @@ export default function Settings({ theme, setTheme }) {
   ];
 
   return (
-    <div style={{ padding: "28px 40px 60px" }}>
+    <div className="page-pad" style={{ padding: "28px 40px 60px" }}>
       <Section eyebrow="— ACÇÕES RÁPIDAS" title="O que queres fazer?" />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 14 }}>
+      <div className="settings-actions" style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 14 }}>
         {actions.map((a, i) => (
           <Card key={a.m} delay={i * 40} pad={22} onClick={() => { setForm({}); setModal(a.m); }}>
             <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
@@ -89,7 +89,7 @@ export default function Settings({ theme, setTheme }) {
 
       <Section eyebrow="— DADOS" title="Exportar para CSV" sub="Para contabilidade, backup, ou abrir no Excel/Sheets" />
       <Card pad={22}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10 }}>
+        <div className="settings-actions" style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 10 }}>
           {exports.map((e) => (
             <Btn key={e.label} variant="secondary" icon={<Icon name="copy" size={14} />} onClick={() => { e.run(); show(`Exportado: ${e.label}`); }}>
               {e.label}
@@ -120,7 +120,7 @@ export default function Settings({ theme, setTheme }) {
       </Card>
 
       <Section eyebrow="— SEGURANÇA & RGPD" title="Auditoria e privacidade" />
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 14 }}>
+      <div className="settings-actions" style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 14 }}>
         <Card pad={22} onClick={() => navigate("/auditoria")}>
           <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
             <div style={{ width: 52, height: 52, borderRadius: 12, background: "#DCE7F0", color: "#152741", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="shield" size={22} /></div>
@@ -145,9 +145,10 @@ export default function Settings({ theme, setTheme }) {
 
       <Section eyebrow="— SISTEMA" title="Sobre" />
       <Card pad={26}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 24 }}>
+        <div className="kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 24 }}>
           <div><Eyebrow>VERSÃO</Eyebrow><div style={{ fontSize: 15, color: "#152741", marginTop: 6, fontWeight: 500 }}>{APP_VERSION}</div></div>
-          <div><Eyebrow>ADMINISTRADOR</Eyebrow><div style={{ fontSize: 15, color: "#152741", marginTop: 6, fontWeight: 500 }}>{ADMIN_EMAIL}</div></div>
+          <div><Eyebrow>ATUALIZADO</Eyebrow><div style={{ fontSize: 15, color: "#152741", marginTop: 6, fontWeight: 500 }}>{formatBuildDate()}</div></div>
+          <div><Eyebrow>ADMINISTRADOR</Eyebrow><div style={{ fontSize: 15, color: "#152741", marginTop: 6, fontWeight: 500, wordBreak: "break-all" }}>{ADMIN_EMAIL}</div></div>
           <div><Eyebrow>WEB</Eyebrow><div style={{ fontSize: 15, color: "#152741", marginTop: 6, fontWeight: 500 }}>acasadapsicomotricidade.pt</div></div>
         </div>
       </Card>

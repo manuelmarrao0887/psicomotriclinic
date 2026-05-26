@@ -62,12 +62,12 @@ export default function Login() {
   };
 
   return (
-    <div style={{
+    <div className="login-grid" style={{
       minHeight: "100vh", display: "grid", gridTemplateColumns: "1.05fr 1fr",
       background: "#F7F4EE", opacity: v ? 1 : 0, transition: "opacity .4s",
     }}>
-      {/* LEFT — Brand panel */}
-      <div style={{
+      {/* LEFT — Brand panel (oculto em mobile) */}
+      <div className="login-brand" style={{
         background: "#152741", color: "#F7F4EE",
         padding: "44px 56px 44px",
         display: "flex", flexDirection: "column",
@@ -110,8 +110,18 @@ export default function Login() {
       </div>
 
       {/* RIGHT — Auth panel */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 48px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", padding: "40px 24px", paddingTop: "max(40px, calc(var(--safe-top) + 40px))" }}>
         <div style={{ width: "100%", maxWidth: 380 }}>
+          {/* Brand mark mobile-only — no topo do painel direito */}
+          <div className="only-mobile" style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 32 }}>
+            <Mark size={36} />
+            <div style={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
+              <span style={{ fontFamily: "DM Sans", fontWeight: 700, fontSize: 16, letterSpacing: "-0.01em", color: "#152741" }}>
+                PSICOMOTRI<span style={{ fontWeight: 400 }}>CLINIC</span>
+              </span>
+              <span className="mono" style={{ color: "#8A8A86", fontSize: 9, marginTop: 5 }}>A CASA · CLÍNICA · FORMAÇÃO</span>
+            </div>
+          </div>
 
           {mode === "login" && (
             <div className="fu">

@@ -26,4 +26,15 @@ export function normalizeInsurance(s) {
   return null;
 }
 export const CLINIC_CUT = 0.2;
-export const APP_VERSION = "v2.0.0-alpha.5";
+export const APP_VERSION = "v2.0.0-alpha.6";
+
+// Data/hora da última build — injectada pelo Vite em build (vite.config.js)
+// Em dev é o instante em que o servidor arrancou.
+// eslint-disable-next-line no-undef
+const _BUILD_ISO = typeof __BUILD_DATE__ !== "undefined" ? __BUILD_DATE__ : new Date().toISOString();
+export const BUILD_DATE = _BUILD_ISO;
+export function formatBuildDate(iso = _BUILD_ISO) {
+  const d = new Date(iso);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}

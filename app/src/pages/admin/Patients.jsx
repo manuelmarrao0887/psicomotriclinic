@@ -19,10 +19,10 @@ export default function Patients() {
   const filtered = pts.filter((p) => !search || p.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div style={{ padding: "28px 40px 60px" }}>
+    <div className="page-pad" style={{ padding: "28px 40px 60px" }}>
       <Section eyebrow="— CASOS" title={`Pacientes · ${pts.length}`} sub="Acompanhamentos em curso"
         right={<>
-          <div style={{ position: "relative", width: 260 }}>
+          <div className="only-desktop" style={{ position: "relative", width: 260 }}>
             <label htmlFor="patient-search" className="sr-only">Procurar paciente</label>
             <div aria-hidden="true" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#8A8A86", display: "flex" }}><Icon name="search" size={16} /></div>
             <input id="patient-search" type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Procurar paciente…" aria-label="Procurar paciente" style={{ width: "100%", padding: "10px 14px 10px 40px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FBF9F4" }} />
@@ -30,34 +30,51 @@ export default function Patients() {
           <Btn variant="secondary" icon={<Icon name="copy" size={15} />} onClick={() => { setForm({}); setModal("bulkPatient"); }}>Importar</Btn>
           <Btn icon={<Icon name="plus" size={16} />} onClick={() => { setForm({}); setModal("addPatient"); }}>Novo paciente</Btn>
         </>} />
-      <Card pad={0}>
-        <div role="row" style={{ display: "grid", gridTemplateColumns: "2fr 80px 2fr 2fr 1.2fr 1fr", padding: "14px 20px", background: "#EFEBE2", borderBottom: "1px solid #E5E0D4" }}>
-          <Eyebrow>Nome</Eyebrow><Eyebrow>Idade</Eyebrow><Eyebrow>Profissional</Eyebrow><Eyebrow>Horário</Eyebrow><Eyebrow>Tipo</Eyebrow><Eyebrow>&nbsp;</Eyebrow>
+
+      {/* Search mobile — full width abaixo do título */}
+      <div className="only-mobile" style={{ position: "relative", marginBottom: 14 }}>
+        <label htmlFor="patient-search-m" className="sr-only">Procurar paciente</label>
+        <div aria-hidden="true" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#8A8A86", display: "flex" }}><Icon name="search" size={16} /></div>
+        <input id="patient-search-m" type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Procurar paciente…" aria-label="Procurar paciente" style={{ width: "100%", padding: "12px 14px 12px 40px", borderRadius: 12, border: "1px solid #D9D3C5", background: "#FBF9F4" }} />
+      </div>
+
+      <Card pad={0} style={{ overflow: "hidden" }}>
+        <div data-mobile-cards="true">
+          <div role="row" data-mobile-row="header" style={{ display: "grid", gridTemplateColumns: "2fr 80px 2fr 2fr 1.2fr 1fr", padding: "14px 20px", background: "#EFEBE2", borderBottom: "1px solid #E5E0D4" }}>
+            <Eyebrow>Nome</Eyebrow><Eyebrow>Idade</Eyebrow><Eyebrow>Profissional</Eyebrow><Eyebrow>Horário</Eyebrow><Eyebrow>Tipo</Eyebrow><Eyebrow>&nbsp;</Eyebrow>
+          </div>
+          {filtered.map((p, i) => {
+            const ids = (p.professional_ids && p.professional_ids.length) ? p.professional_ids : (p.professional_id ? [p.professional_id] : []);
+            const names = ids.map((id) => profs.find((x) => x.id === id)?.name).filter(Boolean).join(" · ") || "—";
+            const open = () => navigate(`/pacientes/${p.id}`);
+            return (
+              <div key={p.id} role="button" tabIndex={0} aria-label={`Abrir ficha de ${p.name}`} data-mobile-row="row" className="ch" onClick={open}
+                onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } }}
+                style={{
+                  display: "grid", gridTemplateColumns: "2fr 80px 2fr 2fr 1.2fr 1fr",
+                  padding: "14px 20px", alignItems: "center", cursor: "pointer",
+                  borderBottom: i < filtered.length - 1 ? "1px solid #EFEBE2" : "none",
+                }}>
+                <span style={{ fontSize: 15, fontWeight: 600, color: "#152741" }}>{p.name}</span>
+                <span style={{ fontSize: 13, color: "#5A5A58" }}>
+                  <span className="only-mobile mono" style={{ fontSize: 10, color: "#8A8A86", marginRight: 6 }}>IDADE</span>
+                  {p.age} anos
+                </span>
+                <span style={{ fontSize: 13, color: "#5A5A58" }}>
+                  <span className="only-mobile mono" style={{ fontSize: 10, color: "#8A8A86", marginRight: 6 }}>PROFISSIONAL</span>
+                  {names}
+                </span>
+                <span style={{ fontSize: 13, color: "#5A5A58" }}>
+                  <span className="only-mobile mono" style={{ fontSize: 10, color: "#8A8A86", marginRight: 6 }}>HORÁRIO</span>
+                  {p.day_of_week} · {p.hour}
+                </span>
+                <span><Tag type={p.session_type === "individual" ? "sage" : "amber"}>{p.session_type === "individual" ? "Individual" : "Grupo"}</Tag></span>
+                <span className="only-desktop" style={{ textAlign: "right", color: "#B9CDE0" }} aria-hidden="true"><Icon name="arr" size={16} /></span>
+              </div>
+            );
+          })}
+          {filtered.length === 0 && <div style={{ padding: 40, textAlign: "center", color: "#8A8A86", fontSize: 14 }}>{search ? "Sem resultados para a procura." : "Sem pacientes. Use \"Novo paciente\"."}</div>}
         </div>
-        {filtered.map((p, i) => {
-          const ids = (p.professional_ids && p.professional_ids.length) ? p.professional_ids : (p.professional_id ? [p.professional_id] : []);
-          const names = ids.map((id) => profs.find((x) => x.id === id)?.name).filter(Boolean).join(" · ") || "—";
-          const open = () => navigate(`/pacientes/${p.id}`);
-          return (
-            <div key={p.id} role="button" tabIndex={0} aria-label={`Abrir ficha de ${p.name}`} className="ch" onClick={open}
-              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } }}
-              style={{
-                display: "grid", gridTemplateColumns: "2fr 80px 2fr 2fr 1.2fr 1fr",
-                padding: "14px 20px", alignItems: "center", cursor: "pointer",
-                borderBottom: i < filtered.length - 1 ? "1px solid #EFEBE2" : "none",
-              }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "#FBF9F4"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
-              <span style={{ fontSize: 14, fontWeight: 500, color: "#152741" }}>{p.name}</span>
-              <span style={{ fontSize: 13.5, color: "#5A5A58" }}>{p.age}</span>
-              <span style={{ fontSize: 13.5, color: "#5A5A58" }}>{names}</span>
-              <span style={{ fontSize: 13.5, color: "#5A5A58" }}>{p.day_of_week} · {p.hour}</span>
-              <span><Tag type={p.session_type === "individual" ? "sage" : "amber"}>{p.session_type === "individual" ? "Individual" : "Grupo"}</Tag></span>
-              <span style={{ textAlign: "right", color: "#B9CDE0" }} aria-hidden="true"><Icon name="arr" size={16} /></span>
-            </div>
-          );
-        })}
-        {filtered.length === 0 && <div style={{ padding: 40, textAlign: "center", color: "#8A8A86", fontSize: 14 }}>{search ? "Sem resultados para a procura." : "Sem pacientes. Use \"Novo paciente\"."}</div>}
       </Card>
     </div>
   );
@@ -89,11 +106,11 @@ export function PatientDetail() {
   const ini = pt.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
 
   return (
-    <div style={{ padding: "28px 40px 60px" }}>
-      <button onClick={() => navigate("/pacientes")} className="ch" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13.5, color: "#5A5A58", marginBottom: 18, padding: "6px 0" }}>
+    <div className="page-pad patient-detail" style={{ padding: "28px 40px 60px" }}>
+      <button onClick={() => navigate("/pacientes")} className="ch tap-target" style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, color: "#5A5A58", marginBottom: 18, padding: "6px 0" }}>
         <Icon name="back" size={16} /> Voltar a pacientes
       </button>
-      <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 24 }}>
+      <div className="patient-grid" style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 24 }}>
         <Card pad={28} style={{ textAlign: "center", height: "fit-content" }}>
           <Av t={ini} bg="#DCE7F0" sz={88} />
           <div className="serif" style={{ fontSize: 24, fontWeight: 300, color: "#152741", marginTop: 16, letterSpacing: "-0.02em" }}>{pt.name}</div>

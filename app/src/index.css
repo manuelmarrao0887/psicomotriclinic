@@ -5,43 +5,95 @@
   --line: #E5E0D4; --line-2: #D9D3C5;
   --accent: #E8A13C; --sage: #8DBF94; --sky: #B9CDE0;
   --err: #B83A3A; --warn: #C97A1F; --warn-soft: #F5E5CD;
+
+  /* Safe-area insets (iOS notch / home indicator) */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+
+  /* Layout chrome heights — usadas para reservar espaço nas páginas */
+  --topbar-h: 56px;
+  --tabbar-h: 64px;
 }
-* { margin: 0; padding: 0; box-sizing: border-box; }
+
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { height: 100%; }
 body {
-  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'DM Sans', system-ui, sans-serif;
   background: var(--cream); color: var(--ink);
-  -webkit-font-smoothing: antialiased;
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
   font-size: 15px; line-height: 1.55;
+  overscroll-behavior-y: none;
+  text-rendering: optimizeLegibility;
 }
 input, textarea, button, select { font-family: inherit; color: inherit; }
 button { background: none; border: none; cursor: pointer; }
 a { color: inherit; text-decoration: none; }
-.serif { font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif; font-weight: 300; letter-spacing: -0.02em; }
-.serif-it { font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif; font-weight: 400; font-style: italic; letter-spacing: -0.005em; }
-.mono { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; }
+
+/* Display / editorial — usado em h1, h2 e Stat */
+.serif {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 300; letter-spacing: -0.02em;
+}
+.serif-it {
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-weight: 400; font-style: italic; letter-spacing: -0.005em;
+}
+.mono {
+  font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+  font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase;
+}
+
+/* Scrollbars — discretas em desktop, escondidas em mobile (estilo iOS) */
 ::-webkit-scrollbar { width: 10px; height: 10px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--line-2); border-radius: 10px; border: 2px solid var(--cream); }
 ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* Animações iOS — easing spring-like */
 @keyframes fu { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
 @keyframes ti { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
-.fu { animation: fu .35s ease both; }
-.ch { transition: transform .12s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease; }
-.ch:active { transform: scale(.985); }
+@keyframes sheet-up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+.fu  { animation: fu .35s cubic-bezier(.32,.72,0,1) both; }
+.ch  { transition: transform .18s cubic-bezier(.32,.72,0,1), background .15s ease, border-color .15s ease, box-shadow .15s ease, color .15s ease; }
+.ch:active { transform: scale(.97); }
+
 input:focus, select:focus, textarea:focus { outline: none; border-color: var(--navy) !important; box-shadow: 0 0 0 3px rgba(21,39,65,.08); }
 button:disabled { cursor: not-allowed; opacity: .55; }
 button:focus-visible, a:focus-visible, [role="button"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
 input:focus-visible, select:focus-visible, textarea:focus-visible { outline: none; }
-.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
-.skip-link { position: absolute; left: 12px; top: -100px; z-index: 1000; background: var(--navy); color: var(--cream); padding: 10px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; transition: top .15s ease; }
+
+/* Acessibilidade */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+}
+.skip-link {
+  position: absolute; left: 12px; top: -100px; z-index: 1000;
+  background: var(--navy); color: var(--cream);
+  padding: 10px 14px; border-radius: 8px;
+  font-size: 13px; font-weight: 500;
+  transition: top .15s ease;
+}
 .skip-link:focus { top: 12px; outline: 2px solid var(--accent); outline-offset: 2px; }
+
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
-/* DARK MODE — sobrepor cores inline com seletores de atributo */
-html.dark { --cream: #0E1A2C; --paper: #1A2A44; --cream-2: #152741; --ink: #E8E3D7; --line: #2A3D5C; --line-2: #3A4D6C; }
+/* ─────────────────────────── DARK MODE ─────────────────────────── */
+html.dark {
+  --cream: #0E1A2C; --paper: #1A2A44; --cream-2: #152741;
+  --ink: #E8E3D7; --line: #2A3D5C; --line-2: #3A4D6C;
+}
 html.dark body { background: #0E1A2C; color: #E8E3D7; }
 html.dark [style*="background:#F7F4EE"], html.dark [style*="background: #F7F4EE"] { background: #0E1A2C !important; }
 html.dark [style*="background:#FBF9F4"], html.dark [style*="background: #FBF9F4"] { background: #1A2A44 !important; }
@@ -55,3 +107,98 @@ html.dark [style*="border:1px solid #EFEBE2"] { border-color: #22344E !important
 html.dark [style*="border:1px solid #D9D3C5"] { border-color: #3A4D6C !important; }
 html.dark input, html.dark select, html.dark textarea { color: #E8E3D7; }
 html.dark [style*="background:#152741"] { background: #08111F !important; }
+
+/* ─────────────────────────── RESPONSIVE / iOS-FEEL ───────────────────────────
+   Breakpoint principal: < 900px = mobile/tablet (bottom-tab UI)
+                       >= 900px  = desktop sidebar
+   Em mobile evitamos zoom em inputs (min 16px) e usamos safe-area-insets.
+─────────────────────────────────────────────────────────────────────────── */
+
+/* Estado mobile — controlado por classes adicionadas ao body via JS */
+.no-scroll { overflow: hidden; touch-action: none; }
+
+/* Mobile: ≤ 899px */
+@media (max-width: 899.98px) {
+  body { font-size: 16px; }
+  input, textarea, select { font-size: 16px !important; } /* impede zoom em iOS Safari */
+
+  /* Esconder scrollbar visual em mobile — feel nativo */
+  ::-webkit-scrollbar { width: 0; height: 0; display: none; }
+
+  /* Container hooks para o layout responsivo. As páginas usam estas classes
+     mas a maior parte do styling continua inline — convertemos progressivamente. */
+  .page-pad { padding: 16px 16px calc(var(--tabbar-h) + var(--safe-bottom) + 24px) !important; }
+
+  /* Tabelas em grid (Pacientes, etc.) convertem-se em cartões empilhados.
+     A grid é marcada com data-mobile="card" no <Card> exterior. */
+  [data-mobile-cards="true"] [data-mobile-row="header"] { display: none !important; }
+  [data-mobile-cards="true"] [data-mobile-row="row"] {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    padding: 14px 16px !important;
+    border-bottom: 1px solid #EFEBE2 !important;
+  }
+  [data-mobile-cards="true"] [data-mobile-row="row"] > span {
+    text-align: left !important;
+  }
+
+  /* Esconder elementos só-desktop */
+  .only-desktop { display: none !important; }
+}
+
+/* Desktop: ≥ 900px */
+@media (min-width: 900px) {
+  .only-mobile { display: none !important; }
+}
+
+/* Padding nativo para botões grandes em mobile (44px alvo táctil) */
+@media (max-width: 899.98px) {
+  .tap-target { min-height: 44px; min-width: 44px; }
+
+  /* Detalhe do paciente: empilhar coluna sidebar+conteúdo */
+  .patient-grid { grid-template-columns: 1fr !important; gap: 14px !important; }
+
+  /* Dashboard: KPI grid 2-col em vez de 4 */
+  .kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+
+  /* Section: título/CTA empilhados quando há espaço apertado */
+  .section-stack { flex-direction: column !important; align-items: stretch !important; gap: 12px !important; }
+  .section-stack > div:last-child { width: 100%; flex-wrap: wrap; }
+
+  /* Settings: actions 1-col */
+  .settings-actions { grid-template-columns: 1fr !important; }
+
+  /* Login: paineis empilhados */
+  .login-grid { grid-template-columns: 1fr !important; }
+  .login-brand { display: none !important; }
+}
+
+/* iOS polish — scroll smooth + momentum touch */
+@media (max-width: 899.98px) {
+  html, body { scroll-behavior: smooth; }
+  body { -webkit-overflow-scrolling: touch; }
+}
+
+/* iOS-style bottom sheet — aplicado por .bottom-sheet ao Modal em mobile */
+@media (max-width: 899.98px) {
+  .modal-overlay {
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+  .modal-panel {
+    max-width: 100% !important;
+    width: 100% !important;
+    max-height: 92vh !important;
+    border-radius: 20px 20px 0 0 !important;
+    animation: sheet-up .32s cubic-bezier(.32,.72,0,1) both !important;
+    padding-bottom: calc(var(--safe-bottom) + 8px);
+  }
+  /* Handle bar no topo do bottom sheet */
+  .modal-panel::before {
+    content: ""; display: block;
+    width: 36px; height: 5px; border-radius: 3px;
+    background: #D9D3C5;
+    margin: 8px auto 4px;
+  }
+}

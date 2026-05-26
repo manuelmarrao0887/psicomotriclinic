@@ -52,8 +52,8 @@ export default function Dashboard() {
     .slice(0, 6);
 
   return (
-    <div style={{ padding: "28px 40px 60px" }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 8 }}>
+    <div className="page-pad" style={{ padding: "28px 40px 60px" }}>
+      <div className="kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 8 }}>
         <Stat label="UTILIZADORES" value={activeUsers} accent="#8DBF94" trend="contas ativas" />
         <Stat label="PROFISSIONAIS" value={profs.length} accent="#B9CDE0" />
         <Stat label="PACIENTES" value={pts.length} accent="#E8A13C" trend="casos ativos" />
@@ -62,7 +62,7 @@ export default function Dashboard() {
 
       <Section eyebrow="— ATIVIDADE" title="Visitas por período" sub="Acessos à plataforma ao longo do tempo" />
       <Card pad={22}>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16 }}>
+        <div className="kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 16 }}>
           {PERIODS.map((p) => (
             <div key={p.l}>
               <div className="mono" style={{ fontSize: 10.5, color: "#8A8A86" }}>{p.l.toUpperCase()}</div>
@@ -79,7 +79,7 @@ export default function Dashboard() {
         {birthdays.length === 0 ? (
           <div style={{ fontSize: 13.5, color: "#8A8A86" }}>Sem aniversários nos próximos 30 dias.</div>
         ) : (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 }}>
+          <div className="kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12 }}>
             {birthdays.map(({ p, days, age }) => {
               const ini = p.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
               const d = p.birth_date ? new Date(p.birth_date) : null;

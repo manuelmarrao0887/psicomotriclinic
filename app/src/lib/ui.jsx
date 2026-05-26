@@ -75,13 +75,13 @@ export const Progress = ({ pct, color = "#152741", h = 6, bg = "#EFEBE2" }) => (
 );
 
 export const Section = ({ eyebrow, title, sub, right }) => (
-  <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", margin: "36px 0 18px", gap: 16 }}>
+  <div className="section-stack" style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", margin: "28px 0 16px", gap: 16 }}>
     <div style={{ flex: 1, minWidth: 0 }}>
       {eyebrow && <div style={{ marginBottom: 6 }}><Eyebrow>{eyebrow}</Eyebrow></div>}
-      <div className="serif" style={{ fontSize: 26, fontWeight: 300, color: "#152741", lineHeight: 1.1, letterSpacing: "-0.02em" }}>{title}</div>
+      <div className="serif" style={{ fontSize: 24, fontWeight: 300, color: "#152741", lineHeight: 1.1, letterSpacing: "-0.02em" }}>{title}</div>
       {sub && <div style={{ fontSize: 14, color: "#8A8A86", marginTop: 4 }}>{sub}</div>}
     </div>
-    {right && <div style={{ display: "flex", gap: 10 }}>{right}</div>}
+    {right && <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>{right}</div>}
   </div>
 );
 
@@ -96,11 +96,13 @@ export const Toast = ({ msg, type = "success" }) => {
       aria-live={isError ? "assertive" : "polite"}
       aria-atomic="true"
       style={{
-        position: "fixed", bottom: 32, right: 32,
+        position: "fixed",
+        bottom: "max(32px, calc(var(--tabbar-h) + var(--safe-bottom) + 16px))",
+        right: 16, left: 16,
         background: bg, color: c, padding: "14px 22px 14px 18px",
         borderRadius: 12, fontSize: 14, fontWeight: 500,
         zIndex: 999, boxShadow: "0 12px 36px rgba(21,39,65,.25)",
-        animation: "ti .3s ease", maxWidth: 380,
+        animation: "ti .3s ease", maxWidth: 380, marginLeft: "auto",
         borderLeft: `3px solid ${bar}`,
         display: "flex", alignItems: "center", gap: 10,
     }}>{msg}</div>
@@ -177,6 +179,7 @@ export const Modal = ({ open, onClose, title, eyebrow, children, width = 520 }) 
       role="dialog"
       aria-modal="true"
       aria-label={typeof title === "string" ? title : undefined}
+      className="modal-overlay"
       style={{
         position: "fixed", inset: 0, background: "rgba(21,39,65,.4)", backdropFilter: "blur(4px)",
         zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24,
@@ -185,7 +188,7 @@ export const Modal = ({ open, onClose, title, eyebrow, children, width = 520 }) 
       onKeyDown={(e) => { if (e.key === "Escape") onClose?.(); }}
       tabIndex={-1}
     >
-      <div onClick={(e) => e.stopPropagation()} style={{
+      <div onClick={(e) => e.stopPropagation()} className="modal-panel" style={{
         background: "#FBF9F4", borderRadius: 18,
         width: "100%", maxWidth: width, maxHeight: "86vh",
         overflowY: "auto", animation: "ti .25s ease both",
@@ -197,7 +200,7 @@ export const Modal = ({ open, onClose, title, eyebrow, children, width = 520 }) 
             {eyebrow && <div style={{ marginBottom: 8 }}><Eyebrow>{eyebrow}</Eyebrow></div>}
             <div className="serif" style={{ fontSize: 24, fontWeight: 300, color: "#152741", lineHeight: 1.15, letterSpacing: "-0.02em" }}>{title}</div>
           </div>
-          <button onClick={onClose} aria-label="Fechar" style={{ padding: 6, color: "#8A8A86", borderRadius: 8, display: "flex" }} className="ch"><Icon name="x" size={20} /></button>
+          <button onClick={onClose} aria-label="Fechar" style={{ padding: 6, color: "#8A8A86", borderRadius: 8, display: "flex" }} className="ch tap-target"><Icon name="x" size={20} /></button>
         </div>
         <div style={{ padding: "12px 28px 28px" }}>{children}</div>
       </div>
