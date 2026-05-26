@@ -5,6 +5,7 @@ import { Eyebrow, Av, Toast } from "../lib/ui.jsx";
 import { APP_VERSION, formatBuildDate } from "../lib/constants.js";
 import { StoreProvider, useStore } from "../lib/store.jsx";
 import ModalsHost from "../components/ModalsHost.jsx";
+import ErrorBoundary from "../components/ErrorBoundary.jsx";
 
 // 8 secções para a sidebar (desktop). No mobile mostramos 4 principais na tab bar
 // e o resto via menu "Mais" para evitar uma tab bar entupida (padrão iOS).
@@ -147,7 +148,7 @@ function LayoutInner({ profile, onLogout, theme, setTheme }) {
                 {title.s && <p style={{ fontSize: 14.5, color: "#8A8A86", marginTop: 6 }}>{title.s}</p>}
               </div>
             )}
-            <Outlet />
+            <ErrorBoundary key={location.pathname}><Outlet /></ErrorBoundary>
           </main>
         </div>
       )}
@@ -194,7 +195,7 @@ function LayoutInner({ profile, onLogout, theme, setTheme }) {
           )}
 
           <main id="main" style={{ flex: 1, paddingBottom: 0 }}>
-            <Outlet />
+            <ErrorBoundary key={location.pathname}><Outlet /></ErrorBoundary>
           </main>
 
           {/* Bottom tab bar — 4 primários + "Mais" */}
