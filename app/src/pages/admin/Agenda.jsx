@@ -33,12 +33,21 @@ export default function Agenda() {
                       const ids = (p.professional_ids && p.professional_ids.length) ? p.professional_ids : (p.professional_id ? [p.professional_id] : []);
                       const pr = profs.find((x) => x.id === ids[0]);
                       const firstName = pr?.name?.split(" ")[0] || "—";
+                      const open = () => navigate(`/pacientes/${p.id}`);
                       return (
-                        <div key={p.id} className="ch" onClick={() => navigate(`/pacientes/${p.id}`)} style={{
-                          padding: "7px 9px", borderRadius: 7,
-                          background: pr?.avatar_color || "#DCE7F0",
-                          marginBottom: 4, fontSize: 12, cursor: "pointer",
-                        }}>
+                        <div
+                          key={p.id}
+                          role="button"
+                          tabIndex={0}
+                          aria-label={`${p.name}, ${d} às ${h}, ${p.session_type === "individual" ? "individual" : "grupo"}, com ${firstName}`}
+                          className="ch"
+                          onClick={open}
+                          onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } }}
+                          style={{
+                            padding: "7px 9px", borderRadius: 7,
+                            background: pr?.avatar_color || "#DCE7F0",
+                            marginBottom: 4, fontSize: 12, cursor: "pointer",
+                          }}>
                           <div style={{ fontWeight: 500, color: "#152741" }}>{p.name}</div>
                           <div style={{ color: "#5A5A58", fontSize: 11, marginTop: 1 }}>
                             {firstName}{ids.length > 1 ? ` +${ids.length - 1}` : ""} · {p.session_type === "individual" ? "Indiv." : "Grupo"}

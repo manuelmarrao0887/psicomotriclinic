@@ -84,11 +84,20 @@ export default function Dashboard() {
               const ini = p.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
               const d = p.birth_date ? new Date(p.birth_date) : null;
               const label = d ? `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}` : "";
+              const open = () => navigate(`/pacientes/${p.id}`);
               return (
-                <div key={p.id} className="ch" onClick={() => navigate(`/pacientes/${p.id}`)} style={{
-                  display: "flex", alignItems: "center", gap: 12,
-                  padding: 12, borderRadius: 10, background: "#FBF9F4", border: "1px solid #EFEBE2", cursor: "pointer",
-                }}>
+                <div
+                  key={p.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`Abrir ficha de ${p.name}, ${days === 0 ? "faz anos hoje" : days === 1 ? "faz anos amanhã" : `faz anos em ${days} dias`}`}
+                  className="ch"
+                  onClick={open}
+                  onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } }}
+                  style={{
+                    display: "flex", alignItems: "center", gap: 12,
+                    padding: 12, borderRadius: 10, background: "#FBF9F4", border: "1px solid #EFEBE2", cursor: "pointer",
+                  }}>
                   <Av t={ini} bg="#F5D9A8" sz={40} />
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 14, fontWeight: 500, color: "#152741" }}>{p.name}</div>

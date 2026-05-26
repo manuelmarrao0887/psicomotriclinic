@@ -31,6 +31,14 @@ a { color: inherit; text-decoration: none; }
 .ch:active { transform: scale(.985); }
 input:focus, select:focus, textarea:focus { outline: none; border-color: var(--navy) !important; box-shadow: 0 0 0 3px rgba(21,39,65,.08); }
 button:disabled { cursor: not-allowed; opacity: .55; }
+button:focus-visible, a:focus-visible, [role="button"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline: none; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+.skip-link { position: absolute; left: 12px; top: -100px; z-index: 1000; background: var(--navy); color: var(--cream); padding: 10px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; transition: top .15s ease; }
+.skip-link:focus { top: 12px; outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
 
 /* DARK MODE — sobrepor cores inline com seletores de atributo */
 html.dark { --cream: #0E1A2C; --paper: #1A2A44; --cream-2: #152741; --ink: #E8E3D7; --line: #2A3D5C; --line-2: #3A4D6C; }

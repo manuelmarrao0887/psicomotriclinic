@@ -53,7 +53,9 @@ function useProfile() {
     if (p && p.active === false) {
       await sb.auth.signOut();
       setProfile(null);
-      alert("Esta conta está desativada. Contacte a direção.");
+      if (typeof window !== "undefined" && !window.location.pathname.startsWith("/login")) {
+        window.location.replace("/login?disabled=1");
+      }
       return;
     }
     setProfile(p);

@@ -40,7 +40,8 @@ function LayoutInner({ profile, onLogout, theme, setTheme }) {
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", minHeight: "100vh", background: "#F7F4EE" }}>
-      <aside style={{
+      <a href="#main" className="skip-link">Saltar para o conteúdo principal</a>
+      <aside aria-label="Navegação principal" style={{
         background: "#152741", color: "#F7F4EE",
         display: "flex", flexDirection: "column",
         padding: "22px 16px 18px",
@@ -60,20 +61,20 @@ function LayoutInner({ profile, onLogout, theme, setTheme }) {
         </div>
 
         <div style={{ padding: "0 6px 8px" }}><Eyebrow color="rgba(247,244,238,.4)">— NAVEGAÇÃO</Eyebrow></div>
-        <nav style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
+        <nav aria-label="Secções" style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
           {items.map((it) => (
             <NavLink key={it.id} to={it.to} className="ch" style={({ isActive }) => ({
               display: "flex", alignItems: "center", gap: 12,
               padding: "10px 12px", borderRadius: 9,
               background: isActive ? "rgba(247,244,238,.08)" : "transparent",
-              color: isActive ? "#F7F4EE" : "rgba(247,244,238,.65)",
+              color: isActive ? "#F7F4EE" : "rgba(247,244,238,.78)",
               fontSize: 14, fontWeight: isActive ? 500 : 400,
               textDecoration: "none", position: "relative",
             })}>
               {({ isActive }) => (
                 <>
-                  {isActive && <span style={{ position: "absolute", left: -16, top: 8, bottom: 8, width: 3, background: "#E8A13C", borderRadius: "0 3px 3px 0" }} />}
-                  <span style={{ display: "flex", color: isActive ? "#E8A13C" : "rgba(247,244,238,.5)" }}><Icon name={it.icon} size={18} /></span>
+                  {isActive && <span aria-hidden="true" style={{ position: "absolute", left: -16, top: 8, bottom: 8, width: 3, background: "#E8A13C", borderRadius: "0 3px 3px 0" }} />}
+                  <span aria-hidden="true" style={{ display: "flex", color: isActive ? "#E8A13C" : "rgba(247,244,238,.65)" }}><Icon name={it.icon} size={18} /></span>
                   <span style={{ flex: 1 }}>{it.label}</span>
                 </>
               )}
@@ -81,23 +82,38 @@ function LayoutInner({ profile, onLogout, theme, setTheme }) {
           ))}
         </nav>
 
-        <div style={{ padding: "14px 12px", borderTop: "1px solid rgba(247,244,238,.08)", marginTop: 14, display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ padding: "14px 12px", borderTop: "1px solid rgba(247,244,238,.08)", marginTop: 14, display: "flex", alignItems: "center", gap: 8 }}>
           <Av t={profile?.full_name?.split(" ").map((w) => w[0]).join("").slice(0, 2) || "A"} bg="#E8A13C" sz={36} color="#152741" />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: 13.5, fontWeight: 500, color: "#F7F4EE", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{profile?.full_name || "Admin"}</div>
-            <div style={{ fontSize: 11.5, color: "rgba(247,244,238,.5)" }}>{profile?.role === "director" ? "Diretor" : "Admin"}</div>
+            <div style={{ fontSize: 11.5, color: "rgba(247,244,238,.7)" }}>{profile?.role === "director" ? "Diretor" : "Admin"}</div>
           </div>
-          <button onClick={onLogout} className="ch" style={{ padding: 7, borderRadius: 8, color: "rgba(247,244,238,.55)", display: "flex" }} title="Terminar sessão"><Icon name="logout" size={18} /></button>
+          <button
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="ch"
+            aria-label={theme === "dark" ? "Mudar para modo claro" : "Mudar para modo escuro"}
+            title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+            style={{ padding: 7, borderRadius: 8, color: "rgba(247,244,238,.78)", display: "flex" }}
+          >
+            <Icon name={theme === "dark" ? "sun" : "moon"} size={17} />
+          </button>
+          <button
+            onClick={onLogout}
+            className="ch"
+            aria-label="Terminar sessão"
+            title="Terminar sessão"
+            style={{ padding: 7, borderRadius: 8, color: "rgba(247,244,238,.78)", display: "flex" }}
+          >
+            <Icon name="logout" size={18} />
+          </button>
         </div>
 
-        <div style={{ padding: "6px 12px 0", fontSize: 10, lineHeight: 1.5, color: "rgba(247,244,238,.35)" }}>
-          <span style={{ fontWeight: 600, color: "rgba(247,244,238,.5)" }}>{APP_VERSION}</span>
-          <span style={{ margin: "0 5px" }}>·</span>
-          <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} style={{ color: "rgba(247,244,238,.5)", textDecoration: "underline", fontSize: 10 }}>{theme === "dark" ? "modo claro" : "modo escuro"}</button>
+        <div style={{ padding: "6px 12px 0", fontSize: 10, lineHeight: 1.5, color: "rgba(247,244,238,.55)" }}>
+          <span style={{ fontWeight: 600, color: "rgba(247,244,238,.7)" }}>{APP_VERSION}</span>
         </div>
       </aside>
 
-      <main>
+      <main id="main">
         {title.t && (
           <div style={{ padding: "32px 40px 24px", borderBottom: "1px solid #E5E0D4", background: "#F7F4EE" }}>
             {title.e && <div style={{ marginBottom: 8 }}><Eyebrow>{title.e}</Eyebrow></div>}

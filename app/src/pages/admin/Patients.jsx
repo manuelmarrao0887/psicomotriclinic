@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useStore } from "../../lib/store.jsx";
-import { Btn, Card, Eyebrow, Section, Av, Tag, Progress } from "../../lib/ui.jsx";
+import { Btn, Card, Eyebrow, Section, Av, Tag, Progress, ConfirmModal } from "../../lib/ui.jsx";
 import { Icon } from "../../lib/icons.jsx";
 import { INSURANCE_LABEL } from "../../lib/constants.js";
 
@@ -23,25 +23,29 @@ export default function Patients() {
       <Section eyebrow="— CASOS" title={`Pacientes · ${pts.length}`} sub="Acompanhamentos em curso"
         right={<>
           <div style={{ position: "relative", width: 260 }}>
-            <div style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#8A8A86", display: "flex" }}><Icon name="search" size={16} /></div>
-            <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Procurar paciente…" style={{ width: "100%", padding: "10px 14px 10px 40px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FBF9F4" }} />
+            <label htmlFor="patient-search" className="sr-only">Procurar paciente</label>
+            <div aria-hidden="true" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#8A8A86", display: "flex" }}><Icon name="search" size={16} /></div>
+            <input id="patient-search" type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Procurar paciente…" aria-label="Procurar paciente" style={{ width: "100%", padding: "10px 14px 10px 40px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FBF9F4" }} />
           </div>
           <Btn variant="secondary" icon={<Icon name="copy" size={15} />} onClick={() => { setForm({}); setModal("bulkPatient"); }}>Importar</Btn>
           <Btn icon={<Icon name="plus" size={16} />} onClick={() => { setForm({}); setModal("addPatient"); }}>Novo paciente</Btn>
         </>} />
       <Card pad={0}>
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 80px 2fr 2fr 1.2fr 1fr", padding: "14px 20px", background: "#EFEBE2", borderBottom: "1px solid #E5E0D4" }}>
+        <div role="row" style={{ display: "grid", gridTemplateColumns: "2fr 80px 2fr 2fr 1.2fr 1fr", padding: "14px 20px", background: "#EFEBE2", borderBottom: "1px solid #E5E0D4" }}>
           <Eyebrow>Nome</Eyebrow><Eyebrow>Idade</Eyebrow><Eyebrow>Profissional</Eyebrow><Eyebrow>Horário</Eyebrow><Eyebrow>Tipo</Eyebrow><Eyebrow>&nbsp;</Eyebrow>
         </div>
         {filtered.map((p, i) => {
           const ids = (p.professional_ids && p.professional_ids.length) ? p.professional_ids : (p.professional_id ? [p.professional_id] : []);
           const names = ids.map((id) => profs.find((x) => x.id === id)?.name).filter(Boolean).join(" · ") || "—";
+          const open = () => navigate(`/pacientes/${p.id}`);
           return (
-            <div key={p.id} className="ch" onClick={() => navigate(`/pacientes/${p.id}`)} style={{
-              display: "grid", gridTemplateColumns: "2fr 80px 2fr 2fr 1.2fr 1fr",
-              padding: "14px 20px", alignItems: "center", cursor: "pointer",
-              borderBottom: i < filtered.length - 1 ? "1px solid #EFEBE2" : "none",
-            }}
+            <div key={p.id} role="button" tabIndex={0} aria-label={`Abrir ficha de ${p.name}`} className="ch" onClick={open}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); } }}
+              style={{
+                display: "grid", gridTemplateColumns: "2fr 80px 2fr 2fr 1.2fr 1fr",
+                padding: "14px 20px", alignItems: "center", cursor: "pointer",
+                borderBottom: i < filtered.length - 1 ? "1px solid #EFEBE2" : "none",
+              }}
               onMouseEnter={(e) => { e.currentTarget.style.background = "#FBF9F4"; }}
               onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
               <span style={{ fontSize: 14, fontWeight: 500, color: "#152741" }}>{p.name}</span>
@@ -49,7 +53,7 @@ export default function Patients() {
               <span style={{ fontSize: 13.5, color: "#5A5A58" }}>{names}</span>
               <span style={{ fontSize: 13.5, color: "#5A5A58" }}>{p.day_of_week} · {p.hour}</span>
               <span><Tag type={p.session_type === "individual" ? "sage" : "amber"}>{p.session_type === "individual" ? "Individual" : "Grupo"}</Tag></span>
-              <span style={{ textAlign: "right", color: "#B9CDE0" }}><Icon name="arr" size={16} /></span>
+              <span style={{ textAlign: "right", color: "#B9CDE0" }} aria-hidden="true"><Icon name="arr" size={16} /></span>
             </div>
           );
         })}
@@ -63,6 +67,8 @@ export function PatientDetail() {
   const { patientId } = useParams();
   const navigate = useNavigate();
   const { pts, profs, pays, anamneses, notes, plans, deletePatient, deleteSessionNote, setForm, setModal } = useStore();
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [noteToDelete, setNoteToDelete] = useState(null);
   const pt = pts.find((x) => x.id === patientId);
   const anam = anamneses.find((a) => a.patient_id === patientId);
   const ptNotes = notes.filter((n) => n.patient_id === patientId).sort((a, b) => (a.date < b.date ? 1 : -1));
@@ -113,7 +119,7 @@ export function PatientDetail() {
               }}>Editar dados</Btn>
             <Btn size="sm" variant="secondary" icon={<Icon name="wallet" size={14} />} onClick={() => { setForm({ pt: pt.id }); setModal("addPayment"); }}>Registar pagamento</Btn>
             <Btn size="sm" variant="danger" icon={<Icon name="trash" size={14} />}
-              onClick={() => { if (confirm(`Eliminar o paciente "${pt.name}"? Esta ação é permanente e apaga o caso clínico. Os pagamentos associados não são removidos.`)) { deletePatient(pt.id); navigate("/pacientes"); } }}>
+              onClick={() => setConfirmDelete(true)}>
               Eliminar paciente
             </Btn>
           </div>
@@ -272,7 +278,7 @@ export function PatientDetail() {
                           </Tag>
                           {pr && <span style={{ fontSize: 12, color: "#8A8A86" }}>· {pr.name}</span>}
                         </div>
-                        <button onClick={() => { if (confirm("Eliminar esta nota?")) deleteSessionNote(n.id); }} className="ch" style={{ color: "#B83A3A", padding: 6, display: "flex" }} title="Eliminar"><Icon name="trash" size={14} /></button>
+                        <button onClick={() => setNoteToDelete(n.id)} aria-label="Eliminar nota de sessão" className="ch" style={{ color: "#B83A3A", padding: 6, display: "flex" }} title="Eliminar"><Icon name="trash" size={14} /></button>
                       </div>
                       {n.domains && n.domains.length > 0 && (
                         <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 8 }}>
@@ -315,6 +321,25 @@ export function PatientDetail() {
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        onConfirm={() => { deletePatient(pt.id); setConfirmDelete(false); navigate("/pacientes"); }}
+        eyebrow="— AÇÃO PERMANENTE"
+        title={`Eliminar paciente "${pt.name}"?`}
+        message="Esta ação é permanente e apaga o caso clínico associado (anamnese, plano e notas de sessão). Os pagamentos associados não são removidos."
+        confirmLabel="Eliminar paciente"
+      />
+      <ConfirmModal
+        open={!!noteToDelete}
+        onClose={() => setNoteToDelete(null)}
+        onConfirm={() => { deleteSessionNote(noteToDelete); setNoteToDelete(null); }}
+        eyebrow="— ELIMINAR NOTA"
+        title="Eliminar esta nota de sessão?"
+        message="A nota é apagada definitivamente do registo clínico."
+        confirmLabel="Eliminar"
+      />
     </div>
   );
 }

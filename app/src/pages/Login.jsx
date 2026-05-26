@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { sb } from "../lib/firebase.js";
 import { Mark, Icon } from "../lib/icons.jsx";
 import { Eyebrow, Field, Btn } from "../lib/ui.jsx";
@@ -15,6 +15,7 @@ const ptErr = (m) => {
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [v, setV] = useState(false);
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
@@ -24,6 +25,8 @@ export default function Login() {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+
+  const disabledAccount = new URLSearchParams(location.search).get("disabled") === "1";
 
   useEffect(() => { setTimeout(() => setV(true), 60); }, []);
 
@@ -116,6 +119,13 @@ export default function Login() {
               <h2 className="serif" style={{ fontSize: 36, fontWeight: 300, color: "#152741", margin: "10px 0 8px", letterSpacing: "-0.025em" }}>Bem-vindo<span className="serif-it">.</span></h2>
               <p style={{ fontSize: 14.5, color: "#8A8A86", marginBottom: 28 }}>Aceda à plataforma com a sua conta.</p>
 
+              {disabledAccount && (
+                <div role="alert" aria-live="polite" style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 14px", borderRadius: 10, background: "#F5E5CD", color: "#C97A1F", fontSize: 13, marginBottom: 16, lineHeight: 1.5, border: "1px solid #ECC58A" }}>
+                  <Icon name="warn" size={18} />
+                  <span><b>Conta desativada.</b> Por favor contacte a direção para reativar o acesso.</span>
+                </div>
+              )}
+
               <Field label="Email ou utilizador">
                 <input type="text" placeholder="nome@email.pt  ou  utilizador" value={email} onChange={(e) => setEmail(e.target.value)} style={fieldSt} />
               </Field>
@@ -123,7 +133,7 @@ export default function Login() {
                 <input type="password" placeholder="••••••••" value={pw} onChange={(e) => setPw(e.target.value)} onKeyDown={(e) => e.key === "Enter" && doLogin()} style={fieldSt} />
               </Field>
 
-              {err && <div style={{ padding: "10px 12px", borderRadius: 10, background: "#F4E0E0", color: "#B83A3A", fontSize: 13, marginBottom: 12 }}>{err}</div>}
+              {err && <div role="alert" aria-live="assertive" style={{ padding: "10px 12px", borderRadius: 10, background: "#F4E0E0", color: "#B83A3A", fontSize: 13, marginBottom: 12 }}>{err}</div>}
 
               <Btn onClick={doLogin} disabled={busy} style={{ width: "100%", padding: "13px 0" }}>{busy ? "A entrar..." : "Entrar"}</Btn>
 
@@ -174,7 +184,7 @@ export default function Login() {
                 </span>
               </label>
 
-              {err && <div style={{ padding: "10px 12px", borderRadius: 10, background: "#F4E0E0", color: "#B83A3A", fontSize: 13, marginBottom: 12 }}>{err}</div>}
+              {err && <div role="alert" aria-live="assertive" style={{ padding: "10px 12px", borderRadius: 10, background: "#F4E0E0", color: "#B83A3A", fontSize: 13, marginBottom: 12 }}>{err}</div>}
 
               <Btn onClick={doRegister} disabled={busy || !name || !email || !pw || !selRole || !acceptedTerms} style={{ width: "100%", padding: "13px 0" }}>{busy ? "A criar..." : "Criar conta"}</Btn>
 
