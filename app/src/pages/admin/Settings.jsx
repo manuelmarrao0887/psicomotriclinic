@@ -1,10 +1,12 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStore } from "../../lib/store.jsx";
-import { Btn, Card, Eyebrow, Section } from "../../lib/ui.jsx";
+import { Btn, Card, Eyebrow, Section, Tag } from "../../lib/ui.jsx";
 import { Icon } from "../../lib/icons.jsx";
 import { ADMIN_EMAIL } from "../../lib/firebase.js";
 import { APP_VERSION, formatBuildDate } from "../../lib/constants.js";
 import { downloadCsv } from "../../lib/csv.js";
+import { RELEASE_NOTES } from "../../lib/releaseNotes.js";
 
 export default function Settings({ theme, setTheme }) {
   const { setForm, setModal, pts, profs, pays, notes, plans, anamneses, users, show } = useStore();
@@ -143,6 +145,13 @@ export default function Settings({ theme, setTheme }) {
         </Card>
       </div>
 
+      <Section eyebrow="— NOTAS DE VERSÃO" title="Release notes" sub="Histórico do que foi adicionado, alterado e removido em cada versão" />
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        {RELEASE_NOTES.map((r, i) => (
+          <ReleaseNoteCard key={r.version} note={r} defaultOpen={i === 0} />
+        ))}
+      </div>
+
       <Section eyebrow="— SISTEMA" title="Sobre" />
       <Card pad={26}>
         <div className="kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 24 }}>
@@ -152,6 +161,71 @@ export default function Settings({ theme, setTheme }) {
           <div><Eyebrow>WEB</Eyebrow><div style={{ fontSize: 15, color: "#152741", marginTop: 6, fontWeight: 500 }}>acasadapsicomotricidade.pt</div></div>
         </div>
       </Card>
+    </div>
+  );
+}
+
+function ReleaseNoteCard({ note, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen);
+  const { added = [], changed = [], removed = [] } = note;
+  const count = added.length + changed.length + removed.length;
+
+  return (
+    <Card pad={0} style={{ overflow: "hidden" }}>
+      <button
+        onClick={() => setOpen((o) => !o)}
+        className="ch tap-target"
+        aria-expanded={open}
+        style={{
+          width: "100%", padding: "16px 18px",
+          display: "flex", alignItems: "center", gap: 14,
+          background: "transparent", textAlign: "left",
+        }}
+      >
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 15, fontWeight: 600, color: "#152741" }}>{note.version}</span>
+            <span className="mono" style={{ fontSize: 10.5, color: "#8A8A86" }}>{note.date}</span>
+            <Tag type="default">{count} {count === 1 ? "alteração" : "alterações"}</Tag>
+          </div>
+          <div style={{ fontSize: 14, color: "#3C3C3B", lineHeight: 1.4 }}>{note.title}</div>
+        </div>
+        <span aria-hidden="true" style={{ color: "#8A8A86", transition: "transform .2s", transform: open ? "rotate(90deg)" : "rotate(0deg)", display: "flex" }}>
+          <Icon name="arr" size={18} />
+        </span>
+      </button>
+
+      {open && (
+        <div style={{ padding: "0 18px 18px", borderTop: "1px solid #EFEBE2" }}>
+          {added.length > 0 && (
+            <ReleaseSection eyebrow="— ADICIONADO" items={added} color="#3D7A4A" bg="#DDEADE" />
+          )}
+          {changed.length > 0 && (
+            <ReleaseSection eyebrow="— ALTERADO" items={changed} color="#C97A1F" bg="#F5E5CD" />
+          )}
+          {removed.length > 0 && (
+            <ReleaseSection eyebrow="— REMOVIDO" items={removed} color="#B83A3A" bg="#F4E0E0" />
+          )}
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function ReleaseSection({ eyebrow, items, color, bg }) {
+  return (
+    <div style={{ marginTop: 16 }}>
+      <div style={{ display: "inline-flex", alignItems: "center", padding: "3px 9px", borderRadius: 99, background: bg, color, fontSize: 10.5, fontWeight: 600, letterSpacing: ".08em", marginBottom: 10 }}>
+        {eyebrow}
+      </div>
+      <ul style={{ listStyle: "none", padding: 0, margin: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+        {items.map((line, i) => (
+          <li key={i} style={{ display: "flex", gap: 10, fontSize: 13.5, color: "#3C3C3B", lineHeight: 1.55 }}>
+            <span aria-hidden="true" style={{ color, marginTop: 4, flexShrink: 0 }}>•</span>
+            <span style={{ flex: 1 }}>{line}</span>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

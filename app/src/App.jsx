@@ -2,6 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { sb, ADMIN_EMAIL } from "./lib/firebase.js";
 import { Mark } from "./lib/icons.jsx";
+import { StoreProvider, useStore } from "./lib/store.jsx";
+import { Toast } from "./lib/ui.jsx";
+import ModalsHost from "./components/ModalsHost.jsx";
+import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import Login from "./pages/Login.jsx";
 import AdminLayout from "./pages/AdminLayout.jsx";
 import Dashboard from "./pages/admin/Dashboard.jsx";
@@ -14,6 +18,8 @@ import Requests from "./pages/admin/Requests.jsx";
 import Settings from "./pages/admin/Settings.jsx";
 import AuditPage from "./pages/admin/AuditPage.jsx";
 import Privacy from "./pages/Privacy.jsx";
+import ParentPortal from "./pages/portals/ParentPortal.jsx";
+import ProfessionalPortal from "./pages/portals/ProfessionalPortal.jsx";
 
 const themeKey = "psm.theme";
 
@@ -99,11 +105,16 @@ function VisitLogger({ profile }) {
   return null;
 }
 
+function ToastHost() {
+  const { toast } = useStore();
+  if (!toast) return null;
+  return <Toast msg={toast.m} type={toast.t} />;
+}
+
 export default function App() {
   const { profile, loading, logout } = useProfile();
   const [theme, setTheme] = useTheme();
   const location = useLocation();
-  const navigate = useNavigate();
 
   if (loading) {
     return (
@@ -128,47 +139,50 @@ export default function App() {
   }
 
   const isAdmin = profile.role === "director" || profile.email === ADMIN_EMAIL;
+  const isProfessional = profile.role === "professional";
+  const isParent = profile.role === "parent";
 
-  // Rotas privadas — director/admin
+  // Rotas privadas — store + modals + toast à raiz para todos os portais.
   return (
-    <>
+    <StoreProvider profile={profile}>
       <VisitLogger profile={profile} />
-      <Routes>
+      <ErrorBoundary>
         {isAdmin ? (
-          <Route path="/" element={<AdminLayout profile={profile} onLogout={logout} theme={theme} setTheme={setTheme} />}>
-            <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="dashboard" element={<Dashboard />} />
-            <Route path="utilizadores" element={<Users />} />
-            <Route path="utilizadores/:uid" element={<UserDetail />} />
-            <Route path="equipa" element={<Team />} />
-            <Route path="equipa/:profId" element={<ProfDetail />} />
-            <Route path="pacientes" element={<Patients />} />
-            <Route path="pacientes/:patientId" element={<PatientDetail />} />
-            <Route path="agenda" element={<Agenda />} />
-            <Route path="financeiro" element={<Finance />} />
-            <Route path="pedidos" element={<Requests />} />
-            <Route path="definicoes" element={<Settings theme={theme} setTheme={setTheme} />} />
-            <Route path="auditoria" element={<AuditPage />} />
-            <Route path="privacidade" element={<Privacy />} />
-          </Route>
+          <Routes>
+            <Route path="/" element={<AdminLayout profile={profile} onLogout={logout} theme={theme} setTheme={setTheme} />}>
+              <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route path="dashboard" element={<Dashboard />} />
+              <Route path="utilizadores" element={<Users />} />
+              <Route path="utilizadores/:uid" element={<UserDetail />} />
+              <Route path="equipa" element={<Team />} />
+              <Route path="equipa/:profId" element={<ProfDetail />} />
+              <Route path="pacientes" element={<Patients />} />
+              <Route path="pacientes/:patientId" element={<PatientDetail />} />
+              <Route path="agenda" element={<Agenda />} />
+              <Route path="financeiro" element={<Finance />} />
+              <Route path="pedidos" element={<Requests />} />
+              <Route path="definicoes" element={<Settings theme={theme} setTheme={setTheme} />} />
+              <Route path="auditoria" element={<AuditPage />} />
+              <Route path="privacidade" element={<Privacy />} />
+            </Route>
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        ) : isProfessional ? (
+          <ProfessionalPortal profile={profile} onLogout={logout} theme={theme} setTheme={setTheme} />
+        ) : isParent ? (
+          <ParentPortal profile={profile} onLogout={logout} theme={theme} setTheme={setTheme} />
         ) : (
-          <Route path="*" element={<NonAdminLanding profile={profile} onLogout={logout} />} />
+          // Papel não reconhecido — fallback
+          <div style={{ padding: 40, textAlign: "center" }}>
+            <Mark size={48} />
+            <h1 style={{ marginTop: 16, fontSize: 22, color: "#152741" }}>Papel não definido</h1>
+            <p style={{ color: "#8A8A86", marginTop: 8 }}>Contacte a direção para activar o seu acesso.</p>
+            <button onClick={logout} style={{ marginTop: 18, padding: "10px 18px", background: "#152741", color: "#F7F4EE", borderRadius: 10 }}>Terminar sessão</button>
+          </div>
         )}
-        <Route path="*" element={<Navigate to={isAdmin ? "/dashboard" : "/"} replace />} />
-      </Routes>
-    </>
-  );
-}
-
-function NonAdminLanding({ profile, onLogout }) {
-  return (
-    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16, padding: 32, textAlign: "center" }}>
-      <Mark size={48} />
-      <h1 className="serif" style={{ fontSize: 28, fontWeight: 300, color: "#152741" }}>Olá, {profile.full_name}</h1>
-      <p style={{ color: "#8A8A86", maxWidth: 480 }}>
-        O portal de {profile.role === "professional" ? "Profissional" : "Responsável"} está em construção nesta versão do Hub. Em breve.
-      </p>
-      <button onClick={onLogout} className="ch" style={{ padding: "10px 18px", background: "#152741", color: "#F7F4EE", borderRadius: 10, fontSize: 14 }}>Terminar sessão</button>
-    </div>
+      </ErrorBoundary>
+      <ModalsHost />
+      <ToastHost />
+    </StoreProvider>
   );
 }

@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Mark, Icon } from "../lib/icons.jsx";
-import { Eyebrow, Av, Toast } from "../lib/ui.jsx";
+import { Eyebrow, Av } from "../lib/ui.jsx";
 import { APP_VERSION, formatBuildDate } from "../lib/constants.js";
-import { StoreProvider, useStore } from "../lib/store.jsx";
-import ModalsHost from "../components/ModalsHost.jsx";
 import ErrorBoundary from "../components/ErrorBoundary.jsx";
 
 // 8 secções para a sidebar (desktop). No mobile mostramos 4 principais na tab bar
@@ -53,11 +51,10 @@ function useIsMobile() {
   return is;
 }
 
-function LayoutInner({ profile, onLogout, theme, setTheme }) {
+export default function AdminLayout({ profile, onLogout, theme, setTheme }) {
   const location = useLocation();
   const navigate = useNavigate();
   const title = pickTitle(location.pathname);
-  const { toast } = useStore();
   const isMobile = useIsMobile();
   const [moreOpen, setMoreOpen] = useState(false);
 
@@ -334,16 +331,6 @@ function LayoutInner({ profile, onLogout, theme, setTheme }) {
         </div>
       )}
 
-      <ModalsHost />
-      {toast && <Toast msg={toast.m} type={toast.t} />}
     </>
-  );
-}
-
-export default function AdminLayout(props) {
-  return (
-    <StoreProvider profile={props.profile}>
-      <LayoutInner {...props} />
-    </StoreProvider>
   );
 }

@@ -1,0 +1,358 @@
+import { Fragment, useMemo, useState } from "react";
+import { Mark, Icon } from "../../lib/icons.jsx";
+import { Av, Btn, Card, Eyebrow, Tag } from "../../lib/ui.jsx";
+import { APP_VERSION, formatBuildDate, DAYS, HOURS } from "../../lib/constants.js";
+import { useStore } from "../../lib/store.jsx";
+
+// Match profile.full_name → professionals.name (case-insensitive, trim).
+function findMyProfRecord(profs, fullName) {
+  if (!fullName) return null;
+  const me = fullName.toLowerCase().trim();
+  return profs.find((p) => (p.name || "").toLowerCase().trim() === me)
+      || profs.find((p) => (p.name || "").toLowerCase().includes(me))
+      || null;
+}
+
+export default function ProfessionalPortal({ profile, onLogout, theme, setTheme }) {
+  const { pts, profs, notes, setForm, setModal } = useStore();
+  const [tab, setTab] = useState("home"); // home | agenda | patients | account
+
+  const myProfRecord = useMemo(() => findMyProfRecord(profs, profile?.full_name), [profs, profile?.full_name]);
+  const myProfId = myProfRecord?.id;
+
+  const myPatients = useMemo(() => {
+    if (!myProfId) return [];
+    return pts.filter((p) => {
+      const ids = p.professional_ids?.length ? p.professional_ids : (p.professional_id ? [p.professional_id] : []);
+      return ids.includes(myProfId);
+    });
+  }, [pts, myProfId]);
+
+  const todayIdx = (new Date().getDay() + 6) % 7;
+  const todayLabel = todayIdx < DAYS.length ? DAYS[todayIdx] : null;
+  const todaysSessions = useMemo(() => {
+    if (!todayLabel) return [];
+    return myPatients
+      .filter((p) => p.day_of_week === todayLabel)
+      .sort((a, b) => (a.hour || "").localeCompare(b.hour || ""));
+  }, [myPatients, todayLabel]);
+
+  const initials = profile?.full_name?.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "P";
+
+  const openSessionNote = (patient) => {
+    setForm({
+      snPatientId: patient.id,
+      snDate: new Date().toISOString().slice(0, 10),
+      snStatus: "realizada",
+      snProf: myProfId || patient.professional_id || "",
+      snDomains: [],
+      snWork: "", snObs: "", snProgress: "", snNext: "",
+    });
+    setModal("sessionNote");
+  };
+
+  return (
+    <>
+      <a href="#main" className="skip-link">Saltar para o conteúdo</a>
+
+      <header style={{
+        position: "sticky", top: 0, zIndex: 50,
+        paddingTop: "var(--safe-top)",
+        background: "rgba(247,244,238,.88)",
+        backdropFilter: "saturate(180%) blur(20px)",
+        WebkitBackdropFilter: "saturate(180%) blur(20px)",
+        borderBottom: "1px solid rgba(229,224,212,.6)",
+      }}>
+        <div style={{ height: "var(--topbar-h)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", maxWidth: 1100, margin: "0 auto" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <Mark size={28} />
+            <span style={{ fontFamily: "DM Sans", fontWeight: 700, fontSize: 15, letterSpacing: "-0.01em", color: "#152741" }}>
+              PSICOMOTRI<span style={{ fontWeight: 400 }}>CLINIC</span>
+            </span>
+          </div>
+          <button onClick={() => setTab("account")} className="ch tap-target" aria-label="Conta" style={{ borderRadius: 999, padding: 0 }}>
+            <Av t={initials} bg="#8DBF94" sz={34} color="#152741" />
+          </button>
+        </div>
+      </header>
+
+      <main id="main" style={{ maxWidth: 1100, margin: "0 auto", padding: "12px 16px calc(var(--tabbar-h) + var(--safe-bottom) + 24px)" }}>
+        <div style={{ padding: "8px 2px 6px" }}>
+          <Eyebrow>— PORTAL PROFISSIONAL</Eyebrow>
+          <h1 className="serif" style={{ fontSize: 30, fontWeight: 300, color: "#152741", letterSpacing: "-0.025em", lineHeight: 1.08, marginTop: 6 }}>
+            Bem-vindo{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}<span className="serif-it">.</span>
+          </h1>
+          <p style={{ fontSize: 14, color: "#8A8A86", marginTop: 4 }}>
+            {myProfId
+              ? `${myPatients.length} ${myPatients.length === 1 ? "caso atribuído" : "casos atribuídos"} · ${todaysSessions.length} ${todaysSessions.length === 1 ? "sessão hoje" : "sessões hoje"}`
+              : "Aguardar associação ao registo da equipa."}
+          </p>
+        </div>
+
+        {tab === "home"     && <ProHome myProfId={myProfId} myPatients={myPatients} todaysSessions={todaysSessions} todayLabel={todayLabel} notes={notes} onSessionNote={openSessionNote} />}
+        {tab === "agenda"   && <ProAgenda myPatients={myPatients} profs={profs} />}
+        {tab === "patients" && <ProPatients myPatients={myPatients} notes={notes} onSessionNote={openSessionNote} />}
+        {tab === "account"  && <ProAccount profile={profile} onLogout={onLogout} theme={theme} setTheme={setTheme} />}
+      </main>
+
+      <nav aria-label="Navegação" style={{
+        position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 50,
+        paddingBottom: "var(--safe-bottom)",
+        background: "rgba(247,244,238,.92)",
+        backdropFilter: "saturate(180%) blur(20px)",
+        WebkitBackdropFilter: "saturate(180%) blur(20px)",
+        borderTop: "1px solid rgba(229,224,212,.7)",
+      }}>
+        <div style={{ height: "var(--tabbar-h)", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", maxWidth: 1100, margin: "0 auto" }}>
+          {[
+            { id: "home",     label: "Início",    icon: "home" },
+            { id: "agenda",   label: "Agenda",    icon: "calendar" },
+            { id: "patients", label: "Pacientes", icon: "clipboard" },
+            { id: "account",  label: "Conta",     icon: "users" },
+          ].map((t) => (
+            <button
+              key={t.id}
+              onClick={() => setTab(t.id)}
+              className="ch tap-target"
+              aria-pressed={tab === t.id}
+              aria-label={t.label}
+              style={{
+                display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
+                color: tab === t.id ? "#E8A13C" : "#5A5A58",
+                fontSize: 10.5, fontWeight: tab === t.id ? 600 : 500,
+              }}
+            >
+              <Icon name={t.icon} size={22} />
+              <span style={{ color: tab === t.id ? "#E8A13C" : "#5A5A58" }}>{t.label}</span>
+            </button>
+          ))}
+        </div>
+      </nav>
+    </>
+  );
+}
+
+// ─────────── Sub-componentes ───────────
+
+function ProHome({ myProfId, myPatients, todaysSessions, todayLabel, notes, onSessionNote }) {
+  if (!myProfId) return <NoProfRecord />;
+
+  // Próximos: amanhã + dia seguinte
+  const tomorrowIdx = ((new Date().getDay() + 6) % 7 + 1) % 7;
+  const dayAfterIdx = ((new Date().getDay() + 6) % 7 + 2) % 7;
+  const upcoming = [tomorrowIdx, dayAfterIdx]
+    .filter((idx) => idx < DAYS.length)
+    .flatMap((idx) => myPatients
+      .filter((p) => p.day_of_week === DAYS[idx])
+      .map((p) => ({ p, day: DAYS[idx] }))
+    )
+    .sort((a, b) => (a.p.hour || "").localeCompare(b.p.hour || ""));
+
+  return (
+    <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 16 }}>
+      <Card pad={18}>
+        <Eyebrow>— HOJE · {todayLabel?.toUpperCase()}</Eyebrow>
+        {todaysSessions.length === 0 ? (
+          <div style={{ marginTop: 10, fontSize: 14, color: "#8A8A86" }}>Sem sessões marcadas para hoje.</div>
+        ) : (
+          <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+            {todaysSessions.map((p) => (
+              <SessionRow key={p.id} patient={p} onSessionNote={() => onSessionNote(p)} />
+            ))}
+          </div>
+        )}
+      </Card>
+
+      {upcoming.length > 0 && (
+        <Card pad={18}>
+          <Eyebrow>— PRÓXIMOS DIAS</Eyebrow>
+          <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+            {upcoming.map(({ p, day }) => (
+              <div key={`${day}-${p.id}`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: "#FBF9F4", border: "1px solid #EFEBE2", borderRadius: 12 }}>
+                <div style={{ fontSize: 12, color: "#8A8A86", width: 70 }} className="mono">{day.slice(0, 3).toUpperCase()} {p.hour}</div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: "#152741", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
+                  <div style={{ fontSize: 12, color: "#8A8A86" }}>{p.session_type === "individual" ? "Individual" : "Grupo"}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Stats compactos */}
+      <div className="kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
+        <CompactStat label="MEUS CASOS" value={myPatients.length} accent="#8DBF94" />
+        <CompactStat label="HOJE" value={todaysSessions.length} accent="#E8A13C" />
+        <CompactStat label="NOTAS (30D)" value={notesByMeRecent(notes, myProfId, 30)} accent="#B9CDE0" />
+      </div>
+    </div>
+  );
+}
+
+function notesByMeRecent(notes, myId, days) {
+  if (!myId) return 0;
+  const cutoff = Date.now() - days * 86400000;
+  return notes.filter((n) => n.professional_id === myId && n.date && new Date(n.date).getTime() >= cutoff).length;
+}
+
+function CompactStat({ label, value, accent }) {
+  return (
+    <div style={{ background: "#FBF9F4", borderRadius: 14, padding: "14px 14px 12px", border: "1px solid #E5E0D4", position: "relative", overflow: "hidden" }}>
+      {accent && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: accent }} />}
+      <Eyebrow>{label}</Eyebrow>
+      <div className="serif" style={{ fontSize: 28, fontWeight: 300, color: "#152741", lineHeight: 1, letterSpacing: "-0.025em", marginTop: 8 }}>{value}</div>
+    </div>
+  );
+}
+
+function SessionRow({ patient, onSessionNote }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: "#FBF9F4", border: "1px solid #EFEBE2", borderRadius: 12 }}>
+      <div style={{ fontSize: 13, color: "#152741", fontWeight: 600, width: 56 }} className="mono">{patient.hour}</div>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 15, fontWeight: 600, color: "#152741", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{patient.name}</div>
+        <div style={{ fontSize: 12, color: "#8A8A86", marginTop: 2 }}>
+          {patient.age} anos · {patient.session_type === "individual" ? "Individual" : "Grupo"}
+        </div>
+      </div>
+      <Btn size="sm" variant="secondary" icon={<Icon name="plus" size={13} />} onClick={onSessionNote}>Nota</Btn>
+    </div>
+  );
+}
+
+function ProAgenda({ myPatients, profs }) {
+  // Grelha semana × horas — versão simples (escondem-se células vazias visualmente).
+  const slot = (day, hour) => myPatients.filter((p) => p.day_of_week === day && p.hour === hour);
+
+  // Tira horas em que ninguém tem nada para reduzir scroll
+  const usefulHours = HOURS.filter((h) => DAYS.some((d) => slot(d, h).length > 0));
+  const finalHours = usefulHours.length > 0 ? usefulHours : HOURS;
+
+  return (
+    <div style={{ marginTop: 14 }}>
+      <Card pad={0} style={{ overflow: "auto" }}>
+        <div style={{ display: "grid", gridTemplateColumns: `70px repeat(${DAYS.length}, minmax(120px, 1fr))`, minWidth: 600 }}>
+          <div style={{ padding: "10px 8px", background: "#EFEBE2", borderBottom: "1px solid #E5E0D4" }}><Eyebrow>Hora</Eyebrow></div>
+          {DAYS.map((d) => (
+            <div key={d} style={{ padding: "10px 12px", background: "#EFEBE2", borderBottom: "1px solid #E5E0D4", borderLeft: "1px solid #E5E0D4" }}>
+              <Eyebrow>{d.slice(0, 3)}</Eyebrow>
+            </div>
+          ))}
+          {finalHours.map((h) => (
+            <Fragment key={h}>
+              <div style={{ padding: "10px 8px", borderBottom: "1px solid #EFEBE2", fontSize: 12, color: "#5A5A58", fontWeight: 500 }} className="mono">{h}</div>
+              {DAYS.map((d) => {
+                const items = slot(d, h);
+                return (
+                  <div key={d + h} style={{ padding: 6, borderLeft: "1px solid #EFEBE2", borderBottom: "1px solid #EFEBE2", minHeight: 54, background: items.length === 0 ? "transparent" : "#FBF9F4" }}>
+                    {items.map((p) => (
+                      <div key={p.id} style={{ padding: "5px 7px", borderRadius: 6, background: "#DCE7F0", marginBottom: 4, fontSize: 12 }}>
+                        <div style={{ fontWeight: 500, color: "#152741", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
+                        <div style={{ color: "#5A5A58", fontSize: 10.5, marginTop: 1 }}>{p.session_type === "individual" ? "Indiv." : "Grupo"}</div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })}
+            </Fragment>
+          ))}
+        </div>
+      </Card>
+    </div>
+  );
+}
+
+function ProPatients({ myPatients, notes, onSessionNote }) {
+  const [search, setSearch] = useState("");
+  const filtered = myPatients.filter((p) => !search || p.name.toLowerCase().includes(search.toLowerCase()));
+  if (myPatients.length === 0) return <NoProfRecord />;
+
+  return (
+    <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 14 }}>
+      <div style={{ position: "relative" }}>
+        <label htmlFor="pro-search" className="sr-only">Procurar paciente</label>
+        <div aria-hidden="true" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#8A8A86", display: "flex" }}><Icon name="search" size={16} /></div>
+        <input id="pro-search" type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Procurar paciente…" aria-label="Procurar paciente" style={{ width: "100%", padding: "12px 14px 12px 40px", borderRadius: 12, border: "1px solid #D9D3C5", background: "#FBF9F4" }} />
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+        {filtered.map((p) => {
+          const ini = p.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+          const myNotesCount = notes.filter((n) => n.patient_id === p.id).length;
+          return (
+            <Card key={p.id} pad={14}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <Av t={ini} bg="#DCE7F0" sz={44} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 15, fontWeight: 600, color: "#152741" }}>{p.name}</div>
+                  <div style={{ fontSize: 12.5, color: "#8A8A86", marginTop: 2 }}>
+                    {p.age} anos · {p.day_of_week} · {p.hour} · {p.session_type === "individual" ? "Individual" : "Grupo"}
+                  </div>
+                </div>
+                <Tag type="default">{myNotesCount} {myNotesCount === 1 ? "nota" : "notas"}</Tag>
+              </div>
+              <div style={{ marginTop: 12 }}>
+                <Btn size="sm" variant="secondary" icon={<Icon name="plus" size={13} />} onClick={() => onSessionNote(p)} style={{ width: "100%" }}>Registar nota de sessão</Btn>
+              </div>
+            </Card>
+          );
+        })}
+        {filtered.length === 0 && <div style={{ fontSize: 13.5, color: "#8A8A86", textAlign: "center", padding: 24 }}>Sem resultados.</div>}
+      </div>
+    </div>
+  );
+}
+
+function ProAccount({ profile, onLogout, theme, setTheme }) {
+  return (
+    <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 14, maxWidth: 480, marginLeft: "auto", marginRight: "auto" }}>
+      <Card pad={18}>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <Av t={profile?.full_name?.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "P"} bg="#8DBF94" sz={56} color="#152741" />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div className="serif" style={{ fontSize: 18, fontWeight: 500, color: "#152741" }}>{profile?.full_name}</div>
+            <div style={{ fontSize: 12.5, color: "#8A8A86", marginTop: 2 }}>{profile?.email}</div>
+            <Tag type="professional">Profissional</Tag>
+          </div>
+        </div>
+      </Card>
+
+      <Card pad={0}>
+        <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="ch tap-target" style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", color: "#3C3C3B", fontSize: 15, fontWeight: 500, textAlign: "left", borderBottom: "1px solid #EFEBE2" }}>
+          <span style={{ color: "#5A5A58", display: "flex" }}><Icon name={theme === "dark" ? "sun" : "moon"} size={20} /></span>
+          <span style={{ flex: 1 }}>{theme === "dark" ? "Modo claro" : "Modo escuro"}</span>
+          <Icon name="arr" size={16} color="#B9CDE0" />
+        </button>
+        <button onClick={() => window.open("/privacidade", "_blank")} className="ch tap-target" style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", color: "#3C3C3B", fontSize: 15, fontWeight: 500, textAlign: "left", borderBottom: "1px solid #EFEBE2" }}>
+          <span style={{ color: "#5A5A58", display: "flex" }}><Icon name="shield" size={20} /></span>
+          <span style={{ flex: 1 }}>Política de Privacidade</span>
+          <Icon name="arr" size={16} color="#B9CDE0" />
+        </button>
+        <button onClick={onLogout} className="ch tap-target" style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", color: "#B83A3A", fontSize: 15, fontWeight: 500, textAlign: "left" }}>
+          <span style={{ display: "flex" }}><Icon name="logout" size={20} /></span>
+          <span style={{ flex: 1 }}>Terminar sessão</span>
+        </button>
+      </Card>
+
+      <div style={{ fontSize: 11, color: "#8A8A86", textAlign: "center", padding: "8px 24px 24px", lineHeight: 1.55 }}>
+        <div><b style={{ color: "#5A5A58" }}>{APP_VERSION}</b></div>
+        <div style={{ marginTop: 2 }}>Atualizado: {formatBuildDate()}</div>
+      </div>
+    </div>
+  );
+}
+
+function NoProfRecord() {
+  return (
+    <Card pad={22} style={{ marginTop: 18, textAlign: "center" }}>
+      <div style={{ width: 56, height: 56, borderRadius: 28, background: "#F5E5CD", color: "#C97A1F", display: "inline-flex", alignItems: "center", justifyContent: "center", margin: "0 auto 12px" }}>
+        <Icon name="users" size={26} />
+      </div>
+      <div className="serif" style={{ fontSize: 20, fontWeight: 500, color: "#152741" }}>Conta sem registo na equipa</div>
+      <p style={{ fontSize: 13.5, color: "#5A5A58", lineHeight: 1.6, marginTop: 8, maxWidth: 360, marginLeft: "auto", marginRight: "auto" }}>
+        Não encontrámos um registo de profissional com o seu nome. Contacte a direção para associar a sua conta ao perfil de terapeuta.
+      </p>
+    </Card>
+  );
+}
