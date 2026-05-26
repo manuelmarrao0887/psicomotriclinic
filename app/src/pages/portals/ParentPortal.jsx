@@ -5,14 +5,18 @@ import { APP_VERSION, formatBuildDate, DAYS, HOURS } from "../../lib/constants.j
 import { useStore } from "../../lib/store.jsx";
 import { sb } from "../../lib/firebase.js";
 
-// Match case-insensitive + trim: o nome do responsável (profile.full_name)
-// deve aparecer em parent_mother ou parent_father do paciente.
-function isMyChild(patient, parentName) {
+// 1. Verifica parent_user_ids (vínculo explícito feito pelo director — preferido).
+// 2. Fallback: match case-insensitive entre profile.full_name e
+//    parent_mother/parent_father do paciente.
+function isMyChild(patient, parentName, parentUserId) {
+  if (parentUserId && Array.isArray(patient.parent_user_ids) && patient.parent_user_ids.includes(parentUserId)) {
+    return true;
+  }
   if (!parentName) return false;
   const p = parentName.toLowerCase().trim();
   const m = (patient.parent_mother || "").toLowerCase();
   const f = (patient.parent_father || "").toLowerCase();
-  return m.includes(p) || f.includes(p) || p.includes(m) || p.includes(f);
+  return (m && m.includes(p)) || (f && f.includes(p)) || (p && (p.includes(m) || p.includes(f)));
 }
 
 // Próxima ocorrência de "Segunda 14:00" — para mostrar "em 2 dias" estilo iOS
@@ -47,16 +51,42 @@ function humanWhen(d) {
 }
 
 export default function ParentPortal({ profile, onLogout, theme, setTheme }) {
-  const { pts, profs, plans, notes, pays, show } = useStore();
+  const { pts, profs, plans, notes, pays, reqs, announcements, show } = useStore();
   const [tab, setTab] = useState("home"); // home | sessions | requests | account
   const [requestOpen, setRequestOpen] = useState(false);
   const [requestForm, setRequestForm] = useState({ patient_id: "", new_day: "", new_hour: "", reason: "" });
   const [submitting, setSubmitting] = useState(false);
 
   const myChildren = useMemo(
-    () => pts.filter((p) => isMyChild(p, profile?.full_name)),
-    [pts, profile?.full_name]
+    () => pts.filter((p) => isMyChild(p, profile?.full_name, profile?.id)),
+    [pts, profile?.full_name, profile?.id]
   );
+
+  // Meus pedidos (ordenados pelos mais recentes)
+  const myRequests = useMemo(() => {
+    const childIds = new Set(myChildren.map((c) => c.id));
+    return (reqs || [])
+      .filter((r) => r.requested_by_id === profile?.id || (r.patient_id && childIds.has(r.patient_id)))
+      .sort((a, b) => (new Date(b.created_at || 0) - new Date(a.created_at || 0)));
+  }, [reqs, myChildren, profile?.id]);
+
+  // Anúncios visíveis para responsáveis
+  const visibleAnnouncements = useMemo(() =>
+    (announcements || []).filter((a) => a.active !== false && (a.audience === "all" || a.audience === "parent" || !a.audience)),
+  [announcements]);
+
+  // Notificações: pedidos recém-resolvidos desde a última visita (em localStorage)
+  const lastSeenKey = `psm.parent.lastSeen.${profile?.id || "anon"}`;
+  const lastSeen = (typeof window !== "undefined" ? localStorage.getItem(lastSeenKey) : null) || "0";
+  const lastSeenTs = Number(lastSeen) || 0;
+  const recentlyResolved = myRequests.filter((r) => {
+    if (r.status !== "aprovado" && r.status !== "recusado") return false;
+    const ts = new Date(r.updated_at || r.created_at || 0).getTime();
+    return ts > lastSeenTs;
+  });
+  const markAllSeen = () => {
+    try { localStorage.setItem(lastSeenKey, String(Date.now())); } catch (_) {}
+  };
 
   const submitRequest = async () => {
     if (!requestForm.patient_id || !requestForm.new_day || !requestForm.new_hour) {
@@ -124,9 +154,9 @@ export default function ParentPortal({ profile, onLogout, theme, setTheme }) {
           </p>
         </div>
 
-        {tab === "home" && <HomeTab profile={profile} myChildren={myChildren} profs={profs} plans={plans} notes={notes} pays={pays} onRequest={() => setRequestOpen(true)} />}
+        {tab === "home" && <HomeTab profile={profile} myChildren={myChildren} profs={profs} plans={plans} notes={notes} pays={pays} announcements={visibleAnnouncements} recentlyResolved={recentlyResolved} onAck={markAllSeen} onRequest={() => setRequestOpen(true)} />}
         {tab === "sessions" && <SessionsTab myChildren={myChildren} profs={profs} notes={notes} />}
-        {tab === "requests" && <RequestsTab myChildren={myChildren} onNew={() => setRequestOpen(true)} />}
+        {tab === "requests" && <RequestsTab myChildren={myChildren} myRequests={myRequests} onNew={() => setRequestOpen(true)} onOpen={() => markAllSeen()} />}
         {tab === "account" && <AccountTab profile={profile} onLogout={onLogout} theme={theme} setTheme={setTheme} />}
       </main>
 
@@ -143,22 +173,33 @@ export default function ParentPortal({ profile, onLogout, theme, setTheme }) {
           {[
             { id: "home",     label: "Início",  icon: "home" },
             { id: "sessions", label: "Sessões", icon: "calendar" },
-            { id: "requests", label: "Pedidos", icon: "swap" },
+            { id: "requests", label: "Pedidos", icon: "swap",  badge: recentlyResolved.length },
             { id: "account",  label: "Conta",   icon: "users" },
           ].map((t) => (
             <button
               key={t.id}
-              onClick={() => setTab(t.id)}
+              onClick={() => { setTab(t.id); if (t.id === "requests") markAllSeen(); }}
               className="ch tap-target"
               aria-pressed={tab === t.id}
-              aria-label={t.label}
+              aria-label={t.label + (t.badge ? ` (${t.badge} novidades)` : "")}
               style={{
                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
                 color: tab === t.id ? "#E8A13C" : "#5A5A58",
                 fontSize: 10.5, fontWeight: tab === t.id ? 600 : 500,
+                position: "relative",
               }}
             >
-              <Icon name={t.icon} size={22} />
+              <div style={{ position: "relative" }}>
+                <Icon name={t.icon} size={22} />
+                {t.badge > 0 && (
+                  <span aria-hidden="true" style={{
+                    position: "absolute", top: -3, right: -8,
+                    minWidth: 16, height: 16, padding: "0 4px", borderRadius: 8,
+                    background: "#B83A3A", color: "#fff", fontSize: 10, fontWeight: 700,
+                    display: "flex", alignItems: "center", justifyContent: "center", lineHeight: 1,
+                  }}>{t.badge}</span>
+                )}
+              </div>
               <span style={{ color: tab === t.id ? "#E8A13C" : "#5A5A58" }}>{t.label}</span>
             </button>
           ))}
@@ -203,14 +244,47 @@ export default function ParentPortal({ profile, onLogout, theme, setTheme }) {
 
 // ─────────── Sub-componentes (tabs) ───────────
 
-function HomeTab({ myChildren, profs, plans, notes, pays, onRequest }) {
-  if (myChildren.length === 0) {
-    return <NoChildrenHelp />;
-  }
-
+function HomeTab({ myChildren, profs, plans, notes, pays, announcements, recentlyResolved, onAck, onRequest }) {
   return (
     <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 18 }}>
-      {myChildren.map((child) => <ChildCard key={child.id} child={child} profs={profs} plans={plans} notes={notes} pays={pays} onRequest={onRequest} />)}
+      {/* Notificações de pedidos resolvidos */}
+      {recentlyResolved && recentlyResolved.length > 0 && (
+        <Card pad={16} style={{ background: "#DCE7F0", borderColor: "#B9CDE0" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+            <Icon name="check" size={16} color="#1E3556" />
+            <span className="mono" style={{ fontSize: 10.5, fontWeight: 600, color: "#1E3556" }}>NOVIDADES</span>
+          </div>
+          <div style={{ fontSize: 14, color: "#152741", fontWeight: 500, marginBottom: 4 }}>
+            {recentlyResolved.length} {recentlyResolved.length === 1 ? "pedido foi respondido" : "pedidos foram respondidos"}
+          </div>
+          <div style={{ fontSize: 12.5, color: "#5A5A58", marginBottom: 10 }}>
+            Veja o estado actual no separador <b>Pedidos</b>.
+          </div>
+          <Btn size="sm" variant="secondary" onClick={onAck}>Marcar como visto</Btn>
+        </Card>
+      )}
+
+      {/* Anúncios da direção */}
+      {announcements && announcements.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {announcements.slice(0, 3).map((a) => (
+            <div key={a.id} style={{ padding: "14px 16px", borderRadius: 14, background: "#F5E5CD", border: "1px solid #ECC58A", color: "#C97A1F" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                <Icon name="mail" size={16} />
+                <span className="mono" style={{ fontSize: 10.5, fontWeight: 600 }}>DA DIREÇÃO</span>
+              </div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: "#7A4A0E", marginBottom: 4 }}>{a.title}</div>
+              <div style={{ fontSize: 13.5, color: "#7A4A0E", lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{a.body}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {myChildren.length === 0 ? (
+        <NoChildrenHelp />
+      ) : (
+        myChildren.map((child) => <ChildCard key={child.id} child={child} profs={profs} plans={plans} notes={notes} pays={pays} onRequest={onRequest} />)
+      )}
     </div>
   );
 }
@@ -354,19 +428,50 @@ function SessionsTab({ myChildren, profs, notes }) {
   );
 }
 
-function RequestsTab({ myChildren, onNew }) {
+function RequestsTab({ myChildren, myRequests, onNew }) {
   return (
     <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 14 }}>
       <Card pad={20}>
-        <div className="serif" style={{ fontSize: 18, fontWeight: 500, color: "#152741", marginBottom: 6 }}>Pedido de troca de horário</div>
-        <p style={{ fontSize: 13.5, color: "#5A5A58", lineHeight: 1.55, marginBottom: 14 }}>
-          Se precisar de mudar o horário de uma sessão, envie um pedido à direção. Vamos rever a disponibilidade e responder por aqui.
-        </p>
-        <Btn icon={<Icon name="plus" size={14} />} onClick={onNew} disabled={myChildren.length === 0}>Novo pedido</Btn>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <div>
+            <div className="serif" style={{ fontSize: 18, fontWeight: 500, color: "#152741" }}>Pedidos de troca</div>
+            <p style={{ fontSize: 13, color: "#8A8A86", marginTop: 2 }}>Histórico e estado dos seus pedidos</p>
+          </div>
+          <Btn icon={<Icon name="plus" size={14} />} onClick={onNew} disabled={myChildren.length === 0}>Novo pedido</Btn>
+        </div>
         {myChildren.length === 0 && (
           <div style={{ marginTop: 10, fontSize: 12.5, color: "#8A8A86" }}>Sem filhos associados — não é possível abrir pedido.</div>
         )}
       </Card>
+
+      {myRequests && myRequests.length > 0 && (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {myRequests.map((r) => {
+            const created = r.created_at ? new Date(r.created_at) : null;
+            const tagType = r.status === "aprovado" ? "realizada" : r.status === "recusado" ? "falta" : "pendente";
+            const statusLabel = r.status === "aprovado" ? "Aprovado" : r.status === "recusado" ? "Recusado" : "Pendente";
+            return (
+              <Card key={r.id} pad={14}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, marginBottom: 8, flexWrap: "wrap" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: "#152741" }}>{r.patient_name || "Pedido"}</div>
+                    {created && <div style={{ fontSize: 12, color: "#8A8A86", marginTop: 2 }}>{created.toLocaleDateString("pt-PT")}</div>}
+                  </div>
+                  <Tag type={tagType}>{statusLabel}</Tag>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12.5, flexWrap: "wrap" }}>
+                  <span className="mono" style={{ padding: "3px 8px", borderRadius: 6, background: "#F4E0E0", color: "#B83A3A" }}>{r.from_day} · {r.from_hour}</span>
+                  <Icon name="arr" size={12} color="#8A8A86" />
+                  <span className="mono" style={{ padding: "3px 8px", borderRadius: 6, background: "#DDEADE", color: "#3D7A4A" }}>{r.new_day} · {r.new_hour}</span>
+                </div>
+                {r.reason && (
+                  <div className="serif-it" style={{ fontSize: 13, color: "#5A5A58", marginTop: 8, paddingLeft: 10, borderLeft: "2px solid #EFEBE2" }}>"{r.reason}"</div>
+                )}
+              </Card>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

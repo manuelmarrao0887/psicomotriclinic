@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useStore } from "../../lib/store.jsx";
-import { Btn, Card, Eyebrow, Section, Av, Tag, Progress, ConfirmModal } from "../../lib/ui.jsx";
+import { Btn, Card, Eyebrow, Section, Av, Tag, Progress, ConfirmModal, Modal, Field } from "../../lib/ui.jsx";
 import { Icon } from "../../lib/icons.jsx";
 import { INSURANCE_LABEL } from "../../lib/constants.js";
 
@@ -83,9 +83,10 @@ export default function Patients() {
 export function PatientDetail() {
   const { patientId } = useParams();
   const navigate = useNavigate();
-  const { pts, profs, pays, anamneses, notes, plans, deletePatient, deleteSessionNote, setForm, setModal } = useStore();
+  const { pts, profs, pays, anamneses, notes, plans, users, deletePatient, deleteSessionNote, setPatientParents, setForm, setModal } = useStore();
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [noteToDelete, setNoteToDelete] = useState(null);
+  const [parentsModal, setParentsModal] = useState(false);
   const pt = pts.find((x) => x.id === patientId);
   const anam = anamneses.find((a) => a.patient_id === patientId);
   const ptNotes = notes.filter((n) => n.patient_id === patientId).sort((a, b) => (a.date < b.date ? 1 : -1));
@@ -143,12 +144,16 @@ export function PatientDetail() {
         </Card>
         <div style={{ display: "flex", flexDirection: "column", gap: 24 }}>
           <Card pad={28}>
-            <Eyebrow>— FAMÍLIA</Eyebrow>
-            <div style={{ marginTop: 10 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <Eyebrow>— FAMÍLIA</Eyebrow>
+              <Btn size="sm" variant="secondary" icon={<Icon name="users" size={13} />} onClick={() => setParentsModal(true)}>Vincular contas</Btn>
+            </div>
+            <div>
               <Row label="Nome da mãe" value={pt.parent_mother} />
               <Row label="Nome do pai" value={pt.parent_father} />
               <Row label="NIF" value={pt.nif} />
             </div>
+            <LinkedParents patient={pt} users={users} />
           </Card>
           <Card pad={28}>
             <Eyebrow>— SAÚDE</Eyebrow>
@@ -357,6 +362,99 @@ export function PatientDetail() {
         message="A nota é apagada definitivamente do registo clínico."
         confirmLabel="Eliminar"
       />
+      <LinkParentsModal
+        open={parentsModal}
+        onClose={() => setParentsModal(false)}
+        patient={pt}
+        users={users}
+        onSave={(ids) => { setPatientParents(pt.id, ids); setParentsModal(false); }}
+      />
     </div>
+  );
+}
+
+function LinkedParents({ patient, users }) {
+  const linked = (patient.parent_user_ids || [])
+    .map((id) => users.find((u) => u.id === id))
+    .filter(Boolean);
+
+  if (linked.length === 0) {
+    return (
+      <div style={{ marginTop: 12, padding: 12, borderRadius: 10, background: "#F5E5CD", color: "#C97A1F", fontSize: 12.5, lineHeight: 1.5, display: "flex", gap: 8, alignItems: "flex-start" }}>
+        <Icon name="warn" size={16} />
+        <span>
+          Nenhuma conta de responsável vinculada. Quando vincular, esse responsável passa a ver este paciente no portal dele.
+        </span>
+      </div>
+    );
+  }
+  return (
+    <div style={{ marginTop: 12 }}>
+      <div className="mono" style={{ fontSize: 10, color: "#8A8A86", marginBottom: 6 }}>RESPONSÁVEIS VINCULADOS · {linked.length}</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {linked.map((u) => (
+          <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: "#FBF9F4", border: "1px solid #EFEBE2", borderRadius: 10 }}>
+            <Av t={u.full_name?.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "?"} bg="#DCE7F0" sz={28} />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, fontWeight: 500, color: "#152741", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{u.full_name}</div>
+              <div style={{ fontSize: 11.5, color: "#8A8A86" }}>{u.email}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LinkParentsModal({ open, onClose, patient, users, onSave }) {
+  const [selected, setSelected] = useState(patient?.parent_user_ids || []);
+  const [search, setSearch] = useState("");
+
+  // Reset sempre que abre
+  useMemo(() => { if (open) setSelected(patient?.parent_user_ids || []); }, [open, patient?.id]);
+
+  const parents = (users || [])
+    .filter((u) => u.role === "parent" && u.active !== false)
+    .filter((u) => !search || (u.full_name || "").toLowerCase().includes(search.toLowerCase()) || (u.email || "").toLowerCase().includes(search.toLowerCase()));
+
+  const toggle = (id) => {
+    setSelected((cur) => cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id]);
+  };
+
+  if (!open) return null;
+  return (
+    <Modal open={open} onClose={onClose} title="Vincular responsáveis" eyebrow="— CONTAS COM ACESSO" width={520}>
+      <p style={{ fontSize: 13.5, color: "#5A5A58", lineHeight: 1.55, marginBottom: 14 }}>
+        Selecione as contas (perfis com papel "Responsável") que devem ver este paciente nos seus portais.
+      </p>
+      <Field label="Procurar">
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Nome ou email…" style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FBF9F4" }} />
+      </Field>
+      <div style={{ maxHeight: 280, overflowY: "auto", border: "1px solid #EFEBE2", borderRadius: 10, marginTop: 4 }}>
+        {parents.length === 0 ? (
+          <div style={{ padding: 24, textAlign: "center", color: "#8A8A86", fontSize: 13 }}>
+            {search ? "Sem resultados." : "Sem contas de responsável registadas. Convide um em Definições → Convidar utilizador."}
+          </div>
+        ) : (
+          parents.map((u) => {
+            const checked = selected.includes(u.id);
+            return (
+              <label key={u.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderBottom: "1px solid #EFEBE2", cursor: "pointer", background: checked ? "#EFEBE2" : "transparent" }}>
+                <input type="checkbox" checked={checked} onChange={() => toggle(u.id)} style={{ width: 18, height: 18 }} />
+                <Av t={u.full_name?.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "?"} bg="#DCE7F0" sz={32} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 500, color: "#152741", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{u.full_name}</div>
+                  <div style={{ fontSize: 11.5, color: "#8A8A86" }}>{u.email}</div>
+                </div>
+              </label>
+            );
+          })
+        )}
+      </div>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 16 }}>
+        <Btn variant="secondary" onClick={onClose}>Cancelar</Btn>
+        <Btn onClick={() => onSave(selected)}>Guardar ({selected.length})</Btn>
+      </div>
+    </Modal>
   );
 }

@@ -14,7 +14,7 @@ function findMyProfRecord(profs, fullName) {
 }
 
 export default function ProfessionalPortal({ profile, onLogout, theme, setTheme }) {
-  const { pts, profs, notes, setForm, setModal } = useStore();
+  const { pts, profs, notes, announcements, setForm, setModal, quickMarkFalta } = useStore();
   const [tab, setTab] = useState("home"); // home | agenda | patients | account
 
   const myProfRecord = useMemo(() => findMyProfRecord(profs, profile?.full_name), [profs, profile?.full_name]);
@@ -89,7 +89,7 @@ export default function ProfessionalPortal({ profile, onLogout, theme, setTheme 
           </p>
         </div>
 
-        {tab === "home"     && <ProHome myProfId={myProfId} myPatients={myPatients} todaysSessions={todaysSessions} todayLabel={todayLabel} notes={notes} onSessionNote={openSessionNote} />}
+        {tab === "home"     && <ProHome myProfId={myProfId} myPatients={myPatients} todaysSessions={todaysSessions} todayLabel={todayLabel} notes={notes} announcements={announcements} onSessionNote={openSessionNote} onMarkFalta={(p) => quickMarkFalta(p.id, myProfId)} />}
         {tab === "agenda"   && <ProAgenda myPatients={myPatients} profs={profs} />}
         {tab === "patients" && <ProPatients myPatients={myPatients} notes={notes} onSessionNote={openSessionNote} />}
         {tab === "account"  && <ProAccount profile={profile} onLogout={onLogout} theme={theme} setTheme={setTheme} />}
@@ -134,7 +134,7 @@ export default function ProfessionalPortal({ profile, onLogout, theme, setTheme 
 
 // ─────────── Sub-componentes ───────────
 
-function ProHome({ myProfId, myPatients, todaysSessions, todayLabel, notes, onSessionNote }) {
+function ProHome({ myProfId, myPatients, todaysSessions, todayLabel, notes, announcements, onSessionNote, onMarkFalta }) {
   if (!myProfId) return <NoProfRecord />;
 
   // Próximos: amanhã + dia seguinte
@@ -148,8 +148,19 @@ function ProHome({ myProfId, myPatients, todaysSessions, todayLabel, notes, onSe
     )
     .sort((a, b) => (a.p.hour || "").localeCompare(b.p.hour || ""));
 
+  // Anúncios visíveis para profissionais (ativos, audience = all OR professional)
+  const visibleAnn = (announcements || []).filter((a) => a.active !== false && (a.audience === "all" || a.audience === "professional" || !a.audience));
+
+  // Aniversários dos meus pacientes — próximos 30 dias
+  const birthdays = myPatients
+    .map((p) => ({ p, days: daysUntilBirthday(p.birth_date), age: ageOnNext(p.birth_date) }))
+    .filter((x) => x.days != null && x.days <= 30)
+    .sort((a, b) => a.days - b.days);
+
   return (
     <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 16 }}>
+      {visibleAnn.length > 0 && <AnnouncementsBanner items={visibleAnn} />}
+
       <Card pad={18}>
         <Eyebrow>— HOJE · {todayLabel?.toUpperCase()}</Eyebrow>
         {todaysSessions.length === 0 ? (
@@ -157,7 +168,7 @@ function ProHome({ myProfId, myPatients, todaysSessions, todayLabel, notes, onSe
         ) : (
           <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
             {todaysSessions.map((p) => (
-              <SessionRow key={p.id} patient={p} onSessionNote={() => onSessionNote(p)} />
+              <SessionRow key={p.id} patient={p} onSessionNote={() => onSessionNote(p)} onMarkFalta={() => onMarkFalta(p)} />
             ))}
           </div>
         )}
@@ -180,12 +191,70 @@ function ProHome({ myProfId, myPatients, todaysSessions, todayLabel, notes, onSe
         </Card>
       )}
 
+      {birthdays.length > 0 && (
+        <Card pad={18}>
+          <Eyebrow>— ANIVERSÁRIOS · 30 DIAS</Eyebrow>
+          <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
+            {birthdays.slice(0, 5).map(({ p, days, age }) => {
+              const d = p.birth_date ? new Date(p.birth_date) : null;
+              const label = d ? `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}` : "";
+              return (
+                <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: "#FBF9F4", border: "1px solid #EFEBE2", borderRadius: 12 }}>
+                  <div style={{ width: 32, height: 32, borderRadius: 16, background: "#F5D9A8", color: "#C97A1F", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                    <Icon name="trend" size={16} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: "#152741", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
+                    <div style={{ fontSize: 12, color: "#8A8A86" }}>{label} · faz {age} anos · {days === 0 ? "hoje" : days === 1 ? "amanhã" : `em ${days} dias`}</div>
+                  </div>
+                </div>
+              );
+            })}
+            {birthdays.length > 5 && <div style={{ fontSize: 12, color: "#8A8A86" }}>+ {birthdays.length - 5} aniversários adicionais</div>}
+          </div>
+        </Card>
+      )}
+
       {/* Stats compactos */}
       <div className="kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12 }}>
         <CompactStat label="MEUS CASOS" value={myPatients.length} accent="#8DBF94" />
         <CompactStat label="HOJE" value={todaysSessions.length} accent="#E8A13C" />
         <CompactStat label="NOTAS (30D)" value={notesByMeRecent(notes, myProfId, 30)} accent="#B9CDE0" />
       </div>
+    </div>
+  );
+}
+
+function daysUntilBirthday(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (isNaN(d)) return null;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const next = new Date(today.getFullYear(), d.getMonth(), d.getDate());
+  if (next < today) next.setFullYear(next.getFullYear() + 1);
+  return Math.round((next - today) / 86400000);
+}
+function ageOnNext(dateStr) {
+  if (!dateStr) return null;
+  const d = new Date(dateStr);
+  if (isNaN(d)) return null;
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  return today.getFullYear() - d.getFullYear() + 1;
+}
+
+function AnnouncementsBanner({ items }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+      {items.slice(0, 3).map((a) => (
+        <div key={a.id} style={{ padding: "14px 16px", borderRadius: 14, background: "#F5E5CD", border: "1px solid #ECC58A", color: "#C97A1F" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+            <Icon name="mail" size={16} />
+            <span className="mono" style={{ fontSize: 10.5, fontWeight: 600 }}>DA DIREÇÃO</span>
+          </div>
+          <div style={{ fontSize: 15, fontWeight: 600, color: "#7A4A0E", marginBottom: 4 }}>{a.title}</div>
+          <div style={{ fontSize: 13.5, color: "#7A4A0E", lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{a.body}</div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -206,17 +275,24 @@ function CompactStat({ label, value, accent }) {
   );
 }
 
-function SessionRow({ patient, onSessionNote }) {
+function SessionRow({ patient, onSessionNote, onMarkFalta }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: "#FBF9F4", border: "1px solid #EFEBE2", borderRadius: 12 }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: "#FBF9F4", border: "1px solid #EFEBE2", borderRadius: 12, flexWrap: "wrap" }}>
       <div style={{ fontSize: 13, color: "#152741", fontWeight: 600, width: 56 }} className="mono">{patient.hour}</div>
-      <div style={{ flex: 1, minWidth: 0 }}>
+      <div style={{ flex: 1, minWidth: 140 }}>
         <div style={{ fontSize: 15, fontWeight: 600, color: "#152741", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{patient.name}</div>
         <div style={{ fontSize: 12, color: "#8A8A86", marginTop: 2 }}>
           {patient.age} anos · {patient.session_type === "individual" ? "Individual" : "Grupo"}
         </div>
       </div>
-      <Btn size="sm" variant="secondary" icon={<Icon name="plus" size={13} />} onClick={onSessionNote}>Nota</Btn>
+      <div style={{ display: "flex", gap: 6 }}>
+        {onMarkFalta && (
+          <Btn size="sm" variant="danger" onClick={() => {
+            if (confirm(`Marcar falta para ${patient.name}?`)) onMarkFalta();
+          }}>Falta</Btn>
+        )}
+        <Btn size="sm" variant="secondary" icon={<Icon name="plus" size={13} />} onClick={onSessionNote}>Nota</Btn>
+      </div>
     </div>
   );
 }

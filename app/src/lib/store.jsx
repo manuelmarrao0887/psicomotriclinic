@@ -21,6 +21,7 @@ export function StoreProvider({ profile, children }) {
   const [notes, setNotes]     = useState([]);
   const [plans, setPlans]     = useState([]);
   const [auditLog, setAuditLog] = useState([]);
+  const [announcements, setAnnouncements] = useState([]);
   const [toast, setToast]   = useState(null);
   const [modal, setModal]   = useState(null);
   const [form, setForm]     = useState({});
@@ -32,13 +33,13 @@ export function StoreProvider({ profile, children }) {
 
   const load = useCallback(async () => {
     try {
-      const [r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13] = await Promise.all([
+      const [r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14] = await Promise.all([
         sb.from("profiles").select("*").order("created_at", { ascending: false }),
         sb.from("professionals").select("*").eq("active", true).order("name"),
         sb.from("patients").select("*").eq("active", true).order("name"),
         sb.from("sessions").select("*").order("date", { ascending: false }).limit(200),
         sb.from("payments").select("*").order("created_at", { ascending: false }),
-        sb.from("schedule_requests").select("*").eq("status", "pendente"),
+        sb.from("schedule_requests").select("*"),
         sb.from("overheads").select("*"),
         sb.from("variable_costs").select("*"),
         sb.from("visits").select("*").order("created_at", { ascending: false }).limit(2000),
@@ -46,6 +47,7 @@ export function StoreProvider({ profile, children }) {
         sb.from("session_notes").select("*").order("date", { ascending: false }).limit(500),
         sb.from("intervention_plans").select("*"),
         sb.from("audit_log").select("*").order("ts", { ascending: false }).limit(500),
+        sb.from("announcements").select("*").order("created_at", { ascending: false }).limit(50),
       ]);
       setUsers(r1.data || []);
       setProfs(r2.data || []);
@@ -60,6 +62,7 @@ export function StoreProvider({ profile, children }) {
       setNotes(r11.data || []);
       setPlans(r12.data || []);
       setAuditLog(r13.data || []);
+      setAnnouncements(r14.data || []);
     } catch (e) { console.error(e); }
   }, []);
 
@@ -165,6 +168,7 @@ export function StoreProvider({ profile, children }) {
       birth_date: form.birth || null,
       parent_mother: form.mother || null,
       parent_father: form.father || null,
+      parent_user_ids: form.parentUserIds || [],
       doctor: form.doctor || null,
       other_profs: form.others || null,
       insurance_name: form.insName || null,
@@ -387,13 +391,13 @@ export function StoreProvider({ profile, children }) {
   };
 
   const approveRequest = async (id) => {
-    await sb.from("schedule_requests").update({ status: "aprovado" }).eq("id", id);
+    await sb.from("schedule_requests").update({ status: "aprovado", updated_at: new Date().toISOString() }).eq("id", id);
     await audit("approve_request", `schedule_requests:${id}`, "");
     show("Pedido aprovado"); await load();
   };
 
   const rejectRequest = async (id) => {
-    await sb.from("schedule_requests").update({ status: "recusado" }).eq("id", id);
+    await sb.from("schedule_requests").update({ status: "recusado", updated_at: new Date().toISOString() }).eq("id", id);
     await audit("reject_request", `schedule_requests:${id}`, "");
     show("Pedido recusado", "error"); await load();
   };
@@ -411,10 +415,62 @@ export function StoreProvider({ profile, children }) {
     setModal(null); setForm({}); show("Password alterada com sucesso");
   };
 
+  // ───── Comunicações da direção (announcements) ─────
+  const addAnnouncement = async () => {
+    if (!form.annTitle || !form.annBody) { show("Título e mensagem são obrigatórios", "error"); return; }
+    await sb.from("announcements").insert({
+      title: form.annTitle,
+      body: form.annBody,
+      audience: form.annAudience || "all", // "all" | "professional" | "parent"
+      author_id: profile?.id || null,
+      author_name: profile?.full_name || "Direção",
+      active: true,
+    });
+    await audit("add_announcement", "announcements", `${form.annTitle} · ${form.annAudience || "all"}`);
+    setModal(null); setForm({}); show("Comunicação publicada"); await load();
+  };
+
+  const toggleAnnouncementActive = async (id, newActive) => {
+    await sb.from("announcements").update({ active: newActive }).eq("id", id);
+    await audit("toggle_announcement", `announcements:${id}`, newActive ? "ativada" : "desativada");
+    show(newActive ? "Comunicação ativada" : "Comunicação desativada"); await load();
+  };
+
+  const deleteAnnouncement = async (id) => {
+    await sb.from("announcements").delete().eq("id", id);
+    await audit("delete_announcement", `announcements:${id}`, "");
+    show("Comunicação eliminada"); await load();
+  };
+
+  // ───── Acção rápida do profissional: marcar falta numa sessão ─────
+  const quickMarkFalta = async (patientId, professionalId, date) => {
+    const d = date || new Date().toISOString().slice(0, 10);
+    await sb.from("session_notes").insert({
+      patient_id: patientId,
+      professional_id: professionalId || null,
+      date: d,
+      status: "falta",
+      domains: [],
+      work_done: "", observations: "", progress: "", next_plan: "",
+      created_by: profile?.id || null,
+    });
+    const pt = pts.find((x) => x.id === patientId);
+    await audit("mark_falta", `session_notes:${patientId}`, `${pt?.name || patientId} · ${d}`);
+    show("Falta registada"); await load();
+  };
+
+  // ───── Linkar responsáveis (perfis com role=parent) a um paciente ─────
+  const setPatientParents = async (patientId, parentUserIds) => {
+    await sb.from("patients").update({ parent_user_ids: parentUserIds || [] }).eq("id", patientId);
+    const pt = pts.find((x) => x.id === patientId);
+    await audit("set_patient_parents", `patients:${patientId}`, `${pt?.name || patientId} · ${(parentUserIds || []).length} vinculados`);
+    show("Responsáveis atualizados"); await load();
+  };
+
   const value = {
     profile,
     users, profs, pts, sess, pays, reqs, over, vcosts, visits,
-    anamneses, notes, plans, auditLog,
+    anamneses, notes, plans, auditLog, announcements,
     toast, show,
     modal, setModal, form, setForm,
     load,
@@ -427,6 +483,8 @@ export function StoreProvider({ profile, children }) {
     approveRequest, rejectRequest,
     saveAnamnesis, addSessionNote, deleteSessionNote, savePlan,
     genPassword, changeMyPassword,
+    addAnnouncement, toggleAnnouncementActive, deleteAnnouncement,
+    quickMarkFalta, setPatientParents,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

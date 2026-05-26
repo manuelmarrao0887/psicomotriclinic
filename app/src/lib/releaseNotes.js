@@ -6,6 +6,31 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.8",
+    date: "2026-05-26",
+    title: "Comunicações, vinculação de responsáveis e mais",
+    added: [
+      "Página Comunicações (admin) — director publica anúncios visíveis nos portais Profissional e/ou Responsável; podem ser activadas/desactivadas/eliminadas",
+      "Vinculação explícita responsável↔paciente — em PatientDetail, novo botão 'Vincular contas' abre modal para selecionar perfis com role=parent; o portal do responsável passa a usar parent_user_ids como matching preferencial (com fallback para o nome)",
+      "Portal Profissional — botão rápido 'Marcar falta' nas sessões de hoje (cria nota com status=falta)",
+      "Portal Profissional — secção 'Aniversários · 30 dias' dos meus pacientes",
+      "Portal Profissional — banner de anúncios da direção no topo",
+      "Portal Responsável — banner de anúncios da direção no topo",
+      "Portal Responsável — separador 'Pedidos' mostra histórico completo com estado (Pendente / Aprovado / Recusado) e os horários antes→depois",
+      "Portal Responsável — badge vermelho na tab 'Pedidos' quando há pedidos respondidos desde a última visita; banner 'Novidades' na Home",
+    ],
+    changed: [
+      "store.jsx: nova colecção announcements + acções addAnnouncement/toggleAnnouncementActive/deleteAnnouncement",
+      "store.jsx: quickMarkFalta(patientId, profId) e setPatientParents(patientId, ids)",
+      "store.jsx: schedule_requests deixa de ser filtrada por status na store; admin Requests passa a filtrar localmente para o responsável poder ver o histórico",
+      "store.jsx: approveRequest/rejectRequest gravam updated_at (necessário para detecção de novidades no portal)",
+      "Admin Requests: agora distingue origem do pedido (Profissional vs Responsável) e mostra horários antes→depois para ambos os formatos",
+      "Patients: addPatient agora persiste parent_user_ids",
+      "Sidebar admin: nova entrada Comunicações entre Pedidos e Definições",
+    ],
+    removed: [],
+  },
+  {
     version: "v2.0.0-alpha.7",
     date: "2026-05-26",
     title: "Portais Responsável & Profissional · Release notes",

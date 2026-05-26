@@ -15,6 +15,7 @@ const allItems = [
   { id: "utilizadores", label: "Utilizadores",     icon: "shield",    to: "/utilizadores", primary: false },
   { id: "equipa",       label: "Equipa",           icon: "users",     to: "/equipa",       primary: false },
   { id: "pedidos",      label: "Pedidos",          icon: "swap",      to: "/pedidos",      primary: false },
+  { id: "comunicacoes", label: "Comunicações",     icon: "mail",      to: "/comunicacoes", primary: false },
   { id: "definicoes",   label: "Definições",       icon: "cog",       to: "/definicoes",   primary: false },
 ];
 
@@ -29,6 +30,7 @@ const titles = {
   "/agenda":       { e: "— AGENDA",       t: "Sessões",              s: "" },
   "/financeiro":   { e: "— FINANCEIRO",   t: "Pagamentos & custos",  s: "" },
   "/pedidos":      { e: "— PEDIDOS",      t: "Trocas de horário",    s: "" },
+  "/comunicacoes": { e: "— ANÚNCIOS",     t: "Comunicações",         s: "Mensagens visíveis nos portais" },
   "/definicoes":   { e: "— PREFERÊNCIAS", t: "Definições",           s: "" },
 };
 
