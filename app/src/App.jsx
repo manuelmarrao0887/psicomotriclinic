@@ -1,26 +1,34 @@
-import { useEffect, useRef, useState } from "react";
-import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import { sb, ADMIN_EMAIL } from "./lib/firebase.js";
 import { Mark } from "./lib/icons.jsx";
 import { StoreProvider, useStore } from "./lib/store.jsx";
 import { Toast } from "./lib/ui.jsx";
 import ModalsHost from "./components/ModalsHost.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
+
+// Páginas críticas (shell + login + dashboard) carregadas eagerly
 import Login from "./pages/Login.jsx";
 import AdminLayout from "./pages/AdminLayout.jsx";
 import Dashboard from "./pages/admin/Dashboard.jsx";
-import Users, { UserDetail } from "./pages/admin/Users.jsx";
-import Team, { ProfDetail } from "./pages/admin/Team.jsx";
-import Patients, { PatientDetail } from "./pages/admin/Patients.jsx";
-import Agenda from "./pages/admin/Agenda.jsx";
-import Finance from "./pages/admin/Finance.jsx";
-import Requests from "./pages/admin/Requests.jsx";
-import Settings from "./pages/admin/Settings.jsx";
-import AuditPage from "./pages/admin/AuditPage.jsx";
-import Announcements from "./pages/admin/Announcements.jsx";
-import Privacy from "./pages/Privacy.jsx";
-import ParentPortal from "./pages/portals/ParentPortal.jsx";
-import ProfessionalPortal from "./pages/portals/ProfessionalPortal.jsx";
+
+// Lazy: tudo o resto. Cada route só baixa o bundle quando o utilizador a
+// abre — reduz o initial load drasticamente e responde ao aviso >500KB.
+const Users = lazy(() => import("./pages/admin/Users.jsx"));
+const UserDetail = lazy(() => import("./pages/admin/Users.jsx").then((m) => ({ default: m.UserDetail })));
+const Team = lazy(() => import("./pages/admin/Team.jsx"));
+const ProfDetail = lazy(() => import("./pages/admin/Team.jsx").then((m) => ({ default: m.ProfDetail })));
+const Patients = lazy(() => import("./pages/admin/Patients.jsx"));
+const PatientDetail = lazy(() => import("./pages/admin/Patients.jsx").then((m) => ({ default: m.PatientDetail })));
+const Agenda = lazy(() => import("./pages/admin/Agenda.jsx"));
+const Finance = lazy(() => import("./pages/admin/Finance.jsx"));
+const Requests = lazy(() => import("./pages/admin/Requests.jsx"));
+const Settings = lazy(() => import("./pages/admin/Settings.jsx"));
+const AuditPage = lazy(() => import("./pages/admin/AuditPage.jsx"));
+const Announcements = lazy(() => import("./pages/admin/Announcements.jsx"));
+const Privacy = lazy(() => import("./pages/Privacy.jsx"));
+const ParentPortal = lazy(() => import("./pages/portals/ParentPortal.jsx"));
+const ProfessionalPortal = lazy(() => import("./pages/portals/ProfessionalPortal.jsx"));
 
 const themeKey = "psm.theme";
 
@@ -112,6 +120,17 @@ function ToastHost() {
   return <Toast msg={toast.m} type={toast.t} />;
 }
 
+function PageLoader() {
+  return (
+    <div style={{ minHeight: 240, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ textAlign: "center", color: "#8A8A86" }}>
+        <Mark size={36} />
+        <div className="mono" style={{ marginTop: 12, fontSize: 11 }}>— A CARREGAR</div>
+      </div>
+    </div>
+  );
+}
+
 export default function App() {
   const { profile, loading, logout } = useProfile();
   const [theme, setTheme] = useTheme();
@@ -131,11 +150,13 @@ export default function App() {
   // Rotas públicas (não autenticado)
   if (!profile) {
     return (
-      <Routes>
-        <Route path="/login" element={<Login />} />
-        <Route path="/privacidade" element={<Privacy />} />
-        <Route path="*" element={<Navigate to="/login" replace state={{ from: location }} />} />
-      </Routes>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+          <Route path="/privacidade" element={<Privacy />} />
+          <Route path="*" element={<Navigate to="/login" replace state={{ from: location }} />} />
+        </Routes>
+      </Suspense>
     );
   }
 
@@ -143,45 +164,45 @@ export default function App() {
   const isProfessional = profile.role === "professional";
   const isParent = profile.role === "parent";
 
-  // Rotas privadas — store + modals + toast à raiz para todos os portais.
   return (
     <StoreProvider profile={profile}>
       <VisitLogger profile={profile} />
       <ErrorBoundary>
-        {isAdmin ? (
-          <Routes>
-            <Route path="/" element={<AdminLayout profile={profile} onLogout={logout} theme={theme} setTheme={setTheme} />}>
-              <Route index element={<Navigate to="/dashboard" replace />} />
-              <Route path="dashboard" element={<Dashboard />} />
-              <Route path="utilizadores" element={<Users />} />
-              <Route path="utilizadores/:uid" element={<UserDetail />} />
-              <Route path="equipa" element={<Team />} />
-              <Route path="equipa/:profId" element={<ProfDetail />} />
-              <Route path="pacientes" element={<Patients />} />
-              <Route path="pacientes/:patientId" element={<PatientDetail />} />
-              <Route path="agenda" element={<Agenda />} />
-              <Route path="financeiro" element={<Finance />} />
-              <Route path="pedidos" element={<Requests />} />
-              <Route path="definicoes" element={<Settings theme={theme} setTheme={setTheme} />} />
-              <Route path="auditoria" element={<AuditPage />} />
-              <Route path="comunicacoes" element={<Announcements />} />
-              <Route path="privacidade" element={<Privacy />} />
-            </Route>
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Routes>
-        ) : isProfessional ? (
-          <ProfessionalPortal profile={profile} onLogout={logout} theme={theme} setTheme={setTheme} />
-        ) : isParent ? (
-          <ParentPortal profile={profile} onLogout={logout} theme={theme} setTheme={setTheme} />
-        ) : (
-          // Papel não reconhecido — fallback
-          <div style={{ padding: 40, textAlign: "center" }}>
-            <Mark size={48} />
-            <h1 style={{ marginTop: 16, fontSize: 22, color: "#152741" }}>Papel não definido</h1>
-            <p style={{ color: "#8A8A86", marginTop: 8 }}>Contacte a direção para activar o seu acesso.</p>
-            <button onClick={logout} style={{ marginTop: 18, padding: "10px 18px", background: "#152741", color: "#F7F4EE", borderRadius: 10 }}>Terminar sessão</button>
-          </div>
-        )}
+        <Suspense fallback={<PageLoader />}>
+          {isAdmin ? (
+            <Routes>
+              <Route path="/" element={<AdminLayout profile={profile} onLogout={logout} theme={theme} setTheme={setTheme} />}>
+                <Route index element={<Navigate to="/dashboard" replace />} />
+                <Route path="dashboard" element={<Dashboard />} />
+                <Route path="utilizadores" element={<Users />} />
+                <Route path="utilizadores/:uid" element={<UserDetail />} />
+                <Route path="equipa" element={<Team />} />
+                <Route path="equipa/:profId" element={<ProfDetail />} />
+                <Route path="pacientes" element={<Patients />} />
+                <Route path="pacientes/:patientId" element={<PatientDetail />} />
+                <Route path="agenda" element={<Agenda />} />
+                <Route path="financeiro" element={<Finance />} />
+                <Route path="pedidos" element={<Requests />} />
+                <Route path="definicoes" element={<Settings theme={theme} setTheme={setTheme} />} />
+                <Route path="auditoria" element={<AuditPage />} />
+                <Route path="comunicacoes" element={<Announcements />} />
+                <Route path="privacidade" element={<Privacy />} />
+              </Route>
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Routes>
+          ) : isProfessional ? (
+            <ProfessionalPortal profile={profile} onLogout={logout} theme={theme} setTheme={setTheme} />
+          ) : isParent ? (
+            <ParentPortal profile={profile} onLogout={logout} theme={theme} setTheme={setTheme} />
+          ) : (
+            <div style={{ padding: 40, textAlign: "center" }}>
+              <Mark size={48} />
+              <h1 style={{ marginTop: 16, fontSize: 22, color: "#152741" }}>Papel não definido</h1>
+              <p style={{ color: "#8A8A86", marginTop: 8 }}>Contacte a direção para activar o seu acesso.</p>
+              <button onClick={logout} style={{ marginTop: 18, padding: "10px 18px", background: "#152741", color: "#F7F4EE", borderRadius: 10 }}>Terminar sessão</button>
+            </div>
+          )}
+        </Suspense>
       </ErrorBoundary>
       <ModalsHost />
       <ToastHost />

@@ -4,8 +4,13 @@ import { Av, Btn, Card, Eyebrow, Tag } from "../../lib/ui.jsx";
 import { APP_VERSION, formatBuildDate, DAYS, HOURS } from "../../lib/constants.js";
 import { useStore } from "../../lib/store.jsx";
 
-// Match profile.full_name → professionals.name (case-insensitive, trim).
-function findMyProfRecord(profs, fullName) {
+// 1. Vínculo explícito do director: professionals.profile_id === user.id (preferido).
+// 2. Fallback: match case-insensitive de profile.full_name → professionals.name.
+function findMyProfRecord(profs, userId, fullName) {
+  if (userId) {
+    const byId = profs.find((p) => p.profile_id === userId);
+    if (byId) return byId;
+  }
   if (!fullName) return null;
   const me = fullName.toLowerCase().trim();
   return profs.find((p) => (p.name || "").toLowerCase().trim() === me)
@@ -17,7 +22,7 @@ export default function ProfessionalPortal({ profile, onLogout, theme, setTheme 
   const { pts, profs, notes, announcements, setForm, setModal, quickMarkFalta } = useStore();
   const [tab, setTab] = useState("home"); // home | agenda | patients | account
 
-  const myProfRecord = useMemo(() => findMyProfRecord(profs, profile?.full_name), [profs, profile?.full_name]);
+  const myProfRecord = useMemo(() => findMyProfRecord(profs, profile?.id, profile?.full_name), [profs, profile?.id, profile?.full_name]);
   const myProfId = myProfRecord?.id;
 
   const myPatients = useMemo(() => {

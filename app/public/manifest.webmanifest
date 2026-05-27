@@ -1,0 +1,17 @@
+{
+  "name": "Psicomotriclinic Hub",
+  "short_name": "Psicomotri",
+  "description": "Gestão clínica para A Casa da Psicomotricidade — agenda, casos, financeiro e portais para responsáveis e profissionais.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#152741",
+  "theme_color": "#152741",
+  "lang": "pt-PT",
+  "categories": ["medical", "productivity", "business"],
+  "icons": [
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

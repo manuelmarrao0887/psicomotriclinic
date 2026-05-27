@@ -6,6 +6,25 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.9",
+    date: "2026-05-27",
+    title: "PWA, code splitting, vínculo profissional, regras Firestore",
+    added: [
+      "PWA — manifest.webmanifest, icon.svg, apple-touch-icon.svg, service worker (cache-first em /assets, network-first com fallback offline para HTML). Install no iPhone via 'Adicionar ao Ecrã Principal'",
+      "Code splitting — todas as páginas admin e portais carregadas com React.lazy + Suspense. O bundle inicial baixa só Login + Dashboard + shell; o resto vem on-demand",
+      "Vínculo conta ↔ profissional — ProfDetail (admin → Equipa) ganha card 'Conta vinculada' com modal de seleção (apenas perfis role=professional). O Portal Profissional usa profile_id explícito antes do fallback por nome",
+      "PageLoader iOS-style durante Suspense (mark + spinner mono)",
+    ],
+    changed: [
+      "firestore.rules atualizadas — colecção announcements (read autenticados, write director); schedule_requests aceita create de qualquer autenticado (parent submete pedidos); anamnesis/notes/plans read aberto a autenticado para o portal do responsável funcionar (filtragem por parent_user_ids no cliente)",
+      "App.jsx — VisitLogger e ToastHost mantidos, mas os componentes de página estão atrás de Suspense + ErrorBoundary",
+      "Team.jsx — ProfDetail layout em 2 colunas (perfil+conta vinculada / KPIs+casos); usa patient-grid CSS para empilhar em mobile",
+      "ProfessionalPortal — findMyProfRecord aceita profile.id como primeiro argumento; profile_id tem prioridade",
+      "store: setProfessionalUser(professionalId, userId) — director vincula/desvincula conta",
+    ],
+    removed: [],
+  },
+  {
     version: "v2.0.0-alpha.8",
     date: "2026-05-26",
     title: "Comunicações, vinculação de responsáveis e mais",

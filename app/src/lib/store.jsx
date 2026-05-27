@@ -467,6 +467,15 @@ export function StoreProvider({ profile, children }) {
     show("Responsáveis atualizados"); await load();
   };
 
+  // ───── Linkar conta (perfil com role=professional) a um registo de profissional ─────
+  const setProfessionalUser = async (professionalId, userId) => {
+    await sb.from("professionals").update({ profile_id: userId || null }).eq("id", professionalId);
+    const pr = profs.find((x) => x.id === professionalId);
+    const u = users.find((x) => x.id === userId);
+    await audit("set_professional_user", `professionals:${professionalId}`, `${pr?.name || professionalId} ↔ ${u?.full_name || userId || "—"}`);
+    show(userId ? "Conta vinculada" : "Vínculo removido"); await load();
+  };
+
   const value = {
     profile,
     users, profs, pts, sess, pays, reqs, over, vcosts, visits,
@@ -484,7 +493,7 @@ export function StoreProvider({ profile, children }) {
     saveAnamnesis, addSessionNote, deleteSessionNote, savePlan,
     genPassword, changeMyPassword,
     addAnnouncement, toggleAnnouncementActive, deleteAnnouncement,
-    quickMarkFalta, setPatientParents,
+    quickMarkFalta, setPatientParents, setProfessionalUser,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

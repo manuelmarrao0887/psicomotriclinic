@@ -21,17 +21,38 @@ service cloud.firestore {
     match /patients/{id}           { allow read: if isSignedIn(); allow write: if isStaff(); }
     match /sessions/{id}           { allow read: if isSignedIn(); allow write: if isStaff(); }
     match /payments/{id}           { allow read: if isSignedIn(); allow write: if isDirector(); }
-    match /schedule_requests/{id}  { allow read: if isSignedIn(); allow write: if isStaff(); }
+
+    // Pedidos de troca: read a todos os autenticados (responsável vê os seus,
+    // director vê todos); create a qualquer autenticado (responsável submete
+    // pedidos); update/delete só a staff (aprovar/recusar).
+    match /schedule_requests/{id}  {
+      allow read:   if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isStaff();
+    }
+
     match /overheads/{id}          { allow read: if isSignedIn(); allow write: if isDirector(); }
     match /variable_costs/{id}     { allow read: if isSignedIn(); allow write: if isDirector(); }
+
     // Visitas: qualquer autenticado regista a sua; só a direção lê as métricas.
     match /visits/{id}             { allow read: if isDirector(); allow create: if isSignedIn(); allow update, delete: if false; }
-    // Clínico: dados sensíveis — leitura e escrita só a staff (direção + profissionais).
-    match /anamnesis/{id}          { allow read: if isStaff(); allow write: if isStaff(); }
-    match /session_notes/{id}      { allow read: if isStaff(); allow write: if isStaff(); }
-    match /intervention_plans/{id} { allow read: if isStaff(); allow write: if isStaff(); }
+
+    // Clínico — dados sensíveis. A leitura é aberta a autenticados para o portal
+    // do responsável ver o plano e notas dos seus filhos (filtragem por
+    // parent_user_ids é feita no cliente). Escrita só a staff.
+    // Nota: para uma versão mais restritiva por documento, considerar mover
+    // notes/plans para sub-colecções aninhadas em patients/{id}/... onde as
+    // regras possam validar parent_user_ids por get().
+    match /anamnesis/{id}          { allow read: if isSignedIn(); allow write: if isStaff(); }
+    match /session_notes/{id}      { allow read: if isSignedIn(); allow write: if isStaff(); }
+    match /intervention_plans/{id} { allow read: if isSignedIn(); allow write: if isStaff(); }
+
     // Auditoria: staff escreve (registo de ações), só direção lê e nada se atualiza/apaga.
     match /audit_log/{id}          { allow read: if isDirector(); allow create: if isStaff(); allow update, delete: if false; }
+
+    // Comunicações da direção: read a qualquer autenticado (cada portal filtra
+    // por audience no cliente); write só a direção.
+    match /announcements/{id}      { allow read: if isSignedIn(); allow write: if isDirector(); }
 
     // Lembretes: escritos só pela Cloud Function (Admin SDK ignora regras). Direção lê.
     match /reminders/{id}          { allow read: if isDirector(); allow write: if false; }
