@@ -21,7 +21,10 @@ import {
   setDoc,
   updateDoc,
   deleteDoc,
+  arrayUnion,
+  arrayRemove,
 } from "firebase/firestore";
+import { getMessaging, getToken, onMessage, isSupported as messagingIsSupported, deleteToken } from "firebase/messaging";
 
 export const firebaseConfig = {
   apiKey: "AIzaSyBGQGSSGthbIMUxHDefwWlarNR7c_Vjd3E",
@@ -205,3 +208,102 @@ export const sb = {
     },
   },
 };
+
+// ───── FCM (Push Notifications) ────────────────────────────────────────
+// VAPID public key — gerada em Firebase Console → Project Settings → Cloud
+// Messaging → Web Push certificates. Configurar como VITE_FCM_VAPID_KEY em
+// Vercel (Environment Variables) e em .env.local para dev.
+export const FCM_VAPID_KEY = import.meta.env.VITE_FCM_VAPID_KEY || "";
+
+let _messaging = null;
+let _messagingInitTried = false;
+
+async function _initMessaging() {
+  if (_messagingInitTried) return _messaging;
+  _messagingInitTried = true;
+  try {
+    const supported = await messagingIsSupported();
+    if (!supported) return null;
+    _messaging = getMessaging(app);
+    return _messaging;
+  } catch (_) { return null; }
+}
+
+// Resultado: { token } ou { error: { code, message } }.
+// Códigos possíveis: "unsupported", "no-vapid", "permission-denied",
+// "permission-default", "sw-not-ready", "token-fail".
+export async function fcmRequestPermissionAndToken() {
+  if (!FCM_VAPID_KEY) return { error: { code: "no-vapid", message: "Servidor não configurado para push (VAPID em falta)." } };
+  const messaging = await _initMessaging();
+  if (!messaging) return { error: { code: "unsupported", message: "Este browser não suporta notificações." } };
+
+  if (typeof Notification === "undefined") return { error: { code: "unsupported", message: "Notificações não disponíveis." } };
+  let perm = Notification.permission;
+  if (perm === "default") perm = await Notification.requestPermission();
+  if (perm !== "granted") return { error: { code: "permission-" + perm, message: "Permissão negada." } };
+
+  // Garante que o nosso sw.js está activo antes de pedir token.
+  let swReg;
+  try {
+    swReg = await navigator.serviceWorker.ready;
+  } catch (_) {
+    return { error: { code: "sw-not-ready", message: "Service worker indisponível." } };
+  }
+
+  try {
+    const token = await getToken(messaging, { vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: swReg });
+    if (!token) return { error: { code: "token-fail", message: "Não foi possível obter token." } };
+    return { token };
+  } catch (e) {
+    return { error: { code: "token-fail", message: e?.message || "Falha ao obter token." } };
+  }
+}
+
+// Apaga o token actual deste device (usado em disablePush).
+export async function fcmDeleteToken() {
+  const messaging = await _initMessaging();
+  if (!messaging) return { ok: false };
+  try { await deleteToken(messaging); return { ok: true }; }
+  catch (_) { return { ok: false }; }
+}
+
+// Subscreve mensagens em foreground (app aberta) — chamada uma vez na App.
+export async function fcmOnForegroundMessage(cb) {
+  const messaging = await _initMessaging();
+  if (!messaging) return () => {};
+  return onMessage(messaging, cb);
+}
+
+// Guarda/remove o token no profile do utilizador (array — multi-device).
+export async function fcmSaveTokenToProfile(uid, token) {
+  if (!uid || !token) return;
+  try {
+    await updateDoc(doc(_db, "profiles", uid), {
+      fcm_tokens: arrayUnion(token),
+      push_enabled_at: new Date().toISOString(),
+    });
+  } catch (e) {
+    // perfil pode não existir como doc concreto; cria
+    try {
+      await setDoc(doc(_db, "profiles", uid), {
+        fcm_tokens: [token],
+        push_enabled_at: new Date().toISOString(),
+      }, { merge: true });
+    } catch (_) {}
+  }
+}
+
+export async function fcmRemoveTokenFromProfile(uid, token) {
+  if (!uid || !token) return;
+  try {
+    await updateDoc(doc(_db, "profiles", uid), {
+      fcm_tokens: arrayRemove(token),
+    });
+  } catch (_) {}
+}
+
+// Estado actual sem pedir permissão (para UI saber se já está activo).
+export function fcmCurrentPermission() {
+  if (typeof Notification === "undefined") return "unsupported";
+  return Notification.permission; // "default" | "granted" | "denied"
+}

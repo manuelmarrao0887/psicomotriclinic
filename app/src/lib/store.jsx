@@ -1,7 +1,7 @@
 // Store partilhada: dados carregados do Firestore + acções CRUD + toast + modais.
 // Vive ao nível do AdminLayout — todas as páginas filhas usam `useStore()`.
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { sb } from "./firebase.js";
+import { sb, fcmRequestPermissionAndToken, fcmDeleteToken, fcmSaveTokenToProfile, fcmRemoveTokenFromProfile, fcmCurrentPermission } from "./firebase.js";
 import { AVATAR_BG, normalizeInsurance, INSURANCES } from "./constants.js";
 
 const Ctx = createContext(null);
@@ -467,6 +467,72 @@ export function StoreProvider({ profile, children }) {
     show("Responsáveis atualizados"); await load();
   };
 
+  // ───── Push notifications ─────
+  const [pushState, setPushState] = useState({
+    permission: typeof window !== "undefined" ? fcmCurrentPermission() : "unsupported",
+    enabling: false,
+  });
+
+  const enablePush = async () => {
+    setPushState((s) => ({ ...s, enabling: true }));
+    const res = await fcmRequestPermissionAndToken();
+    setPushState((s) => ({ ...s, enabling: false, permission: fcmCurrentPermission() }));
+    if (res.error) {
+      const map = {
+        "no-vapid": "Servidor ainda não configurado para notificações. Contacte a direção.",
+        "unsupported": "Este browser/dispositivo não suporta notificações.",
+        "permission-denied": "Permissão negada — active nas definições do browser.",
+        "permission-default": "Permissão não concedida.",
+        "sw-not-ready": "Service worker indisponível.",
+        "token-fail": "Não foi possível registar o dispositivo.",
+      };
+      show(map[res.error.code] || res.error.message, "error");
+      return { ok: false };
+    }
+    if (profile?.id) {
+      await fcmSaveTokenToProfile(profile.id, res.token);
+      await audit("enable_push", `profiles:${profile.id}`, "");
+    }
+    show("Notificações ativadas neste dispositivo");
+    return { ok: true };
+  };
+
+  const disablePush = async () => {
+    try {
+      // Apaga token actual deste device + remove-o do array no profile.
+      // Como não temos o valor do token, usamos deleteToken (revoga FCM-side)
+      // e deixamos o token "morto" no array — Cloud Function descarta no envio.
+      await fcmDeleteToken();
+      if (profile?.id) await audit("disable_push", `profiles:${profile.id}`, "");
+    } catch (_) {}
+    setPushState((s) => ({ ...s, permission: fcmCurrentPermission() }));
+    show("Notificações desativadas neste dispositivo");
+  };
+
+  // ───── Confirmar "Não posso ir" — grava nota com status=cancelado ─────
+  // Usado pelo fluxo 1-tap do push de lembrete (página /confirmar/...).
+  const cancelSession = async (patientId, dateISO, reason) => {
+    const pt = pts.find((x) => x.id === patientId);
+    if (!pt) { show("Paciente não encontrado", "error"); return { ok: false }; }
+    await sb.from("session_notes").insert({
+      patient_id: patientId,
+      professional_id: pt.professional_id || null,
+      date: dateISO,
+      status: "cancelado",
+      domains: [],
+      work_done: "",
+      observations: reason || "Cancelado pelo responsável (app).",
+      progress: "",
+      next_plan: "",
+      created_by: profile?.id || null,
+      cancelled_by_user: true,
+    });
+    await audit("cancel_session_by_parent", `session_notes:${patientId}`, `${pt.name} · ${dateISO}`);
+    show("Sessão cancelada — a direção foi avisada");
+    await load();
+    return { ok: true };
+  };
+
   // ───── Linkar conta (perfil com role=professional) a um registo de profissional ─────
   const setProfessionalUser = async (professionalId, userId) => {
     await sb.from("professionals").update({ profile_id: userId || null }).eq("id", professionalId);
@@ -494,6 +560,7 @@ export function StoreProvider({ profile, children }) {
     genPassword, changeMyPassword,
     addAnnouncement, toggleAnnouncementActive, deleteAnnouncement,
     quickMarkFalta, setPatientParents, setProfessionalUser,
+    pushState, enablePush, disablePush, cancelSession,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

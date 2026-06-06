@@ -9,7 +9,8 @@ service cloud.firestore {
     function isStaff()    { return isSignedIn() && (role() == 'director' || role() == 'professional'); }
 
     // Perfis: qualquer autenticado lê (listas de equipa/utilizadores).
-    // Cada um cria/edita o próprio doc; a direção edita qualquer um.
+    // Cada um cria/edita o próprio doc (incluindo fcm_tokens para opt-in
+    // de notificações); a direção edita qualquer um.
     match /profiles/{uid} {
       allow read: if isSignedIn();
       allow create, update: if isDirector() || request.auth.uid == uid;
@@ -44,7 +45,17 @@ service cloud.firestore {
     // notes/plans para sub-colecções aninhadas em patients/{id}/... onde as
     // regras possam validar parent_user_ids por get().
     match /anamnesis/{id}          { allow read: if isSignedIn(); allow write: if isStaff(); }
-    match /session_notes/{id}      { allow read: if isSignedIn(); allow write: if isStaff(); }
+    // Notas de sessão: write reservado a staff, com excepção — responsáveis
+    // podem criar uma nota de cancelamento (status=cancelado, cancelled_by_user=true)
+    // a partir do fluxo de push "Não posso ir".
+    match /session_notes/{id}      {
+      allow read: if isSignedIn();
+      allow create: if isStaff()
+        || (isSignedIn()
+            && request.resource.data.cancelled_by_user == true
+            && request.resource.data.status == "cancelado");
+      allow update, delete: if isStaff();
+    }
     match /intervention_plans/{id} { allow read: if isSignedIn(); allow write: if isStaff(); }
 
     // Auditoria: staff escreve (registo de ações), só direção lê e nada se atualiza/apaga.

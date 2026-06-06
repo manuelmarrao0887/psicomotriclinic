@@ -1,11 +1,12 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
-import { Routes, Route, Navigate, useLocation } from "react-router-dom";
-import { sb, ADMIN_EMAIL } from "./lib/firebase.js";
+import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
+import { sb, ADMIN_EMAIL, fcmOnForegroundMessage } from "./lib/firebase.js";
 import { Mark } from "./lib/icons.jsx";
 import { StoreProvider, useStore } from "./lib/store.jsx";
 import { Toast } from "./lib/ui.jsx";
 import ModalsHost from "./components/ModalsHost.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
+import PushPermissionBanner from "./components/PushPermissionBanner.jsx";
 
 // Páginas críticas (shell + login + dashboard) carregadas eagerly
 import Login from "./pages/Login.jsx";
@@ -29,6 +30,7 @@ const Announcements = lazy(() => import("./pages/admin/Announcements.jsx"));
 const Privacy = lazy(() => import("./pages/Privacy.jsx"));
 const ParentPortal = lazy(() => import("./pages/portals/ParentPortal.jsx"));
 const ProfessionalPortal = lazy(() => import("./pages/portals/ProfessionalPortal.jsx"));
+const ConfirmSession = lazy(() => import("./pages/ConfirmSession.jsx"));
 
 const themeKey = "psm.theme";
 
@@ -120,6 +122,35 @@ function ToastHost() {
   return <Toast msg={toast.m} type={toast.t} />;
 }
 
+// Recebe mensagens em foreground (app aberta) e mostra como toast,
+// e escuta postMessage do SW para navegar quando o utilizador toca numa
+// notificação enquanto a app já está aberta.
+function PushListener() {
+  const { show } = useStore();
+  const navigate = useNavigate();
+  useEffect(() => {
+    let off = () => {};
+    fcmOnForegroundMessage((payload) => {
+      const title = payload?.data?.title || payload?.notification?.title || "Nova notificação";
+      const body = payload?.data?.body || payload?.notification?.body || "";
+      show(`${title}${body ? ` — ${body}` : ""}`, "info");
+    }).then((u) => { off = u || (() => {}); });
+    return () => off();
+  }, [show]);
+
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.serviceWorker) return;
+    const handler = (e) => {
+      if (e.data?.type === "navigate" && typeof e.data.url === "string") {
+        navigate(e.data.url);
+      }
+    };
+    navigator.serviceWorker.addEventListener("message", handler);
+    return () => navigator.serviceWorker.removeEventListener("message", handler);
+  }, [navigate]);
+  return null;
+}
+
 function PageLoader() {
   return (
     <div style={{ minHeight: 240, display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -167,10 +198,12 @@ export default function App() {
   return (
     <StoreProvider profile={profile}>
       <VisitLogger profile={profile} />
+      <PushListener />
       <ErrorBoundary>
         <Suspense fallback={<PageLoader />}>
           {isAdmin ? (
             <Routes>
+              <Route path="/confirmar/:patientId/:date" element={<ConfirmSession />} />
               <Route path="/" element={<AdminLayout profile={profile} onLogout={logout} theme={theme} setTheme={setTheme} />}>
                 <Route index element={<Navigate to="/dashboard" replace />} />
                 <Route path="dashboard" element={<Dashboard />} />
@@ -191,9 +224,15 @@ export default function App() {
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           ) : isProfessional ? (
-            <ProfessionalPortal profile={profile} onLogout={logout} theme={theme} setTheme={setTheme} />
+            <Routes>
+              <Route path="/confirmar/:patientId/:date" element={<ConfirmSession />} />
+              <Route path="*" element={<ProfessionalPortal profile={profile} onLogout={logout} theme={theme} setTheme={setTheme} />} />
+            </Routes>
           ) : isParent ? (
-            <ParentPortal profile={profile} onLogout={logout} theme={theme} setTheme={setTheme} />
+            <Routes>
+              <Route path="/confirmar/:patientId/:date" element={<ConfirmSession />} />
+              <Route path="*" element={<ParentPortal profile={profile} onLogout={logout} theme={theme} setTheme={setTheme} />} />
+            </Routes>
           ) : (
             <div style={{ padding: 40, textAlign: "center" }}>
               <Mark size={48} />
@@ -206,6 +245,7 @@ export default function App() {
       </ErrorBoundary>
       <ModalsHost />
       <ToastHost />
+      <PushPermissionBanner />
     </StoreProvider>
   );
 }

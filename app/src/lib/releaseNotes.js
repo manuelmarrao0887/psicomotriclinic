@@ -6,6 +6,29 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.10",
+    date: "2026-06-06",
+    title: "Push notifications + Confirmar sessão 1-tap",
+    added: [
+      "Service worker unificado (cache PWA + FCM background messages)",
+      "Push notifications de 3 tipos: lembrete de sessão amanhã, novo anúncio, estado de pedido (aprovado/recusado)",
+      "PushPermissionBanner — pede permissão ao utilizador (auto-dismiss após 7 dias)",
+      "Página /confirmar/:patientId/:date — fluxo opt-out: 'Tudo OK' ou 'Não posso ir' (com motivo opcional). Cria nota de sessão com status=cancelado",
+      "store.enablePush()/disablePush()/cancelSession() + pushState",
+      "fcm helpers em firebase.js (requestPermissionAndToken, deleteToken, onForegroundMessage, saveTokenToProfile)",
+      "Cloud Functions (functions/index.js): sessionReminders (Cloud Scheduler 18:00 Lisboa), onAnnouncementCreated, onScheduleRequestUpdated",
+      "Limpeza automática de tokens FCM inválidos (pruneInvalidTokens) — após erro, remove do profile",
+    ],
+    changed: [
+      "App.jsx: rota /confirmar/:patientId/:date acessível a todos os perfis autenticados",
+      "App.jsx: PushListener — foreground messages aparecem como toast; postMessage do SW navega para o URL alvo",
+      "firestore.rules: session_notes ganha excepção — responsáveis podem criar nota cancelled_by_user=true (necessário para o fluxo 'Não posso ir')",
+      "sw.js renomeado conceptualmente — agora é o registado service worker, inclui firebase-messaging-compat",
+      "functions/index.js: lembretes agora enviam push (preferido) + email (complementar via Resend)",
+    ],
+    removed: [],
+  },
+  {
     version: "v2.0.0-alpha.9",
     date: "2026-05-27",
     title: "PWA, code splitting, vínculo profissional, regras Firestore",
