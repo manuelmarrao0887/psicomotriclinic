@@ -13,24 +13,60 @@ import Login from "./pages/Login.jsx";
 import AdminLayout from "./pages/AdminLayout.jsx";
 import Dashboard from "./pages/admin/Dashboard.jsx";
 
+// Wrapper para React.lazy com auto-recovery de chunks órfãos.
+//
+// Cenário: utilizador tem o index.html antigo carregado e há deploy novo.
+// O JS antigo tenta importar "/assets/Page-OLDHASH.js" — Vercel devolve
+// 404 (ficheiro do build anterior, já removido). A SPA quebrava.
+//
+// Fix: na primeira falha de fetch de chunk, gravamos uma flag em
+// sessionStorage e forçamos location.reload(). O reload puxa o index.html
+// novo, que aponta para os hashes novos — utilizador nunca vê o erro.
+// Se mesmo após reload o erro persistir (problema real, não staleness),
+// deixamos o erro propagar para a ErrorBoundary.
+const RELOAD_FLAG = "psm.chunk.reloaded";
+function lazyWithRetry(importFn) {
+  return lazy(() => importFn().catch((err) => {
+    const msg = String(err?.message || err || "");
+    const isChunkError = /dynamically imported module|Failed to fetch|Loading chunk|Loading CSS chunk|ChunkLoadError/i.test(msg);
+    if (isChunkError && typeof window !== "undefined") {
+      try {
+        if (!sessionStorage.getItem(RELOAD_FLAG)) {
+          sessionStorage.setItem(RELOAD_FLAG, "1");
+          window.location.reload();
+          return new Promise(() => {}); // suspende para sempre — página vai recarregar
+        }
+      } catch (_) {}
+    }
+    throw err;
+  }));
+}
+
 // Lazy: tudo o resto. Cada route só baixa o bundle quando o utilizador a
 // abre — reduz o initial load drasticamente e responde ao aviso >500KB.
-const Users = lazy(() => import("./pages/admin/Users.jsx"));
-const UserDetail = lazy(() => import("./pages/admin/Users.jsx").then((m) => ({ default: m.UserDetail })));
-const Team = lazy(() => import("./pages/admin/Team.jsx"));
-const ProfDetail = lazy(() => import("./pages/admin/Team.jsx").then((m) => ({ default: m.ProfDetail })));
-const Patients = lazy(() => import("./pages/admin/Patients.jsx"));
-const PatientDetail = lazy(() => import("./pages/admin/Patients.jsx").then((m) => ({ default: m.PatientDetail })));
-const Agenda = lazy(() => import("./pages/admin/Agenda.jsx"));
-const Finance = lazy(() => import("./pages/admin/Finance.jsx"));
-const Requests = lazy(() => import("./pages/admin/Requests.jsx"));
-const Settings = lazy(() => import("./pages/admin/Settings.jsx"));
-const AuditPage = lazy(() => import("./pages/admin/AuditPage.jsx"));
-const Announcements = lazy(() => import("./pages/admin/Announcements.jsx"));
-const Privacy = lazy(() => import("./pages/Privacy.jsx"));
-const ParentPortal = lazy(() => import("./pages/portals/ParentPortal.jsx"));
-const ProfessionalPortal = lazy(() => import("./pages/portals/ProfessionalPortal.jsx"));
-const ConfirmSession = lazy(() => import("./pages/ConfirmSession.jsx"));
+const Users = lazyWithRetry(() => import("./pages/admin/Users.jsx"));
+const UserDetail = lazyWithRetry(() => import("./pages/admin/Users.jsx").then((m) => ({ default: m.UserDetail })));
+const Team = lazyWithRetry(() => import("./pages/admin/Team.jsx"));
+const ProfDetail = lazyWithRetry(() => import("./pages/admin/Team.jsx").then((m) => ({ default: m.ProfDetail })));
+const Patients = lazyWithRetry(() => import("./pages/admin/Patients.jsx"));
+const PatientDetail = lazyWithRetry(() => import("./pages/admin/Patients.jsx").then((m) => ({ default: m.PatientDetail })));
+const Agenda = lazyWithRetry(() => import("./pages/admin/Agenda.jsx"));
+const Finance = lazyWithRetry(() => import("./pages/admin/Finance.jsx"));
+const Requests = lazyWithRetry(() => import("./pages/admin/Requests.jsx"));
+const Settings = lazyWithRetry(() => import("./pages/admin/Settings.jsx"));
+const AuditPage = lazyWithRetry(() => import("./pages/admin/AuditPage.jsx"));
+const Announcements = lazyWithRetry(() => import("./pages/admin/Announcements.jsx"));
+const Privacy = lazyWithRetry(() => import("./pages/Privacy.jsx"));
+const ParentPortal = lazyWithRetry(() => import("./pages/portals/ParentPortal.jsx"));
+const ProfessionalPortal = lazyWithRetry(() => import("./pages/portals/ProfessionalPortal.jsx"));
+const ConfirmSession = lazyWithRetry(() => import("./pages/ConfirmSession.jsx"));
+
+// Após render bem-sucedido das rotas, limpa a flag de reload
+// (assim, próxima vez que houver chunk error, a recuperação pode disparar).
+if (typeof window !== "undefined") {
+  // delay para garantir que ao menos um chunk dinâmico carregou com sucesso
+  setTimeout(() => { try { sessionStorage.removeItem(RELOAD_FLAG); } catch (_) {} }, 5000);
+}
 
 const themeKey = "psm.theme";
 

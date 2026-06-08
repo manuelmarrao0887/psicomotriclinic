@@ -6,6 +6,18 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.12",
+    date: "2026-06-08",
+    title: "Fix: auto-recovery de chunks órfãos após deploy",
+    added: [
+      "lazyWithRetry — wrapper de React.lazy que detecta falha de fetch de chunk (utilizador com index.html antigo após deploy novo) e força location.reload() uma vez para apanhar o index novo. Limpa flag após 5s para permitir nova recuperação em futuros deploys.",
+    ],
+    changed: [
+      "App.jsx: todas as importações lazy passam por lazyWithRetry. Utilizadores com sessões antigas deixam de ver 'Failed to fetch dynamically imported module' — recovery silencioso por reload automático.",
+    ],
+    removed: [],
+  },
+  {
     version: "v2.0.0-alpha.11",
     date: "2026-06-08",
     title: "Fix: banner de notificações esconde-se até servidor configurado",
