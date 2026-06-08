@@ -2,9 +2,11 @@ import { useEffect, useState } from "react";
 import { useStore } from "../lib/store.jsx";
 import { Icon } from "../lib/icons.jsx";
 import { Btn } from "../lib/ui.jsx";
+import { FCM_VAPID_KEY } from "../lib/firebase.js";
 
 // Banner discreto que pede permissão para notificações.
 // Mostra-se se:
+// - servidor tem VAPID configurada (sem isto, push não funciona — não vale oferecer)
 // - browser suporta Notification API
 // - permission === "default" (nunca foi pedido)
 // - utilizador ainda não dispensou nesta sessão (localStorage)
@@ -19,6 +21,7 @@ export default function PushPermissionBanner() {
 
   useEffect(() => {
     if (typeof window === "undefined") return;
+    if (!FCM_VAPID_KEY) { setVisible(false); return; } // servidor ainda não configurado
     if (pushState.permission !== "default") { setVisible(false); return; }
     if (!profile?.id) { setVisible(false); return; }
     const until = Number(localStorage.getItem(DISMISS_KEY) || 0);

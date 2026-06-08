@@ -6,6 +6,16 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.11",
+    date: "2026-06-08",
+    title: "Fix: banner de notificações esconde-se até servidor configurado",
+    added: [],
+    changed: [
+      "PushPermissionBanner: agora oculta-se completamente se FCM_VAPID_KEY estiver vazia (servidor ainda não configurado). Evita oferecer ao utilizador algo que falha sempre.",
+    ],
+    removed: [],
+  },
+  {
     version: "v2.0.0-alpha.10",
     date: "2026-06-06",
     title: "Push notifications + Confirmar sessão 1-tap",
