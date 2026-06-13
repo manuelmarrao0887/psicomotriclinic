@@ -13,6 +13,9 @@ import {
 } from "firebase/auth";
 import {
   getFirestore,
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
   collection,
   doc,
   getDoc,
@@ -23,6 +26,12 @@ import {
   deleteDoc,
   arrayUnion,
   arrayRemove,
+  query,
+  where,
+  orderBy,
+  limit as fsLimit,
+  onSnapshot,
+  getCountFromServer,
 } from "firebase/firestore";
 import { getMessaging, getToken, onMessage, isSupported as messagingIsSupported, deleteToken } from "firebase/messaging";
 
@@ -39,7 +48,24 @@ export const ADMIN_EMAIL = "manuelsousamarrao@gmail.com";
 
 const app = initializeApp(firebaseConfig);
 const _auth = getAuth(app);
-const _db = getFirestore(app);
+
+// Firestore com cache persistente (IndexedDB) e suporte multi-tab.
+// Reduz reads facturados — cache hits servem da rede local.
+// initializeFirestore tem de ser chamado ANTES de qualquer outra operação Firestore.
+let _db;
+try {
+  _db = initializeFirestore(app, {
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }),
+  });
+} catch (_) {
+  // Já inicializado (ex: HMR no dev) ou persistência indisponível — fallback
+  _db = getFirestore(app);
+}
+
+// Re-exports para uso directo em store.jsx (listeners em vez do compat sb).
+export const db = _db;
+export { collection, query, where, orderBy, onSnapshot, getCountFromServer };
+export const limit = fsLimit;
 
 const _toEmail = (v) =>
   (v || "").includes("@") ? (v || "").trim() : `${(v || "").trim().toLowerCase()}@psicomotriclinic.local`;
@@ -127,13 +153,19 @@ class _Q {
         const s = await getDoc(doc(_db, this.c, this.idEq));
         return { data: s.exists() ? { id: s.id, ...s.data() } : null, error: null };
       }
-      const snap = await getDocs(col);
-      let rows = snap.docs.map((d) => ({ id: d.id, ...d.data() })).filter((r) => this._match(r));
-      if (this.o) {
-        const [k, dir] = this.o;
-        rows.sort((a, b) => (a[k] > b[k] ? 1 : a[k] < b[k] ? -1 : 0) * dir);
+      // Constrói a query *server-side* — where/orderBy/limit aplicados pelo
+      // Firestore (evita lê-la inteira e filtrar/limit em JS). Cada read
+      // facturado corresponde a um doc verdadeiramente devolvido.
+      const constraints = [];
+      for (const [c, v] of this.w) {
+        if (c === "id") continue; // Firestore não aceita where("id", ...) directamente
+        constraints.push(where(c, "==", v));
       }
-      if (this.l != null) rows = rows.slice(0, this.l);
+      if (this.o) constraints.push(orderBy(this.o[0], this.o[1] === 1 ? "asc" : "desc"));
+      if (this.l != null) constraints.push(fsLimit(this.l));
+      const q = constraints.length ? query(col, ...constraints) : col;
+      const snap = await getDocs(q);
+      const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
       return { data: this.s ? rows[0] || null : rows, error: null };
     } catch (e) {
       return { data: null, error: { message: e.message, code: e.code } };

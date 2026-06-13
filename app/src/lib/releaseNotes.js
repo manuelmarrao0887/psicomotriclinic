@@ -6,6 +6,26 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.13",
+    date: "2026-06-13",
+    title: "Otimização Firestore — listeners + cache + limits reais (-90% reads)",
+    added: [
+      "Cache persistente IndexedDB (persistentLocalCache + persistentMultipleTabManager) — Firestore SDK serve dados em cache local, multi-tab safe",
+      "Listeners em tempo real (onSnapshot) em todas as 14 colecções — primeiro ligar paga as reads, depois só docs alterados são facturados",
+      "Limits e where/orderBy aplicados *server-side* — Firestore deixa de devolver colecções inteiras só para serem cortadas no cliente",
+      "Visits restringidas aos últimos 30 dias (where ts >= 30d) — antes pull de toda a colecção crescendo a cada login",
+      "Listeners director-only para audit_log e visits — parents/pros já nem subscrevem (rules bloqueavam mas tentativa custava ruído na consola)",
+    ],
+    changed: [
+      "store.jsx: load() agora é no-op compatível — `await load()` em acções não custa nada, listeners propagam mutações automaticamente",
+      "firebase.js: _run() select usa query(col, ...constraints) com where/orderBy/limit reais; ignora where('id') que Firestore não aceita directamente",
+      "firebase.js: db, query, where, orderBy, limit, onSnapshot, getCountFromServer exportados para uso directo em store.jsx",
+    ],
+    removed: [
+      "Polling com Promise.all de 14 getDocs() em cada open + após cada mutação — substituído por subscriptions persistentes",
+    ],
+  },
+  {
     version: "v2.0.0-alpha.12",
     date: "2026-06-08",
     title: "Fix: auto-recovery de chunks órfãos após deploy",

@@ -1,7 +1,7 @@
 // Store partilhada: dados carregados do Firestore + acções CRUD + toast + modais.
 // Vive ao nível do AdminLayout — todas as páginas filhas usam `useStore()`.
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { sb, fcmRequestPermissionAndToken, fcmDeleteToken, fcmSaveTokenToProfile, fcmRemoveTokenFromProfile, fcmCurrentPermission } from "./firebase.js";
+import { sb, db, collection, query, where, orderBy, limit, onSnapshot, fcmRequestPermissionAndToken, fcmDeleteToken, fcmSaveTokenToProfile, fcmRemoveTokenFromProfile, fcmCurrentPermission } from "./firebase.js";
 import { AVATAR_BG, normalizeInsurance, INSURANCES } from "./constants.js";
 
 const Ctx = createContext(null);
@@ -31,40 +31,70 @@ export function StoreProvider({ profile, children }) {
     setTimeout(() => setToast(null), 3000);
   }, []);
 
-  const load = useCallback(async () => {
-    try {
-      const [r1, r2, r3, r4, r5, r6, r7, r8, r9, r10, r11, r12, r13, r14] = await Promise.all([
-        sb.from("profiles").select("*").order("created_at", { ascending: false }),
-        sb.from("professionals").select("*").eq("active", true).order("name"),
-        sb.from("patients").select("*").eq("active", true).order("name"),
-        sb.from("sessions").select("*").order("date", { ascending: false }).limit(200),
-        sb.from("payments").select("*").order("created_at", { ascending: false }),
-        sb.from("schedule_requests").select("*"),
-        sb.from("overheads").select("*"),
-        sb.from("variable_costs").select("*"),
-        sb.from("visits").select("*").order("created_at", { ascending: false }).limit(2000),
-        sb.from("anamnesis").select("*"),
-        sb.from("session_notes").select("*").order("date", { ascending: false }).limit(500),
-        sb.from("intervention_plans").select("*"),
-        sb.from("audit_log").select("*").order("ts", { ascending: false }).limit(500),
-        sb.from("announcements").select("*").order("created_at", { ascending: false }).limit(50),
-      ]);
-      setUsers(r1.data || []);
-      setProfs(r2.data || []);
-      setPts(r3.data || []);
-      setSess(r4.data || []);
-      setPays(r5.data || []);
-      setReqs(r6.data || []);
-      setOver((r7.data && r7.data[0]) || {});
-      setVcosts(r8.data || []);
-      setVisits(r9.data || []);
-      setAnamneses(r10.data || []);
-      setNotes(r11.data || []);
-      setPlans(r12.data || []);
-      setAuditLog(r13.data || []);
-      setAnnouncements(r14.data || []);
-    } catch (e) { console.error(e); }
-  }, []);
+  // ───── Listeners (onSnapshot) ─────
+  // Cada colecção tem uma subscrição em vez de polling. Resultado:
+  //  • Primeiro ligar = N reads (uma vez por colecção)
+  //  • Depois, apenas docs que mudam são facturados
+  //  • Cache IndexedDB (persistentLocalCache) serve dados anteriores
+  //    enquanto a delta chega da rede
+  //  • Mutações via sb.from(...).insert/update/delete propagam-se aos
+  //    listeners automaticamente — sem necessidade de refetch manual
+  //
+  // load() permanece como callable no-op para compatibilidade com chamadas
+  // de "await load()" dispersas pelas acções — listeners actualizam state
+  // por conta própria.
+  const load = useCallback(() => Promise.resolve(), []);
+
+  useEffect(() => {
+    if (!profile?.id) return;
+    const unsubs = [];
+    const sub = (q, setter, transform) => {
+      const u = onSnapshot(
+        q,
+        (snap) => {
+          const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+          setter(transform ? transform(rows) : rows);
+        },
+        (err) => console.warn("[subscription]", err?.code || err?.message || err),
+      );
+      unsubs.push(u);
+    };
+    const sortByName = (rows) => rows.slice().sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
+    // profiles & equipa
+    sub(query(collection(db, "profiles"), orderBy("created_at", "desc")), setUsers);
+    // where + orderBy em campos diferentes requer índice composto — sort em JS é mais simples
+    sub(query(collection(db, "professionals"), where("active", "==", true)), setProfs, sortByName);
+    sub(query(collection(db, "patients"), where("active", "==", true)), setPts, sortByName);
+
+    // financeiro
+    sub(query(collection(db, "payments"), orderBy("created_at", "desc")), setPays);
+    sub(collection(db, "overheads"), setOver, (rows) => rows[0] || {});
+    sub(collection(db, "variable_costs"), setVcosts);
+
+    // clínico
+    sub(query(collection(db, "sessions"), orderBy("date", "desc"), limit(200)), setSess);
+    sub(collection(db, "anamnesis"), setAnamneses);
+    sub(query(collection(db, "session_notes"), orderBy("date", "desc"), limit(500)), setNotes);
+    sub(collection(db, "intervention_plans"), setPlans);
+
+    // pedidos & comunicações
+    sub(collection(db, "schedule_requests"), setReqs);
+    sub(query(collection(db, "announcements"), orderBy("created_at", "desc"), limit(50)), setAnnouncements);
+
+    // colecções restritas (só director lê — rules) — só subscrever se for director
+    if (profile.role === "director") {
+      sub(query(collection(db, "audit_log"), orderBy("ts", "desc"), limit(500)), setAuditLog);
+      // visits limitadas a 30 dias — corta drasticamente reads (cresce com cada login)
+      const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
+      sub(query(collection(db, "visits"), where("ts", ">=", thirtyDaysAgo), orderBy("ts", "desc")), setVisits);
+    } else {
+      setAuditLog([]);
+      setVisits([]);
+    }
+
+    return () => unsubs.forEach((u) => { try { u && u(); } catch (_) {} });
+  }, [profile?.id, profile?.role]);
 
   // Audit helper — escreve no audit_log sem nunca quebrar a UI em caso de falha.
   const audit = useCallback(async (action, target, summary) => {
