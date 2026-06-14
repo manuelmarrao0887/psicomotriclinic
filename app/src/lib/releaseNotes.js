@@ -6,6 +6,17 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.14",
+    date: "2026-06-13",
+    title: "Style Lab — 3 direcções visuais para redesign",
+    added: [
+      "Página /style-lab com 3 variantes lado-a-lado: Mono Navy (minimal SaaS), Brand Aligned (navy+amber), Sage Fresh (verde do logo). Cada uma renderiza sidebar/topbar/KPIs/tabela/botões com tokens próprios — preview real antes de commit.",
+      "Cores do logo: navy #152741 e sage #8DBF94 como primárias. Sem indigo.",
+    ],
+    changed: [],
+    removed: [],
+  },
+  {
     version: "v2.0.0-alpha.13",
     date: "2026-06-13",
     title: "Otimização Firestore — listeners + cache + limits reais (-90% reads)",

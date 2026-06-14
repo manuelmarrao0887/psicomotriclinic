@@ -60,6 +60,7 @@ const Privacy = lazyWithRetry(() => import("./pages/Privacy.jsx"));
 const ParentPortal = lazyWithRetry(() => import("./pages/portals/ParentPortal.jsx"));
 const ProfessionalPortal = lazyWithRetry(() => import("./pages/portals/ProfessionalPortal.jsx"));
 const ConfirmSession = lazyWithRetry(() => import("./pages/ConfirmSession.jsx"));
+const StyleLab = lazyWithRetry(() => import("./pages/StyleLab.jsx"));
 
 // Após render bem-sucedido das rotas, limpa a flag de reload
 // (assim, próxima vez que houver chunk error, a recuperação pode disparar).
@@ -240,6 +241,7 @@ export default function App() {
           {isAdmin ? (
             <Routes>
               <Route path="/confirmar/:patientId/:date" element={<ConfirmSession />} />
+              <Route path="/style-lab" element={<StyleLab />} />
               <Route path="/" element={<AdminLayout profile={profile} onLogout={logout} theme={theme} setTheme={setTheme} />}>
                 <Route index element={<Navigate to="/dashboard" replace />} />
                 <Route path="dashboard" element={<Dashboard />} />
@@ -262,11 +264,13 @@ export default function App() {
           ) : isProfessional ? (
             <Routes>
               <Route path="/confirmar/:patientId/:date" element={<ConfirmSession />} />
+              <Route path="/style-lab" element={<StyleLab />} />
               <Route path="*" element={<ProfessionalPortal profile={profile} onLogout={logout} theme={theme} setTheme={setTheme} />} />
             </Routes>
           ) : isParent ? (
             <Routes>
               <Route path="/confirmar/:patientId/:date" element={<ConfirmSession />} />
+              <Route path="/style-lab" element={<StyleLab />} />
               <Route path="*" element={<ParentPortal profile={profile} onLogout={logout} theme={theme} setTheme={setTheme} />} />
             </Routes>
           ) : (
