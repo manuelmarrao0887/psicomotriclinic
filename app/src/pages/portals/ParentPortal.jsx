@@ -124,10 +124,10 @@ export default function ParentPortal({ profile, onLogout, theme, setTheme }) {
       <header style={{
         position: "sticky", top: 0, zIndex: 50,
         paddingTop: "var(--safe-top)",
-        background: "rgba(247,244,238,.88)",
+        background: "rgba(255,255,255,.88)",
         backdropFilter: "saturate(180%) blur(20px)",
         WebkitBackdropFilter: "saturate(180%) blur(20px)",
-        borderBottom: "1px solid rgba(229,224,212,.6)",
+        borderBottom: "1px solid rgba(234,230,221,.6)",
       }}>
         <div style={{ height: "var(--topbar-h)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", maxWidth: 720, margin: "0 auto" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -164,10 +164,10 @@ export default function ParentPortal({ profile, onLogout, theme, setTheme }) {
       <nav aria-label="Navegação" style={{
         position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 50,
         paddingBottom: "var(--safe-bottom)",
-        background: "rgba(247,244,238,.92)",
+        background: "rgba(255,255,255,.92)",
         backdropFilter: "saturate(180%) blur(20px)",
         WebkitBackdropFilter: "saturate(180%) blur(20px)",
-        borderTop: "1px solid rgba(229,224,212,.7)",
+        borderTop: "1px solid rgba(234,230,221,.7)",
       }}>
         <div style={{ height: "var(--tabbar-h)", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", maxWidth: 720, margin: "0 auto" }}>
           {[
@@ -209,7 +209,7 @@ export default function ParentPortal({ profile, onLogout, theme, setTheme }) {
       {/* Modal: pedido de troca de horário */}
       {requestOpen && (
         <div className="modal-overlay" onClick={() => setRequestOpen(false)} role="dialog" aria-modal="true" aria-label="Pedido de troca de horário" style={{ position: "fixed", inset: 0, background: "rgba(21,39,65,.4)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "fu .2s ease both" }}>
-          <div className="modal-panel" onClick={(e) => e.stopPropagation()} style={{ background: "#FBF9F4", borderRadius: 18, width: "100%", maxWidth: 460, maxHeight: "86vh", overflowY: "auto", animation: "ti .25s ease both", border: "1px solid #E5E0D4", boxShadow: "0 24px 64px rgba(21,39,65,.18)" }}>
+          <div className="modal-panel" onClick={(e) => e.stopPropagation()} style={{ background: "#FBFAF7", borderRadius: 18, width: "100%", maxWidth: 460, maxHeight: "86vh", overflowY: "auto", animation: "ti .25s ease both", border: "1px solid #EAE6DD", boxShadow: "0 24px 64px rgba(21,39,65,.18)" }}>
             <div style={{ padding: "24px 24px 12px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
               <div>
                 <Eyebrow>— PEDIDO</Eyebrow>
@@ -301,7 +301,7 @@ function ChildCard({ child, profs, plans, notes, pays, onRequest }) {
   return (
     <Card pad={0} style={{ overflow: "hidden" }}>
       {/* Header com nome + próxima sessão */}
-      <div style={{ padding: 18, display: "flex", alignItems: "center", gap: 14, borderBottom: "1px solid #EFEBE2" }}>
+      <div style={{ padding: 18, display: "flex", alignItems: "center", gap: 14, borderBottom: "1px solid #F5F2EC" }}>
         <Av t={ini} bg="#DCE7F0" sz={52} />
         <div style={{ flex: 1, minWidth: 0 }}>
           <div className="serif" style={{ fontSize: 20, fontWeight: 300, color: "#152741", letterSpacing: "-0.02em" }}>{child.name}</div>
@@ -312,7 +312,7 @@ function ChildCard({ child, profs, plans, notes, pays, onRequest }) {
       </div>
 
       {/* Próxima sessão */}
-      <div style={{ padding: 16, borderBottom: "1px solid #EFEBE2" }}>
+      <div style={{ padding: 16, borderBottom: "1px solid #F5F2EC" }}>
         <Eyebrow>— PRÓXIMA SESSÃO</Eyebrow>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginTop: 6 }}>
           <div>
@@ -325,7 +325,7 @@ function ChildCard({ child, profs, plans, notes, pays, onRequest }) {
 
       {/* Plano de intervenção (resumo) */}
       {plan && (
-        <div style={{ padding: 16, borderBottom: "1px solid #EFEBE2" }}>
+        <div style={{ padding: 16, borderBottom: "1px solid #F5F2EC" }}>
           <Eyebrow>— PLANO DE INTERVENÇÃO</Eyebrow>
           {plan.area && <div style={{ fontSize: 14, color: "#152741", marginTop: 6, fontWeight: 500 }}>{plan.area}</div>}
           <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 10 }}>
@@ -347,11 +347,11 @@ function ChildCard({ child, profs, plans, notes, pays, onRequest }) {
 
       {/* Últimas notas (resumo) */}
       {childNotes.length > 0 && (
-        <div style={{ padding: 16, borderBottom: "1px solid #EFEBE2" }}>
+        <div style={{ padding: 16, borderBottom: "1px solid #F5F2EC" }}>
           <Eyebrow>— ÚLTIMAS SESSÕES</Eyebrow>
           <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 10 }}>
             {childNotes.map((n) => (
-              <div key={n.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "8px 0", borderTop: "1px solid #EFEBE2" }}>
+              <div key={n.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, padding: "8px 0", borderTop: "1px solid #F5F2EC" }}>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13.5, color: "#152741", fontWeight: 500 }}>{n.date && new Date(n.date).toLocaleDateString("pt-PT")}</div>
                   {n.progress && <div style={{ fontSize: 12.5, color: "#5A5A58", marginTop: 2, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{n.progress}</div>}
@@ -367,7 +367,7 @@ function ChildCard({ child, profs, plans, notes, pays, onRequest }) {
 
       {/* Pagamentos */}
       {childPays.length > 0 && (
-        <div style={{ padding: 16, borderBottom: "1px solid #EFEBE2" }}>
+        <div style={{ padding: 16, borderBottom: "1px solid #F5F2EC" }}>
           <Eyebrow>— PAGAMENTOS</Eyebrow>
           <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 6 }}>
             {childPays.map((p) => (
@@ -407,7 +407,7 @@ function SessionsTab({ myChildren, profs, notes }) {
                 {childNotes.slice(0, 10).map((n) => {
                   const pr = profs.find((x) => x.id === n.professional_id);
                   return (
-                    <div key={n.id} style={{ padding: 12, borderRadius: 12, background: "#FBF9F4", border: "1px solid #EFEBE2" }}>
+                    <div key={n.id} style={{ padding: 12, borderRadius: 12, background: "#FBFAF7", border: "1px solid #F5F2EC" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
                         <span style={{ fontSize: 13.5, color: "#152741", fontWeight: 600 }}>{n.date && new Date(n.date).toLocaleDateString("pt-PT")}</span>
                         <Tag type={n.status === "realizada" ? "realizada" : n.status === "falta" ? "falta" : "default"}>
@@ -465,7 +465,7 @@ function RequestsTab({ myChildren, myRequests, onNew }) {
                   <span className="mono" style={{ padding: "3px 8px", borderRadius: 6, background: "#DDEADE", color: "#3D7A4A" }}>{r.new_day} · {r.new_hour}</span>
                 </div>
                 {r.reason && (
-                  <div className="serif-it" style={{ fontSize: 13, color: "#5A5A58", marginTop: 8, paddingLeft: 10, borderLeft: "2px solid #EFEBE2" }}>"{r.reason}"</div>
+                  <div className="serif-it" style={{ fontSize: 13, color: "#5A5A58", marginTop: 8, paddingLeft: 10, borderLeft: "2px solid #F5F2EC" }}>"{r.reason}"</div>
                 )}
               </Card>
             );
@@ -494,7 +494,7 @@ function AccountTab({ profile, onLogout, theme, setTheme }) {
         <button
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
           className="ch tap-target"
-          style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", color: "#3C3C3B", fontSize: 15, fontWeight: 500, textAlign: "left", borderBottom: "1px solid #EFEBE2" }}
+          style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", color: "#3C3C3B", fontSize: 15, fontWeight: 500, textAlign: "left", borderBottom: "1px solid #F5F2EC" }}
         >
           <span style={{ color: "#5A5A58", display: "flex" }}><Icon name={theme === "dark" ? "sun" : "moon"} size={20} /></span>
           <span style={{ flex: 1 }}>{theme === "dark" ? "Modo claro" : "Modo escuro"}</span>
@@ -503,7 +503,7 @@ function AccountTab({ profile, onLogout, theme, setTheme }) {
         <button
           onClick={() => window.open("/privacidade", "_blank")}
           className="ch tap-target"
-          style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", color: "#3C3C3B", fontSize: 15, fontWeight: 500, textAlign: "left", borderBottom: "1px solid #EFEBE2" }}
+          style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", color: "#3C3C3B", fontSize: 15, fontWeight: 500, textAlign: "left", borderBottom: "1px solid #F5F2EC" }}
         >
           <span style={{ color: "#5A5A58", display: "flex" }}><Icon name="shield" size={20} /></span>
           <span style={{ flex: 1 }}>Política de Privacidade</span>

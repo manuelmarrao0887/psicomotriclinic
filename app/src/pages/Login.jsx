@@ -58,13 +58,13 @@ export default function Login() {
   const fieldSt = {
     width: "100%", padding: "13px 16px", borderRadius: 10,
     border: "1px solid #D9D3C5", fontSize: 14.5,
-    background: "#FBF9F4", color: "#3C3C3B", marginBottom: 10,
+    background: "#FBFAF7", color: "#3C3C3B", marginBottom: 10,
   };
 
   return (
     <div className="login-grid" style={{
       minHeight: "100vh", display: "grid", gridTemplateColumns: "1.05fr 1fr",
-      background: "#F7F4EE", opacity: v ? 1 : 0, transition: "opacity .4s",
+      background: "#FFFFFF", opacity: v ? 1 : 0, transition: "opacity .4s",
     }}>
       {/* LEFT — Brand panel (oculto em mobile) */}
       <div className="login-brand" style={{
@@ -148,9 +148,9 @@ export default function Login() {
               <Btn onClick={doLogin} disabled={busy} style={{ width: "100%", padding: "13px 0" }}>{busy ? "A entrar..." : "Entrar"}</Btn>
 
               <div style={{ display: "flex", alignItems: "center", gap: 12, margin: "22px 0" }}>
-                <div style={{ flex: 1, height: 1, background: "#E5E0D4" }} />
+                <div style={{ flex: 1, height: 1, background: "#EAE6DD" }} />
                 <span className="mono" style={{ color: "#8A8A86" }}>OU</span>
-                <div style={{ flex: 1, height: 1, background: "#E5E0D4" }} />
+                <div style={{ flex: 1, height: 1, background: "#EAE6DD" }} />
               </div>
 
               <Btn variant="secondary" onClick={doGoogle} icon={<Icon name="google" size={18} />} style={{ width: "100%", padding: "12px 0" }}>Continuar com Google</Btn>
@@ -179,7 +179,7 @@ export default function Login() {
                 {[{ id: "parent", l: "Responsável" }, { id: "professional", l: "Profissional" }, { id: "director", l: "Diretor" }].map((r) => (
                   <div key={r.id} onClick={() => setSelRole(r.id)} className="ch" style={{
                     padding: "14px 8px", borderRadius: 10,
-                    background: selRole === r.id ? "#152741" : "#FBF9F4",
+                    background: selRole === r.id ? "#152741" : "#FBFAF7",
                     color: selRole === r.id ? "#F7F4EE" : "#3C3C3B",
                     border: `1px solid ${selRole === r.id ? "#152741" : "#D9D3C5"}`,
                     cursor: "pointer", textAlign: "center", fontSize: 13, fontWeight: 500,

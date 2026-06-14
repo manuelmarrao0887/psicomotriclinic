@@ -4,7 +4,7 @@ import { Card, Eyebrow } from "../lib/ui.jsx";
 
 export default function Privacy() {
   return (
-    <div style={{ minHeight: "100vh", background: "#F7F4EE", padding: "40px 24px" }}>
+    <div style={{ minHeight: "100vh", background: "#FFFFFF", padding: "40px 24px" }}>
       <div style={{ maxWidth: 760, margin: "0 auto" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 22 }}>
           <Mark size={36} />
@@ -48,7 +48,7 @@ export default function Privacy() {
             A plataforma utiliza a infraestrutura Firebase (Google Cloud, Europa) com autenticação, regras de acesso baseadas em papéis e tráfego cifrado em HTTPS. Acessos sensíveis (consulta de dados clínicos, alterações administrativas) são registados.
           </p>
 
-          <div style={{ marginTop: 24, paddingTop: 18, borderTop: "1px solid #EFEBE2", fontSize: 12, color: "#8A8A86" }}>
+          <div style={{ marginTop: 24, paddingTop: 18, borderTop: "1px solid #F5F2EC", fontSize: 12, color: "#8A8A86" }}>
             Última atualização: 2026-05-23 · Versão 1.0
           </div>
         </Card>

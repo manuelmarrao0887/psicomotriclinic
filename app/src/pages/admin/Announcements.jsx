@@ -72,7 +72,7 @@ export default function Announcements() {
             value={form.annBody || ""}
             onChange={(e) => setForm((f) => ({ ...f, annBody: e.target.value }))}
             placeholder="O essencial em 2-3 frases."
-            style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FBF9F4", minHeight: 110, resize: "vertical", fontFamily: "inherit" }}
+            style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FBFAF7", minHeight: 110, resize: "vertical", fontFamily: "inherit" }}
           />
         </Field>
         <Field label="Audiência">

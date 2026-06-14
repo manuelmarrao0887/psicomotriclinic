@@ -78,7 +78,7 @@ export function ProfDetail() {
             <div className="serif" style={{ fontSize: 24, fontWeight: 300, color: "#152741", marginTop: 16, letterSpacing: "-0.02em" }}>{p.name}</div>
             <div style={{ fontSize: 13.5, color: "#8A8A86", marginTop: 4 }}>{p.role_title}</div>
             <div style={{ marginTop: 14 }}><Tag type="professional">Ativo</Tag></div>
-            <div style={{ marginTop: 24, paddingTop: 20, borderTop: "1px solid #EFEBE2" }}>
+            <div style={{ marginTop: 24, paddingTop: 20, borderTop: "1px solid #F5F2EC" }}>
               <Btn size="sm" variant="danger" icon={<Icon name="trash" size={14} />}
                 onClick={() => {
                   const msg = pP.length > 0
@@ -98,7 +98,7 @@ export function ProfDetail() {
               </Btn>
             </div>
             {linkedUser ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "#FBF9F4", border: "1px solid #EFEBE2", borderRadius: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "#FBFAF7", border: "1px solid #F5F2EC", borderRadius: 10 }}>
                 <Av t={linkedUser.full_name?.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "?"} bg="#DCE7F0" sz={32} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 500, color: "#152741", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{linkedUser.full_name}</div>
@@ -168,10 +168,10 @@ function LinkProfessionalUserModal({ open, onClose, professional, users, current
         Selecione a conta que corresponde a este profissional. Será a conta que vê o portal com a agenda e os casos atribuídos.
       </p>
       <Field label="Procurar">
-        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Nome ou email…" style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FBF9F4" }} />
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Nome ou email…" style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FBFAF7" }} />
       </Field>
-      <div style={{ maxHeight: 280, overflowY: "auto", border: "1px solid #EFEBE2", borderRadius: 10, marginTop: 4 }}>
-        <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderBottom: "1px solid #EFEBE2", cursor: "pointer", background: selected === null ? "#EFEBE2" : "transparent" }}>
+      <div style={{ maxHeight: 280, overflowY: "auto", border: "1px solid #F5F2EC", borderRadius: 10, marginTop: 4 }}>
+        <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderBottom: "1px solid #F5F2EC", cursor: "pointer", background: selected === null ? "#F5F2EC" : "transparent" }}>
           <input type="radio" name="proUser" checked={selected === null} onChange={() => setSelected(null)} style={{ width: 18, height: 18 }} />
           <div style={{ fontSize: 13.5, color: "#5A5A58", fontStyle: "italic" }}>(Sem conta vinculada)</div>
         </label>
@@ -183,7 +183,7 @@ function LinkProfessionalUserModal({ open, onClose, professional, users, current
           pros.map((u) => {
             const checked = selected === u.id;
             return (
-              <label key={u.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderBottom: "1px solid #EFEBE2", cursor: "pointer", background: checked ? "#EFEBE2" : "transparent" }}>
+              <label key={u.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderBottom: "1px solid #F5F2EC", cursor: "pointer", background: checked ? "#F5F2EC" : "transparent" }}>
                 <input type="radio" name="proUser" checked={checked} onChange={() => setSelected(u.id)} style={{ width: 18, height: 18 }} />
                 <Av t={u.full_name?.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "?"} bg="#DCE7F0" sz={32} />
                 <div style={{ flex: 1, minWidth: 0 }}>

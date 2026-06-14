@@ -64,7 +64,7 @@ export default function Settings({ theme, setTheme }) {
   ];
 
   const actions = [
-    { t: "Convidar utilizador",      d: "Criar conta e enviar credenciais de acesso", ic: "mail",      ac: "#EFEBE2", m: "invite" },
+    { t: "Convidar utilizador",      d: "Criar conta e enviar credenciais de acesso", ic: "mail",      ac: "#F5F2EC", m: "invite" },
     { t: "Adicionar profissional",   d: "Registar novo terapeuta na equipa",          ic: "users",     ac: "#C7DDCB", m: "addProf" },
     { t: "Novo paciente",            d: "Abrir caso clínico e definir horário",       ic: "clipboard", ac: "#DCE7F0", m: "addPatient" },
     { t: "Registar pagamento",       d: "Recibo emitido ou cobrança pendente",        ic: "wallet",    ac: "#F5D9A8", m: "addPayment" },
@@ -135,7 +135,7 @@ export default function Settings({ theme, setTheme }) {
         </Card>
         <Card pad={22} onClick={() => window.open("/privacidade", "_blank")}>
           <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
-            <div style={{ width: 52, height: 52, borderRadius: 12, background: "#EFEBE2", color: "#152741", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="mail" size={22} /></div>
+            <div style={{ width: 52, height: 52, borderRadius: 12, background: "#F5F2EC", color: "#152741", display: "flex", alignItems: "center", justifyContent: "center" }}><Icon name="mail" size={22} /></div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 15, fontWeight: 500, color: "#152741" }}>Política de Privacidade</div>
               <div style={{ fontSize: 13, color: "#8A8A86", marginTop: 3 }}>RGPD: como tratamos os dados. Abre em nova aba.</div>
@@ -196,7 +196,7 @@ function ReleaseNoteCard({ note, defaultOpen = false }) {
       </button>
 
       {open && (
-        <div style={{ padding: "0 18px 18px", borderTop: "1px solid #EFEBE2" }}>
+        <div style={{ padding: "0 18px 18px", borderTop: "1px solid #F5F2EC" }}>
           {added.length > 0 && (
             <ReleaseSection eyebrow="— ADICIONADO" items={added} color="#3D7A4A" bg="#DDEADE" />
           )}

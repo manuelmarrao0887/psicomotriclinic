@@ -6,6 +6,21 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.15",
+    date: "2026-06-13",
+    title: "Redesign Brand Aligned — primeira passagem (whites + navy + amber)",
+    added: [],
+    changed: [
+      "Background global passou de cream #F7F4EE para branco #FFFFFF. AdminLayout (desktop + mobile), Login, ConfirmSession, Privacy.",
+      "Tokens cream → tons mais frescos: paper #FBF9F4 → #FBFAF7 (cards), cream-2 #EFEBE2 → #F5F2EC (headers de tabela, hover), line #E5E0D4 → #EAE6DD (borders mais subtis).",
+      "Top bars / tab bars dos portais Responsável e Profissional: blur translúcido sobre branco em vez de cream.",
+      "Btn secondary: bg branco, hover surfaceAlt — destaca-se contra fundo branco em vez de fundir.",
+      "CSS var --cream-inverse preserva F7F4EE para texto inverso em fundo navy (sidebar, modais escuros).",
+      "Sidebar navy + amber accent mantidos exactamente como antes — só o canvas mudou.",
+    ],
+    removed: [],
+  },
+  {
     version: "v2.0.0-alpha.14",
     date: "2026-06-13",
     title: "Style Lab — 3 direcções visuais para redesign",

@@ -6,7 +6,7 @@ import { Icon } from "../../lib/icons.jsx";
 import { INSURANCE_LABEL } from "../../lib/constants.js";
 
 const Row = ({ label, value }) => (
-  <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", padding: "8px 0", borderTop: "1px solid #EFEBE2", fontSize: 13.5 }}>
+  <div style={{ display: "grid", gridTemplateColumns: "180px 1fr", padding: "8px 0", borderTop: "1px solid #F5F2EC", fontSize: 13.5 }}>
     <span style={{ color: "#8A8A86" }}>{label}</span>
     <span style={{ color: "#152741" }}>{value || "—"}</span>
   </div>
@@ -25,7 +25,7 @@ export default function Patients() {
           <div className="only-desktop" style={{ position: "relative", width: 260 }}>
             <label htmlFor="patient-search" className="sr-only">Procurar paciente</label>
             <div aria-hidden="true" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#8A8A86", display: "flex" }}><Icon name="search" size={16} /></div>
-            <input id="patient-search" type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Procurar paciente…" aria-label="Procurar paciente" style={{ width: "100%", padding: "10px 14px 10px 40px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FBF9F4" }} />
+            <input id="patient-search" type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Procurar paciente…" aria-label="Procurar paciente" style={{ width: "100%", padding: "10px 14px 10px 40px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FBFAF7" }} />
           </div>
           <Btn variant="secondary" icon={<Icon name="copy" size={15} />} onClick={() => { setForm({}); setModal("bulkPatient"); }}>Importar</Btn>
           <Btn icon={<Icon name="plus" size={16} />} onClick={() => { setForm({}); setModal("addPatient"); }}>Novo paciente</Btn>
@@ -35,12 +35,12 @@ export default function Patients() {
       <div className="only-mobile" style={{ position: "relative", marginBottom: 14 }}>
         <label htmlFor="patient-search-m" className="sr-only">Procurar paciente</label>
         <div aria-hidden="true" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#8A8A86", display: "flex" }}><Icon name="search" size={16} /></div>
-        <input id="patient-search-m" type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Procurar paciente…" aria-label="Procurar paciente" style={{ width: "100%", padding: "12px 14px 12px 40px", borderRadius: 12, border: "1px solid #D9D3C5", background: "#FBF9F4" }} />
+        <input id="patient-search-m" type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Procurar paciente…" aria-label="Procurar paciente" style={{ width: "100%", padding: "12px 14px 12px 40px", borderRadius: 12, border: "1px solid #D9D3C5", background: "#FBFAF7" }} />
       </div>
 
       <Card pad={0} style={{ overflow: "hidden" }}>
         <div data-mobile-cards="true">
-          <div role="row" data-mobile-row="header" style={{ display: "grid", gridTemplateColumns: "2fr 80px 2fr 2fr 1.2fr 1fr", padding: "14px 20px", background: "#EFEBE2", borderBottom: "1px solid #E5E0D4" }}>
+          <div role="row" data-mobile-row="header" style={{ display: "grid", gridTemplateColumns: "2fr 80px 2fr 2fr 1.2fr 1fr", padding: "14px 20px", background: "#F5F2EC", borderBottom: "1px solid #EAE6DD" }}>
             <Eyebrow>Nome</Eyebrow><Eyebrow>Idade</Eyebrow><Eyebrow>Profissional</Eyebrow><Eyebrow>Horário</Eyebrow><Eyebrow>Tipo</Eyebrow><Eyebrow>&nbsp;</Eyebrow>
           </div>
           {filtered.map((p, i) => {
@@ -53,7 +53,7 @@ export default function Patients() {
                 style={{
                   display: "grid", gridTemplateColumns: "2fr 80px 2fr 2fr 1.2fr 1fr",
                   padding: "14px 20px", alignItems: "center", cursor: "pointer",
-                  borderBottom: i < filtered.length - 1 ? "1px solid #EFEBE2" : "none",
+                  borderBottom: i < filtered.length - 1 ? "1px solid #F5F2EC" : "none",
                 }}>
                 <span style={{ fontSize: 15, fontWeight: 600, color: "#152741" }}>{p.name}</span>
                 <span style={{ fontSize: 13, color: "#5A5A58" }}>
@@ -120,7 +120,7 @@ export function PatientDetail() {
             <Tag type={pt.session_type === "individual" ? "sage" : "amber"}>{pt.session_type === "individual" ? "Individual" : "Grupo"}</Tag>
             <Tag type="default">{pt.day_of_week} · {pt.hour}</Tag>
           </div>
-          <div style={{ marginTop: 20, paddingTop: 18, borderTop: "1px solid #EFEBE2", display: "flex", flexDirection: "column", gap: 10 }}>
+          <div style={{ marginTop: 20, paddingTop: 18, borderTop: "1px solid #F5F2EC", display: "flex", flexDirection: "column", gap: 10 }}>
             <Btn size="sm" variant="secondary" icon={<Icon name="edit" size={14} />}
               onClick={() => {
                 setForm({
@@ -207,7 +207,7 @@ export function PatientDetail() {
                   { l: "Intervenções anteriores", v: anam.previous_interventions },
                   { l: "Notas gerais", v: anam.general_notes },
                 ].filter((x) => x.v && x.v.trim()).map((x) => (
-                  <div key={x.l} style={{ padding: "10px 0", borderTop: "1px solid #EFEBE2" }}>
+                  <div key={x.l} style={{ padding: "10px 0", borderTop: "1px solid #F5F2EC" }}>
                     <div className="mono" style={{ fontSize: 10.5, color: "#8A8A86", marginBottom: 4 }}>{x.l.toUpperCase()}</div>
                     <div style={{ fontSize: 13.5, color: "#3C3C3B", whiteSpace: "pre-wrap", lineHeight: 1.55 }}>{x.v}</div>
                   </div>
@@ -240,7 +240,7 @@ export function PatientDetail() {
                 {plan.area && <div style={{ fontSize: 14, color: "#152741", fontWeight: 500, marginBottom: 12 }}>{plan.area}</div>}
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   {(plan.objectives || []).map((o, i) => (
-                    <div key={i} style={{ padding: 14, borderRadius: 10, background: "#FBF9F4", border: "1px solid #EFEBE2" }}>
+                    <div key={i} style={{ padding: 14, borderRadius: 10, background: "#FBFAF7", border: "1px solid #F5F2EC" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, marginBottom: 8 }}>
                         <div style={{ fontSize: 13.5, color: "#152741", lineHeight: 1.5 }}>{o.text}</div>
                         <Tag type={o.status === "atingido" ? "sage" : o.status === "em_pausa" ? "pendente" : "default"}>
@@ -258,7 +258,7 @@ export function PatientDetail() {
                   ))}
                 </div>
                 {plan.notes && (
-                  <div style={{ marginTop: 14, padding: 12, borderTop: "1px solid #EFEBE2", fontSize: 13, color: "#5A5A58", whiteSpace: "pre-wrap", lineHeight: 1.55 }}>{plan.notes}</div>
+                  <div style={{ marginTop: 14, padding: 12, borderTop: "1px solid #F5F2EC", fontSize: 13, color: "#5A5A58", whiteSpace: "pre-wrap", lineHeight: 1.55 }}>{plan.notes}</div>
                 )}
                 {plan.review_date && (
                   <div style={{ marginTop: 10, fontSize: 12, color: "#8A8A86" }}>Próxima revisão: <b>{new Date(plan.review_date).toLocaleDateString("pt-PT")}</b></div>
@@ -291,7 +291,7 @@ export function PatientDetail() {
                 {ptNotes.map((n) => {
                   const pr = profs.find((x) => x.id === n.professional_id);
                   return (
-                    <div key={n.id} style={{ padding: 14, borderRadius: 10, background: "#FBF9F4", border: "1px solid #EFEBE2" }}>
+                    <div key={n.id} style={{ padding: 14, borderRadius: 10, background: "#FBFAF7", border: "1px solid #F5F2EC" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                           <span className="mono" style={{ fontSize: 11, color: "#152741", fontWeight: 600 }}>{n.date && new Date(n.date).toLocaleDateString("pt-PT")}</span>
@@ -332,7 +332,7 @@ export function PatientDetail() {
               <Eyebrow>— PAGAMENTOS</Eyebrow>
               <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 8 }}>
                 {myPays.map((p) => (
-                  <div key={p.id} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", padding: "8px 0", borderTop: "1px solid #EFEBE2", fontSize: 13.5, alignItems: "center" }}>
+                  <div key={p.id} style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", padding: "8px 0", borderTop: "1px solid #F5F2EC", fontSize: 13.5, alignItems: "center" }}>
                     <span style={{ color: "#5A5A58" }}>{p.month}</span>
                     <span style={{ color: "#152741", fontWeight: 500 }}>{p.amount}€</span>
                     <span><Tag type={p.status}>{p.status === "pago" ? "Pago" : "Pendente"}</Tag></span>
@@ -393,7 +393,7 @@ function LinkedParents({ patient, users }) {
       <div className="mono" style={{ fontSize: 10, color: "#8A8A86", marginBottom: 6 }}>RESPONSÁVEIS VINCULADOS · {linked.length}</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         {linked.map((u) => (
-          <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: "#FBF9F4", border: "1px solid #EFEBE2", borderRadius: 10 }}>
+          <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: "#FBFAF7", border: "1px solid #F5F2EC", borderRadius: 10 }}>
             <Av t={u.full_name?.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "?"} bg="#DCE7F0" sz={28} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 500, color: "#152741", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{u.full_name}</div>
@@ -428,9 +428,9 @@ function LinkParentsModal({ open, onClose, patient, users, onSave }) {
         Selecione as contas (perfis com papel "Responsável") que devem ver este paciente nos seus portais.
       </p>
       <Field label="Procurar">
-        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Nome ou email…" style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FBF9F4" }} />
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Nome ou email…" style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FBFAF7" }} />
       </Field>
-      <div style={{ maxHeight: 280, overflowY: "auto", border: "1px solid #EFEBE2", borderRadius: 10, marginTop: 4 }}>
+      <div style={{ maxHeight: 280, overflowY: "auto", border: "1px solid #F5F2EC", borderRadius: 10, marginTop: 4 }}>
         {parents.length === 0 ? (
           <div style={{ padding: 24, textAlign: "center", color: "#8A8A86", fontSize: 13 }}>
             {search ? "Sem resultados." : "Sem contas de responsável registadas. Convide um em Definições → Convidar utilizador."}
@@ -439,7 +439,7 @@ function LinkParentsModal({ open, onClose, patient, users, onSave }) {
           parents.map((u) => {
             const checked = selected.includes(u.id);
             return (
-              <label key={u.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderBottom: "1px solid #EFEBE2", cursor: "pointer", background: checked ? "#EFEBE2" : "transparent" }}>
+              <label key={u.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderBottom: "1px solid #F5F2EC", cursor: "pointer", background: checked ? "#F5F2EC" : "transparent" }}>
                 <input type="checkbox" checked={checked} onChange={() => toggle(u.id)} style={{ width: 18, height: 18 }} />
                 <Av t={u.full_name?.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "?"} bg="#DCE7F0" sz={32} />
                 <div style={{ flex: 1, minWidth: 0 }}>

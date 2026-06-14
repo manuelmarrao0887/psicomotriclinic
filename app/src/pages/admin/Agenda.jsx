@@ -35,21 +35,21 @@ export default function Agenda() {
       <div className="page-pad" style={{ padding: "28px 40px 60px" }}>
         <Card pad={0}>
           <div style={{ display: "grid", gridTemplateColumns: `90px repeat(${DAYS.length}, 1fr)` }}>
-            <div style={{ padding: "14px 12px", background: "#EFEBE2", borderBottom: "1px solid #E5E0D4" }}><Eyebrow>Hora</Eyebrow></div>
+            <div style={{ padding: "14px 12px", background: "#F5F2EC", borderBottom: "1px solid #EAE6DD" }}><Eyebrow>Hora</Eyebrow></div>
             {DAYS.map((d) => (
-              <div key={d} style={{ padding: "14px 16px", background: "#EFEBE2", borderBottom: "1px solid #E5E0D4", borderLeft: "1px solid #E5E0D4" }}>
+              <div key={d} style={{ padding: "14px 16px", background: "#F5F2EC", borderBottom: "1px solid #EAE6DD", borderLeft: "1px solid #EAE6DD" }}>
                 <Eyebrow>{d}</Eyebrow>
               </div>
             ))}
             {HOURS.map((h) => (
               <Fragment key={h}>
-                <div style={{ padding: "14px 12px", borderBottom: "1px solid #EFEBE2", color: "#5A5A58", fontSize: 13, fontWeight: 500 }} className="mono">{h}</div>
+                <div style={{ padding: "14px 12px", borderBottom: "1px solid #F5F2EC", color: "#5A5A58", fontSize: 13, fontWeight: 500 }} className="mono">{h}</div>
                 {DAYS.map((d) => {
                   const items = slot(d, h);
                   return (
                     <div key={d + h} style={{
-                      padding: 8, borderLeft: "1px solid #EFEBE2", borderBottom: "1px solid #EFEBE2",
-                      minHeight: 62, background: items.length === 0 ? "transparent" : "#FBF9F4",
+                      padding: 8, borderLeft: "1px solid #F5F2EC", borderBottom: "1px solid #F5F2EC",
+                      minHeight: 62, background: items.length === 0 ? "transparent" : "#FBFAF7",
                     }}>
                       {items.map((p) => {
                         const ids = (p.professional_ids && p.professional_ids.length) ? p.professional_ids : (p.professional_id ? [p.professional_id] : []);
@@ -98,7 +98,7 @@ export default function Agenda() {
       {/* Segmented control iOS-style */}
       <div style={{
         display: "flex", gap: 4, padding: 4, marginBottom: 16,
-        background: "#EFEBE2", borderRadius: 12,
+        background: "#F5F2EC", borderRadius: 12,
         position: "sticky", top: "calc(var(--topbar-h) + var(--safe-top))",
         zIndex: 5,
       }}>
@@ -110,7 +110,7 @@ export default function Agenda() {
             aria-pressed={activeDay === d}
             style={{
               flex: 1, padding: "9px 6px", borderRadius: 9,
-              background: activeDay === d ? "#FBF9F4" : "transparent",
+              background: activeDay === d ? "#FBFAF7" : "transparent",
               color: activeDay === d ? "#152741" : "#5A5A58",
               fontSize: 13, fontWeight: activeDay === d ? 600 : 500,
               boxShadow: activeDay === d ? "0 1px 3px rgba(21,39,65,.08)" : "none",
@@ -148,7 +148,7 @@ export default function Agenda() {
                       style={{
                         display: "flex", alignItems: "center", gap: 12,
                         padding: "14px 16px", borderRadius: 14,
-                        background: "#FBF9F4", border: "1px solid #EFEBE2", cursor: "pointer",
+                        background: "#FBFAF7", border: "1px solid #F5F2EC", cursor: "pointer",
                       }}
                     >
                       <div style={{

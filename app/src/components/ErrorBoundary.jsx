@@ -29,8 +29,8 @@ export default class ErrorBoundary extends Component {
       return (
         <div style={{
           maxWidth: 720, margin: "40px auto", padding: 24,
-          background: "#FBF9F4", color: "#3C3C3B",
-          border: "1px solid #E5E0D4", borderRadius: 14,
+          background: "#FBFAF7", color: "#3C3C3B",
+          border: "1px solid #EAE6DD", borderRadius: 14,
           fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", fontSize: 14, lineHeight: 1.6,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, color: "#B83A3A" }}>
@@ -44,7 +44,7 @@ export default class ErrorBoundary extends Component {
             A página não conseguiu renderizar. O erro está abaixo — partilha isto para podermos corrigir.
           </p>
           <pre style={{
-            background: "#F7F4EE", border: "1px solid #E5E0D4", borderRadius: 10,
+            background: "#F5F2EC", border: "1px solid #EAE6DD", borderRadius: 10,
             padding: 14, overflow: "auto", maxHeight: 260,
             fontFamily: "JetBrains Mono, ui-monospace, monospace", fontSize: 12,
             color: "#B83A3A", whiteSpace: "pre-wrap", wordBreak: "break-word",
@@ -53,7 +53,7 @@ export default class ErrorBoundary extends Component {
             <details style={{ marginTop: 12 }}>
               <summary style={{ cursor: "pointer", fontSize: 13, color: "#5A5A58" }}>Stack trace</summary>
               <pre style={{
-                background: "#F7F4EE", border: "1px solid #E5E0D4", borderRadius: 10,
+                background: "#F5F2EC", border: "1px solid #EAE6DD", borderRadius: 10,
                 padding: 14, overflow: "auto", maxHeight: 200, marginTop: 8,
                 fontFamily: "JetBrains Mono, ui-monospace, monospace", fontSize: 11,
                 color: "#5A5A58", whiteSpace: "pre",
@@ -64,7 +64,7 @@ export default class ErrorBoundary extends Component {
             <details style={{ marginTop: 8 }}>
               <summary style={{ cursor: "pointer", fontSize: 13, color: "#5A5A58" }}>Component stack</summary>
               <pre style={{
-                background: "#F7F4EE", border: "1px solid #E5E0D4", borderRadius: 10,
+                background: "#F5F2EC", border: "1px solid #EAE6DD", borderRadius: 10,
                 padding: 14, overflow: "auto", maxHeight: 200, marginTop: 8,
                 fontFamily: "JetBrains Mono, ui-monospace, monospace", fontSize: 11,
                 color: "#5A5A58", whiteSpace: "pre",
@@ -78,7 +78,7 @@ export default class ErrorBoundary extends Component {
             }}>Tentar outra vez</button>
             <button onClick={() => window.location.assign("/dashboard")} style={{
               padding: "10px 18px", borderRadius: 10, border: "1px solid #D9D3C5",
-              background: "#FBF9F4", color: "#152741", fontSize: 14, fontWeight: 500,
+              background: "#FBFAF7", color: "#152741", fontSize: 14, fontWeight: 500,
             }}>Voltar ao Dashboard</button>
           </div>
         </div>

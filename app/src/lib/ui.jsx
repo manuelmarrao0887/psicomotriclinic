@@ -19,9 +19,9 @@ export const Tag = ({ children, type = "default" }) => {
   const m = {
     realizada: ["#DDEADE", "#3D7A4A"], falta: ["#F4E0E0", "#B83A3A"],
     agendada: ["#DCE7F0", "#1E3556"], pago: ["#DDEADE", "#3D7A4A"],
-    pendente: ["#F5E5CD", "#C97A1F"], director: ["#EFEBE2", "#152741"],
+    pendente: ["#F5E5CD", "#C97A1F"], director: ["#F5F2EC", "#152741"],
     professional: ["#DDEADE", "#3D7A4A"], parent: ["#DCE7F0", "#1E3556"],
-    admin: ["#152741", "#F7F4EE"], default: ["#EFEBE2", "#3C3C3B"],
+    admin: ["#152741", "#F7F4EE"], default: ["#F5F2EC", "#3C3C3B"],
     amber: ["#F5D9A8", "#C97A1F"], sage: ["#C7DDCB", "#3D7A4A"],
   };
   const [bg, c] = m[type] || m.default;
@@ -37,22 +37,22 @@ export const Tag = ({ children, type = "default" }) => {
 
 export const Card = ({ children, style, onClick, delay = 0, pad = 22 }) => (
   <div className="ch fu" onClick={onClick} style={{
-    background: "#FBF9F4", borderRadius: 14, padding: pad,
-    border: "1px solid #E5E0D4",
+    background: "#FBFAF7", borderRadius: 14, padding: pad,
+    border: "1px solid #EAE6DD",
     cursor: onClick ? "pointer" : "default",
     animationDelay: `${delay}ms`,
     transition: "border-color .15s ease, box-shadow .15s ease, transform .12s ease",
     ...style,
   }}
     onMouseEnter={onClick ? (e) => { e.currentTarget.style.borderColor = "#152741"; e.currentTarget.style.boxShadow = "0 4px 14px rgba(21,39,65,.06)"; } : undefined}
-    onMouseLeave={onClick ? (e) => { e.currentTarget.style.borderColor = "#E5E0D4"; e.currentTarget.style.boxShadow = "none"; } : undefined}
+    onMouseLeave={onClick ? (e) => { e.currentTarget.style.borderColor = "#EAE6DD"; e.currentTarget.style.boxShadow = "none"; } : undefined}
   >{children}</div>
 );
 
-export const Stat = ({ label, value, suffix, color = "#152741", bg = "#FBF9F4", trend, accent }) => (
+export const Stat = ({ label, value, suffix, color = "#152741", bg = "#FBFAF7", trend, accent }) => (
   <div style={{
     background: bg, borderRadius: 14, padding: "22px 22px 20px",
-    border: "1px solid #E5E0D4", flex: 1, position: "relative", overflow: "hidden",
+    border: "1px solid #EAE6DD", flex: 1, position: "relative", overflow: "hidden",
   }}>
     {accent && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: accent }} />}
     <Eyebrow>{label}</Eyebrow>
@@ -64,7 +64,7 @@ export const Stat = ({ label, value, suffix, color = "#152741", bg = "#FBF9F4", 
   </div>
 );
 
-export const Progress = ({ pct, color = "#152741", h = 6, bg = "#EFEBE2" }) => (
+export const Progress = ({ pct, color = "#152741", h = 6, bg = "#F5F2EC" }) => (
   <div style={{ height: h, borderRadius: h / 2, background: bg, overflow: "hidden" }}>
     <div style={{
       height: "100%", width: `${Math.min(pct, 100)}%`,
@@ -112,10 +112,10 @@ export const Toast = ({ msg, type = "success" }) => {
 export const Btn = ({ children, onClick, disabled, variant = "primary", size = "md", icon, style }) => {
   const variants = {
     primary: { bg: "#152741", c: "#F7F4EE", bd: "#152741", hbg: "#1E3556" },
-    secondary: { bg: "#FBF9F4", c: "#152741", bd: "#D9D3C5", hbg: "#F7F4EE" },
-    ghost: { bg: "transparent", c: "#152741", bd: "transparent", hbg: "#EFEBE2" },
+    secondary: { bg: "#FFFFFF", c: "#152741", bd: "#D9D3C5", hbg: "#F5F2EC" },
+    ghost: { bg: "transparent", c: "#152741", bd: "transparent", hbg: "#F5F2EC" },
     accent: { bg: "#E8A13C", c: "#152741", bd: "#E8A13C", hbg: "#D89030" },
-    danger: { bg: "#FBF9F4", c: "#B83A3A", bd: "#F4E0E0", hbg: "#F4E0E0" },
+    danger: { bg: "#FBFAF7", c: "#B83A3A", bd: "#F4E0E0", hbg: "#F4E0E0" },
   };
   const v = variants[variant] || variants.primary;
   const sizes = { sm: "8px 14px", md: "11px 20px", lg: "14px 26px" };
@@ -152,7 +152,7 @@ export const Inp = (props) => (
   <input {...props} style={{
     width: "100%", padding: "11px 14px", borderRadius: 10,
     border: "1px solid #D9D3C5", fontSize: 14,
-    background: "#FBF9F4", color: "#3C3C3B",
+    background: "#FBFAF7", color: "#3C3C3B",
     transition: "border-color .15s ease, box-shadow .15s ease",
     ...(props.style || {}),
   }} />
@@ -162,7 +162,7 @@ export const Sel = ({ value, onChange, options, placeholder }) => (
   <select value={value} onChange={(e) => onChange(e.target.value)} style={{
     width: "100%", padding: "11px 14px", borderRadius: 10,
     border: "1px solid #D9D3C5", fontSize: 14,
-    background: "#FBF9F4", color: "#3C3C3B", appearance: "none",
+    background: "#FBFAF7", color: "#3C3C3B", appearance: "none",
     backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238A8A86' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")",
     backgroundRepeat: "no-repeat", backgroundPosition: "right 14px center", paddingRight: 36,
   }}>
@@ -189,10 +189,10 @@ export const Modal = ({ open, onClose, title, eyebrow, children, width = 520 }) 
       tabIndex={-1}
     >
       <div onClick={(e) => e.stopPropagation()} className="modal-panel" style={{
-        background: "#FBF9F4", borderRadius: 18,
+        background: "#FBFAF7", borderRadius: 18,
         width: "100%", maxWidth: width, maxHeight: "86vh",
         overflowY: "auto", animation: "ti .25s ease both",
-        border: "1px solid #E5E0D4",
+        border: "1px solid #EAE6DD",
         boxShadow: "0 24px 64px rgba(21,39,65,.18)",
       }}>
         <div style={{ padding: "24px 28px 12px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>

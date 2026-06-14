@@ -71,7 +71,7 @@ export default function AdminLayout({ profile, onLogout, theme, setTheme }) {
 
       {/* ─────────────── DESKTOP — sidebar à esquerda ─────────────── */}
       {!isMobile && (
-        <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", minHeight: "100vh", background: "#F7F4EE" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", minHeight: "100vh", background: "#FFFFFF" }}>
           <aside aria-label="Navegação principal" style={{
             background: "#152741", color: "#F7F4EE",
             display: "flex", flexDirection: "column",
@@ -141,7 +141,7 @@ export default function AdminLayout({ profile, onLogout, theme, setTheme }) {
 
           <main id="main">
             {title.t && (
-              <div style={{ padding: "32px 40px 24px", borderBottom: "1px solid #E5E0D4", background: "#F7F4EE" }}>
+              <div style={{ padding: "32px 40px 24px", borderBottom: "1px solid #EAE6DD", background: "#FFFFFF" }}>
                 {title.e && <div style={{ marginBottom: 8 }}><Eyebrow>{title.e}</Eyebrow></div>}
                 <h1 className="serif" style={{ fontSize: 36, fontWeight: 300, color: "#152741", letterSpacing: "-0.025em", lineHeight: 1.05 }}>{title.t}</h1>
                 {title.s && <p style={{ fontSize: 14.5, color: "#8A8A86", marginTop: 6 }}>{title.s}</p>}
@@ -154,7 +154,7 @@ export default function AdminLayout({ profile, onLogout, theme, setTheme }) {
 
       {/* ─────────────── MOBILE — topbar + bottom tab bar (iOS-feel) ─────────────── */}
       {isMobile && (
-        <div style={{ minHeight: "100vh", background: "#F7F4EE", display: "flex", flexDirection: "column" }}>
+        <div style={{ minHeight: "100vh", background: "#FFFFFF", display: "flex", flexDirection: "column" }}>
           {/* Top app bar — fixo, transparente com blur sob scroll */}
           <header style={{
             position: "sticky", top: 0, zIndex: 50,
@@ -253,7 +253,7 @@ export default function AdminLayout({ profile, onLogout, theme, setTheme }) {
               }}
             >
               <div onClick={(e) => e.stopPropagation()} style={{
-                width: "100%", background: "#FBF9F4",
+                width: "100%", background: "#FBFAF7",
                 borderRadius: "20px 20px 0 0",
                 paddingBottom: "calc(var(--safe-bottom) + 12px)",
                 animation: "sheet-up .32s cubic-bezier(.32,.72,0,1) both",
@@ -261,7 +261,7 @@ export default function AdminLayout({ profile, onLogout, theme, setTheme }) {
               }}>
                 <div style={{ width: 36, height: 5, borderRadius: 3, background: "#D9D3C5", margin: "8px auto 4px" }} aria-hidden="true" />
                 {/* Cabeçalho do utilizador */}
-                <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 20px 14px", borderBottom: "1px solid #EFEBE2" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "16px 20px 14px", borderBottom: "1px solid #F5F2EC" }}>
                   <Av t={initials} bg="#E8A13C" sz={44} color="#152741" />
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 15, fontWeight: 600, color: "#152741", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{profile?.full_name || "Admin"}</div>
@@ -281,7 +281,7 @@ export default function AdminLayout({ profile, onLogout, theme, setTheme }) {
                         style={{
                           width: "100%", display: "flex", alignItems: "center", gap: 14,
                           padding: "13px 12px", borderRadius: 12,
-                          background: active ? "#EFEBE2" : "transparent",
+                          background: active ? "#F5F2EC" : "transparent",
                           color: active ? "#152741" : "#3C3C3B",
                           fontSize: 15, fontWeight: active ? 600 : 500, textAlign: "left",
                         }}
@@ -295,7 +295,7 @@ export default function AdminLayout({ profile, onLogout, theme, setTheme }) {
                 </div>
 
                 {/* Toggle tema + logout */}
-                <div style={{ padding: "10px 12px 14px", marginTop: 6, borderTop: "1px solid #EFEBE2" }}>
+                <div style={{ padding: "10px 12px 14px", marginTop: 6, borderTop: "1px solid #F5F2EC" }}>
                   <button
                     onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
                     className="ch tap-target"

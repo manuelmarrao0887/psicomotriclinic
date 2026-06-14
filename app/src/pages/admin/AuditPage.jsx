@@ -37,7 +37,7 @@ export default function AuditPage() {
           <div key={e.id} style={{
             display: "grid", gridTemplateColumns: "180px 1.5fr 2fr 1.2fr",
             padding: "12px 20px", alignItems: "center", fontSize: 13.5,
-            borderBottom: i < auditLog.length - 1 ? "1px solid #EFEBE2" : "none",
+            borderBottom: i < auditLog.length - 1 ? "1px solid #F5F2EC" : "none",
           }}>
             <span className="mono" style={{ color: "#8A8A86", fontSize: 11 }}>{e.ts ? new Date(e.ts).toLocaleString("pt-PT") : ""}</span>
             <span style={{ color: "#152741", fontWeight: 500 }}>{actionLabel[e.action] || e.action}</span>

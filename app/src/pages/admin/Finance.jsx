@@ -70,7 +70,7 @@ export default function Finance() {
           </div>
         </div>
 
-        <div style={{ borderTop: "1px solid #EFEBE2", paddingTop: 14 }}>
+        <div style={{ borderTop: "1px solid #F5F2EC", paddingTop: 14 }}>
           <div className="mono" style={{ fontSize: 10.5, color: "#8A8A86", marginBottom: 8 }}>CUSTOS VARIÁVEIS POR MÊS · LUZ · ÁGUA · TELECOM.</div>
           {sortedV.length === 0 ? (
             <div style={{ fontSize: 13, color: "#8A8A86" }}>Ainda sem custos registados. Use "Registar custos do mês".</div>
@@ -85,7 +85,7 @@ export default function Finance() {
                   <div key={v.id || v.month} style={{
                     display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr 1fr 1fr",
                     fontSize: 13.5, padding: "7px 0", borderTop: "1px solid #F2EEE5", alignItems: "center",
-                    background: v.month === refMonth ? "#FBF9F4" : "transparent",
+                    background: v.month === refMonth ? "#FBFAF7" : "transparent",
                   }}>
                     <span style={{ color: "#152741", fontWeight: 500 }}>{v.month}</span>
                     <span style={{ color: "#5A5A58" }}>{eur(v.power)}€</span>
@@ -100,7 +100,7 @@ export default function Finance() {
         </div>
 
         {refMonth && (
-          <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid #EFEBE2", display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+          <div style={{ marginTop: 16, paddingTop: 16, borderTop: "1px solid #F5F2EC", display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
             <div>
               <div className="mono" style={{ fontSize: 10.5, color: "#B83A3A" }}>CUSTOS · {refMonth}</div>
               <div className="serif" style={{ fontSize: 24, fontWeight: 300, color: "#B83A3A", marginTop: 4, letterSpacing: "-0.02em" }}>−{eur(custos)}€</div>
@@ -110,7 +110,7 @@ export default function Finance() {
               <div className="mono" style={{ fontSize: 10.5, color: "#3D7A4A" }}>RENDIMENTO GARAGEM</div>
               <div className="serif" style={{ fontSize: 24, fontWeight: 300, color: "#3D7A4A", marginTop: 4, letterSpacing: "-0.02em" }}>+{eur(gar)}€</div>
             </div>
-            <div style={{ paddingLeft: 18, borderLeft: "1px solid #EFEBE2" }}>
+            <div style={{ paddingLeft: 18, borderLeft: "1px solid #F5F2EC" }}>
               <div className="mono" style={{ fontSize: 10.5, color: "#8A8A86" }}>RESULTADO DO ESPAÇO</div>
               <div className="serif" style={{ fontSize: 24, fontWeight: 300, color: resEspaco >= 0 ? "#3D7A4A" : "#B83A3A", marginTop: 4, letterSpacing: "-0.02em" }}>
                 {resEspaco >= 0 ? "+" : "−"}{eur(Math.abs(resEspaco))}€
@@ -184,12 +184,12 @@ export default function Finance() {
             <div style={{ fontSize: 12, color: "#8A8A86" }} className="mono">PROFISSIONAIS · {Math.round((1 - CLINIC_CUT) * 100)}%</div>
             <div className="serif" style={{ fontSize: 30, fontWeight: 300, color: "#152741", marginTop: 4, letterSpacing: "-0.02em" }}>{profCut.toLocaleString("pt-PT", { maximumFractionDigits: 0 })}€</div>
           </div>
-          <div style={{ paddingLeft: 18, borderLeft: "1px solid #EFEBE2" }}>
+          <div style={{ paddingLeft: 18, borderLeft: "1px solid #F5F2EC" }}>
             <div style={{ fontSize: 11, color: "#8A8A86", marginBottom: 6 }} className="mono">NOTA</div>
             <div style={{ fontSize: 13, color: "#5A5A58", lineHeight: 1.5 }}>O profissional recebe o valor total dos responsáveis e transfere os {Math.round(CLINIC_CUT * 100)}% para a clínica.</div>
           </div>
         </div>
-        <div style={{ marginTop: 18, paddingTop: 18, borderTop: "1px solid #EFEBE2", display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ marginTop: 18, paddingTop: 18, borderTop: "1px solid #F5F2EC", display: "flex", flexDirection: "column", gap: 8 }}>
           {profs.map((pr) => {
             const ptIds = pts.filter((pt) => hasProf(pt, pr.id) && (pt.session_type === "individual")).map((p) => p.id);
             const recv = filtered.filter((p) => p.status === "pago" && ptIds.includes(p.patient_id)).reduce((a, p) => a + Number(p.amount), 0);
@@ -212,7 +212,7 @@ export default function Finance() {
 
       {/* Tabela pagamentos */}
       <Card pad={0}>
-        <div style={{ display: "grid", gridTemplateColumns: "2fr 1.2fr 1fr 1fr 1.2fr", padding: "14px 20px", background: "#EFEBE2", borderBottom: "1px solid #E5E0D4" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "2fr 1.2fr 1fr 1fr 1.2fr", padding: "14px 20px", background: "#F5F2EC", borderBottom: "1px solid #EAE6DD" }}>
           <Eyebrow>Paciente</Eyebrow><Eyebrow>Mês</Eyebrow><Eyebrow>Valor</Eyebrow><Eyebrow>Estado</Eyebrow><Eyebrow style={{ textAlign: "right" }}>Acções</Eyebrow>
         </div>
         {filtered.map((p, i) => {
@@ -221,7 +221,7 @@ export default function Finance() {
             <div key={p.id} style={{
               display: "grid", gridTemplateColumns: "2fr 1.2fr 1fr 1fr 1.2fr",
               padding: "14px 20px", alignItems: "center",
-              borderBottom: i < filtered.length - 1 ? "1px solid #EFEBE2" : "none",
+              borderBottom: i < filtered.length - 1 ? "1px solid #F5F2EC" : "none",
             }}>
               <span style={{ fontSize: 14, fontWeight: 500, color: "#152741" }}>{pt?.name || "—"}</span>
               <span style={{ fontSize: 13.5, color: "#5A5A58" }}>{p.month}</span>

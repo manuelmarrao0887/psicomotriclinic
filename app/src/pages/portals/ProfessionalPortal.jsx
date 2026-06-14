@@ -63,10 +63,10 @@ export default function ProfessionalPortal({ profile, onLogout, theme, setTheme 
       <header style={{
         position: "sticky", top: 0, zIndex: 50,
         paddingTop: "var(--safe-top)",
-        background: "rgba(247,244,238,.88)",
+        background: "rgba(255,255,255,.88)",
         backdropFilter: "saturate(180%) blur(20px)",
         WebkitBackdropFilter: "saturate(180%) blur(20px)",
-        borderBottom: "1px solid rgba(229,224,212,.6)",
+        borderBottom: "1px solid rgba(234,230,221,.6)",
       }}>
         <div style={{ height: "var(--topbar-h)", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "0 16px", maxWidth: 1100, margin: "0 auto" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -103,10 +103,10 @@ export default function ProfessionalPortal({ profile, onLogout, theme, setTheme 
       <nav aria-label="Navegação" style={{
         position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 50,
         paddingBottom: "var(--safe-bottom)",
-        background: "rgba(247,244,238,.92)",
+        background: "rgba(255,255,255,.92)",
         backdropFilter: "saturate(180%) blur(20px)",
         WebkitBackdropFilter: "saturate(180%) blur(20px)",
-        borderTop: "1px solid rgba(229,224,212,.7)",
+        borderTop: "1px solid rgba(234,230,221,.7)",
       }}>
         <div style={{ height: "var(--tabbar-h)", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", maxWidth: 1100, margin: "0 auto" }}>
           {[
@@ -184,7 +184,7 @@ function ProHome({ myProfId, myPatients, todaysSessions, todayLabel, notes, anno
           <Eyebrow>— PRÓXIMOS DIAS</Eyebrow>
           <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
             {upcoming.map(({ p, day }) => (
-              <div key={`${day}-${p.id}`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: "#FBF9F4", border: "1px solid #EFEBE2", borderRadius: 12 }}>
+              <div key={`${day}-${p.id}`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: "#FBFAF7", border: "1px solid #F5F2EC", borderRadius: 12 }}>
                 <div style={{ fontSize: 12, color: "#8A8A86", width: 70 }} className="mono">{day.slice(0, 3).toUpperCase()} {p.hour}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 600, color: "#152741", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
@@ -204,7 +204,7 @@ function ProHome({ myProfId, myPatients, todaysSessions, todayLabel, notes, anno
               const d = p.birth_date ? new Date(p.birth_date) : null;
               const label = d ? `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}` : "";
               return (
-                <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: "#FBF9F4", border: "1px solid #EFEBE2", borderRadius: 12 }}>
+                <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: "#FBFAF7", border: "1px solid #F5F2EC", borderRadius: 12 }}>
                   <div style={{ width: 32, height: 32, borderRadius: 16, background: "#F5D9A8", color: "#C97A1F", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <Icon name="trend" size={16} />
                   </div>
@@ -272,7 +272,7 @@ function notesByMeRecent(notes, myId, days) {
 
 function CompactStat({ label, value, accent }) {
   return (
-    <div style={{ background: "#FBF9F4", borderRadius: 14, padding: "14px 14px 12px", border: "1px solid #E5E0D4", position: "relative", overflow: "hidden" }}>
+    <div style={{ background: "#FBFAF7", borderRadius: 14, padding: "14px 14px 12px", border: "1px solid #EAE6DD", position: "relative", overflow: "hidden" }}>
       {accent && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: accent }} />}
       <Eyebrow>{label}</Eyebrow>
       <div className="serif" style={{ fontSize: 28, fontWeight: 300, color: "#152741", lineHeight: 1, letterSpacing: "-0.025em", marginTop: 8 }}>{value}</div>
@@ -282,7 +282,7 @@ function CompactStat({ label, value, accent }) {
 
 function SessionRow({ patient, onSessionNote, onMarkFalta }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: "#FBF9F4", border: "1px solid #EFEBE2", borderRadius: 12, flexWrap: "wrap" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: "#FBFAF7", border: "1px solid #F5F2EC", borderRadius: 12, flexWrap: "wrap" }}>
       <div style={{ fontSize: 13, color: "#152741", fontWeight: 600, width: 56 }} className="mono">{patient.hour}</div>
       <div style={{ flex: 1, minWidth: 140 }}>
         <div style={{ fontSize: 15, fontWeight: 600, color: "#152741", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{patient.name}</div>
@@ -314,19 +314,19 @@ function ProAgenda({ myPatients, profs }) {
     <div style={{ marginTop: 14 }}>
       <Card pad={0} style={{ overflow: "auto" }}>
         <div style={{ display: "grid", gridTemplateColumns: `70px repeat(${DAYS.length}, minmax(120px, 1fr))`, minWidth: 600 }}>
-          <div style={{ padding: "10px 8px", background: "#EFEBE2", borderBottom: "1px solid #E5E0D4" }}><Eyebrow>Hora</Eyebrow></div>
+          <div style={{ padding: "10px 8px", background: "#F5F2EC", borderBottom: "1px solid #EAE6DD" }}><Eyebrow>Hora</Eyebrow></div>
           {DAYS.map((d) => (
-            <div key={d} style={{ padding: "10px 12px", background: "#EFEBE2", borderBottom: "1px solid #E5E0D4", borderLeft: "1px solid #E5E0D4" }}>
+            <div key={d} style={{ padding: "10px 12px", background: "#F5F2EC", borderBottom: "1px solid #EAE6DD", borderLeft: "1px solid #EAE6DD" }}>
               <Eyebrow>{d.slice(0, 3)}</Eyebrow>
             </div>
           ))}
           {finalHours.map((h) => (
             <Fragment key={h}>
-              <div style={{ padding: "10px 8px", borderBottom: "1px solid #EFEBE2", fontSize: 12, color: "#5A5A58", fontWeight: 500 }} className="mono">{h}</div>
+              <div style={{ padding: "10px 8px", borderBottom: "1px solid #F5F2EC", fontSize: 12, color: "#5A5A58", fontWeight: 500 }} className="mono">{h}</div>
               {DAYS.map((d) => {
                 const items = slot(d, h);
                 return (
-                  <div key={d + h} style={{ padding: 6, borderLeft: "1px solid #EFEBE2", borderBottom: "1px solid #EFEBE2", minHeight: 54, background: items.length === 0 ? "transparent" : "#FBF9F4" }}>
+                  <div key={d + h} style={{ padding: 6, borderLeft: "1px solid #F5F2EC", borderBottom: "1px solid #F5F2EC", minHeight: 54, background: items.length === 0 ? "transparent" : "#FBFAF7" }}>
                     {items.map((p) => (
                       <div key={p.id} style={{ padding: "5px 7px", borderRadius: 6, background: "#DCE7F0", marginBottom: 4, fontSize: 12 }}>
                         <div style={{ fontWeight: 500, color: "#152741", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
@@ -354,7 +354,7 @@ function ProPatients({ myPatients, notes, onSessionNote }) {
       <div style={{ position: "relative" }}>
         <label htmlFor="pro-search" className="sr-only">Procurar paciente</label>
         <div aria-hidden="true" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#8A8A86", display: "flex" }}><Icon name="search" size={16} /></div>
-        <input id="pro-search" type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Procurar paciente…" aria-label="Procurar paciente" style={{ width: "100%", padding: "12px 14px 12px 40px", borderRadius: 12, border: "1px solid #D9D3C5", background: "#FBF9F4" }} />
+        <input id="pro-search" type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Procurar paciente…" aria-label="Procurar paciente" style={{ width: "100%", padding: "12px 14px 12px 40px", borderRadius: 12, border: "1px solid #D9D3C5", background: "#FBFAF7" }} />
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -400,12 +400,12 @@ function ProAccount({ profile, onLogout, theme, setTheme }) {
       </Card>
 
       <Card pad={0}>
-        <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="ch tap-target" style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", color: "#3C3C3B", fontSize: 15, fontWeight: 500, textAlign: "left", borderBottom: "1px solid #EFEBE2" }}>
+        <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="ch tap-target" style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", color: "#3C3C3B", fontSize: 15, fontWeight: 500, textAlign: "left", borderBottom: "1px solid #F5F2EC" }}>
           <span style={{ color: "#5A5A58", display: "flex" }}><Icon name={theme === "dark" ? "sun" : "moon"} size={20} /></span>
           <span style={{ flex: 1 }}>{theme === "dark" ? "Modo claro" : "Modo escuro"}</span>
           <Icon name="arr" size={16} color="#B9CDE0" />
         </button>
-        <button onClick={() => window.open("/privacidade", "_blank")} className="ch tap-target" style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", color: "#3C3C3B", fontSize: 15, fontWeight: 500, textAlign: "left", borderBottom: "1px solid #EFEBE2" }}>
+        <button onClick={() => window.open("/privacidade", "_blank")} className="ch tap-target" style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", color: "#3C3C3B", fontSize: 15, fontWeight: 500, textAlign: "left", borderBottom: "1px solid #F5F2EC" }}>
           <span style={{ color: "#5A5A58", display: "flex" }}><Icon name="shield" size={20} /></span>
           <span style={{ flex: 1 }}>Política de Privacidade</span>
           <Icon name="arr" size={16} color="#B9CDE0" />
