@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="pt-PT" class="locked">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="robots" content="noindex, nofollow" />
+<title>QA · Psicomotriclinic Hub</title>
+<style>
+  :root{
+    --navy:#152741; --navy-2:#1E3556; --paper:#FBFAF7; --cream-2:#F5F2EC;
+    --line:#EAE6DD; --line-2:#D9D3C5; --ink:#3C3C3B; --ink-2:#5A5A58;
+    --muted:#8A8A86; --accent:#E8A13C; --sage:#8DBF94; --sky:#B9CDE0;
+    --err:#B83A3A; --warn:#C97A1F; --warn-soft:#F5E5CD; --ok:#3D7A4A;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%}
+  body{font-family:-apple-system,'DM Sans',system-ui,sans-serif;background:#fff;color:var(--ink);font-size:14px;line-height:1.55}
+  /* gate */
+  html.locked body > *:not(#gate){display:none!important}
+  html:not(.locked) #gate{display:none}
+  #gate{position:fixed;inset:0;background:#0E1A2C;color:#F7F4EE;display:flex;align-items:center;justify-content:center;z-index:9999;padding:24px;text-align:center}
+  #gate .card{max-width:420px}
+  #gate h1{font-weight:300;font-size:30px;letter-spacing:-0.025em;margin-bottom:8px}
+  #gate p{font-size:14px;color:rgba(247,244,238,.7);line-height:1.6}
+  #gate a{color:var(--accent);text-decoration:none;font-weight:600}
+  #gate .mark{margin-bottom:18px;font-size:11px;letter-spacing:.16em;color:rgba(247,244,238,.4)}
+  /* header */
+  header{padding:24px 24px 0;max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+  header h1{font-weight:300;font-size:30px;letter-spacing:-0.025em;color:var(--navy)}
+  header .eyebrow{font-size:10px;letter-spacing:.16em;color:var(--muted);font-weight:700;margin-bottom:4px}
+  header .meta{font-size:12px;color:var(--muted)}
+  header .meta b{color:var(--ink-2)}
+  /* tabs */
+  .tabs{padding:24px;max-width:1200px;margin:0 auto;display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:0;padding-bottom:0}
+  .tabs button{background:none;border:none;padding:12px 18px;font:inherit;color:var(--ink-2);cursor:pointer;border-bottom:2px solid transparent;font-weight:500;font-size:14px}
+  .tabs button.active{color:var(--navy);border-bottom-color:var(--accent);font-weight:600}
+  main{padding:24px;max-width:1200px;margin:0 auto}
+  /* tab content */
+  .tab{display:none}
+  .tab.active{display:block}
+  /* plan controls */
+  .ctl{display:flex;gap:10px;align-items:center;margin-bottom:18px;flex-wrap:wrap}
+  .ctl input[type=text]{padding:10px 12px;border-radius:10px;border:1px solid var(--line-2);font-size:14px;background:#FBFAF7;min-width:240px}
+  .ctl .stat{font-size:12px;color:var(--muted)}
+  .ctl .stat b{color:var(--navy);font-weight:600}
+  .ctl button{padding:9px 14px;border-radius:10px;border:1px solid var(--line-2);background:#fff;cursor:pointer;font-size:13px;font-weight:500}
+  .ctl button.primary{background:var(--navy);color:#F7F4EE;border-color:var(--navy)}
+  /* group */
+  .group{border:1px solid var(--line);border-radius:14px;margin-bottom:14px;background:var(--paper);overflow:hidden}
+  .group > h2{padding:14px 18px;font-size:14px;font-weight:600;color:var(--navy);background:var(--cream-2);border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .group > h2 .gid{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;color:var(--muted);margin-right:8px}
+  .group > h2 .gcount{font-size:11px;color:var(--muted);font-weight:500}
+  .test{padding:14px 18px;border-bottom:1px solid var(--line)}
+  .test:last-child{border-bottom:none}
+  .test header{padding:0;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;flex-wrap:wrap;margin:0}
+  .test header h3{font-size:14px;font-weight:600;color:var(--navy);margin-bottom:6px}
+  .test header .tid{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);margin-right:8px}
+  .test .steps{font-size:13px;color:var(--ink-2);margin-bottom:6px}
+  .test .steps ol{margin-left:18px}
+  .test .steps li{margin-bottom:2px}
+  .test .expect{font-size:12.5px;color:var(--ok);padding:8px 10px;background:#DDEADE;border-radius:8px;margin-top:8px}
+  .test .actions{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:10px}
+  .test .actions button{padding:5px 10px;border-radius:6px;border:1px solid var(--line-2);background:#fff;cursor:pointer;font-size:12px;font-weight:500}
+  .test .actions button.pass.set{background:#DDEADE;border-color:#8DBF94;color:var(--ok)}
+  .test .actions button.fail.set{background:#F4E0E0;border-color:#E8A0A0;color:var(--err)}
+  .test .actions button.na.set{background:#F5E5CD;border-color:#ECC58A;color:var(--warn)}
+  .test .actions input{flex:1;min-width:200px;padding:5px 10px;border-radius:6px;border:1px solid var(--line);font-size:12px;background:#FBFAF7}
+  /* data map */
+  .layers{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+  .layer{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px}
+  .layer h3{font-size:11px;letter-spacing:.12em;color:var(--muted);margin-bottom:8px;font-weight:700}
+  .layer ul{list-style:none;margin:0}
+  .layer li{padding:6px 0;border-top:1px solid var(--line);font-size:13px;color:var(--navy)}
+  .layer li:first-child{border-top:none}
+  .entities{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+  .entity{background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px}
+  .entity h4{font-size:14px;color:var(--navy);margin-bottom:4px;font-family:'JetBrains Mono',monospace;font-weight:600}
+  .entity .desc{font-size:12px;color:var(--muted);margin-bottom:10px}
+  .entity .fields{font-size:12.5px;color:var(--ink-2);font-family:'JetBrains Mono',monospace;line-height:1.7}
+  .entity .links{margin-top:8px;font-size:11px;color:var(--ink-2)}
+  .entity .links span{display:inline-block;padding:2px 6px;border-radius:4px;background:var(--cream-2);margin-right:4px;margin-top:4px}
+  /* security */
+  .sec{margin-bottom:24px}
+  .sec h3{font-size:13px;letter-spacing:.08em;font-weight:700;color:var(--navy);margin-bottom:10px}
+  .sitem{background:var(--paper);border-left:4px solid var(--line-2);border:1px solid var(--line);border-left-width:4px;border-radius:10px;padding:12px 14px;margin-bottom:8px}
+  .sitem.high{border-left-color:var(--err)}
+  .sitem.med{border-left-color:var(--warn)}
+  .sitem.low{border-left-color:var(--sky)}
+  .sitem .sh{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:6px}
+  .sitem .title{font-weight:600;color:var(--navy);font-size:13.5px}
+  .sitem .badges{display:flex;gap:6px}
+  .sitem .badge{padding:2px 8px;border-radius:99px;font-size:10.5px;font-weight:600;letter-spacing:.04em}
+  .sitem .badge.fix{background:#DDEADE;color:var(--ok)}
+  .sitem .badge.rec{background:#F5E5CD;color:var(--warn)}
+  .sitem .badge.high{background:#F4E0E0;color:var(--err)}
+  .sitem .loc{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin-bottom:6px}
+  .sitem .body{font-size:12.5px;color:var(--ink-2);line-height:1.6}
+  .sitem .fix-text{margin-top:6px;font-size:12px;color:var(--ok)}
+  .sec ul{list-style:none;padding-left:0}
+  .sec ul li{padding:6px 0;font-size:13px;color:var(--ink-2);display:flex;gap:8px}
+  .sec ul li::before{content:"✓";color:var(--ok);font-weight:700}
+  @media print{
+    .ctl,.tabs button:not(.active),#gate{display:none!important}
+    .group{break-inside:avoid;border-color:#000}
+    .test{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+
+<div id="gate" role="status" aria-live="polite">
+  <div class="card">
+    <div class="mark">— PSICOMOTRICLINIC HUB · QA</div>
+    <h1>Acesso restrito</h1>
+    <p>Esta página só é visível com sessão iniciada na app. <a href="/login">Iniciar sessão</a></p>
+  </div>
+</div>
+
+<header>
+  <div>
+    <div class="eyebrow">— QA</div>
+    <h1>Plano de testes · Psicomotriclinic Hub</h1>
+  </div>
+  <div class="meta">Versão app: <b id="metaVer">—</b> · Última build: <b id="metaDate">—</b></div>
+</header>
+
+<nav class="tabs" role="tablist">
+  <button class="tab-btn active" data-tab="plan" role="tab">Plano de testes</button>
+  <button class="tab-btn" data-tab="data" role="tab">Mapa de dados</button>
+  <button class="tab-btn" data-tab="sec" role="tab">Segurança</button>
+</nav>
+
+<main>
+  <section class="tab active" id="tab-plan">
+    <div class="ctl">
+      <input id="filter" type="text" placeholder="Filtrar testes (texto, id, grupo)…" />
+      <div class="stat">Total: <b id="cTotal">0</b> · Passou: <b id="cPass">0</b> · Falhou: <b id="cFail">0</b> · N/A: <b id="cNa">0</b> · Por correr: <b id="cTodo">0</b></div>
+      <button onclick="resetAll()">Reset</button>
+      <button class="primary" onclick="window.print()">Imprimir</button>
+    </div>
+    <div id="groups"></div>
+  </section>
+
+  <section class="tab" id="tab-data">
+    <div class="layers" id="layers"></div>
+    <h2 style="font-size:14px;font-weight:700;color:var(--navy);margin:18px 0 10px;letter-spacing:.06em">— ENTIDADES FIRESTORE</h2>
+    <div class="entities" id="entities"></div>
+  </section>
+
+  <section class="tab" id="tab-sec">
+    <div id="security"></div>
+  </section>
+</main>
+
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script>
+// ────────── GATE FIREBASE AUTH ──────────
+(function(){
+  try{
+    firebase.initializeApp({
+      apiKey:"AIzaSyBGQGSSGthbIMUxHDefwWlarNR7c_Vjd3E",
+      authDomain:"psicomotriclinic-app.firebaseapp.com",
+      projectId:"psicomotriclinic-app",
+      storageBucket:"psicomotriclinic-app.firebasestorage.app",
+      messagingSenderId:"114979101363",
+      appId:"1:114979101363:web:7e66962c231e12a66c2ec6"
+    });
+    firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL);
+    firebase.auth().onAuthStateChanged(function(u){
+      if(u){document.documentElement.classList.remove('locked');}
+      else{document.documentElement.classList.add('locked');}
+    });
+  }catch(e){
+    console.warn('Firebase gate falhou — mantém locked',e);
+    document.documentElement.classList.add('locked');
+  }
+})();
+</script>
+
+<script>
+// ────────── PLANO DE TESTES ──────────
+const GROUPS = [
+  { id:"T1", title:"Auth & Papéis", tests:[
+    { id:"T1.1", title:"Login email+password (Director)", steps:[
+      "Abrir /login","Inserir email manuelsousamarrao@gmail.com e password","Submeter"
+    ], expect:"Redirecciona para /dashboard. Sidebar admin com 9 secções visíveis." },
+    { id:"T1.2", title:"Login Google OAuth", steps:[
+      "Abrir /login","Clicar 'Continuar com Google'","Autorizar conta"
+    ], expect:"Sessão criada. Profile.role calculado por fallback (director se email = ADMIN_EMAIL; senão parent)." },
+    { id:"T1.3", title:"Registo novo Responsável", steps:[
+      "Abrir /login → 'Criar conta'","Preencher nome, email, password","Selecionar papel 'Responsável'","Aceitar RGPD","Submeter"
+    ], expect:"Conta criada com role=parent. Sessão iniciada → Portal Responsável visível." },
+    { id:"T1.4", title:"Conta desativada", steps:[
+      "Director marca utilizador como active=false","Esse utilizador tenta login"
+    ], expect:"Sign out automático + redirect /login?disabled=1 + banner 'Conta desativada'." },
+    { id:"T1.5", title:"Routing por papel", steps:[
+      "Login com 3 perfis diferentes (director / professional / parent)","Verificar landing após login"
+    ], expect:"Director→AdminLayout. Professional→ProfessionalPortal. Parent→ParentPortal. Tentativa de aceder /pacientes sem role admin → fallback ao portal próprio." },
+  ]},
+  { id:"T2", title:"Pacientes", tests:[
+    { id:"T2.1", title:"Criar paciente", steps:[
+      "/pacientes → 'Novo paciente'","Preencher nome, idade, profissional, dia, hora, tipo","Guardar"
+    ], expect:"Paciente aparece na lista. Audit log regista 'add_patient'." },
+    { id:"T2.2", title:"Vincular Responsável a paciente", steps:[
+      "Abrir PatientDetail","Cartão 'Família' → 'Vincular contas'","Selecionar conta com role=parent","Guardar"
+    ], expect:"parent_user_ids actualizado. Esse responsável passa a ver este paciente no portal." },
+    { id:"T2.3", title:"Eliminar paciente (confirmação modal)", steps:[
+      "PatientDetail → 'Eliminar paciente'","Confirmar no ConfirmModal"
+    ], expect:"Paciente removido. Audit log. Plano/notas/anamnese ficam órfãos (não eliminados em cascade — comportamento esperado)." },
+    { id:"T2.4", title:"Search lista pacientes", steps:[
+      "Página Pacientes","Escrever no campo procurar"
+    ], expect:"Lista filtrada por nome (case-insensitive includes). Estado vazio se sem resultados." },
+    { id:"T2.5", title:"Importação bulk (formato agenda)", steps:[
+      "/pacientes → 'Importar'","Colar lista: Nome,Idade,Profissional,Dia,Hora,Tipo"
+    ], expect:"X criados, Y ignorados se profissional não existir. Toast informativo." },
+  ]},
+  { id:"T3", title:"Anamnese", tests:[
+    { id:"T3.1", title:"Criar anamnese", steps:[
+      "PatientDetail → cartão 'Anamnese' → 'Criar anamnese'","Preencher 8 secções","Guardar"
+    ], expect:"Anamnese gravada. Aparece o resumo das secções preenchidas no detalhe." },
+    { id:"T3.2", title:"Editar anamnese existente", steps:[
+      "PatientDetail com anamnese existente → 'Editar anamnese'","Alterar campos","Guardar"
+    ], expect:"Upsert sobre o doc existente. ID = patientId (1:1)." },
+  ]},
+  { id:"T4", title:"Plano de Intervenção", tests:[
+    { id:"T4.1", title:"Criar plano com 3 objetivos", steps:[
+      "PatientDetail → cartão Plano → Criar","Adicionar 3 objectivos, cada um com domínio + texto","Definir review_date","Guardar"
+    ], expect:"Plano gravado. Aparece com progress bars (0% default) e tag 'Ativo'." },
+    { id:"T4.2", title:"Marcar objetivo como atingido", steps:[
+      "Editar plano","Mudar status do objectivo para 'atingido'","Guardar"
+    ], expect:"Progress bar verde (#3D7A4A). Tag 'Atingido' no objectivo." },
+  ]},
+  { id:"T5", title:"Notas de sessão", tests:[
+    { id:"T5.1", title:"Registar nota completa", steps:[
+      "PatientDetail → cartão Notas → 'Nova nota'","Preencher data, estado=realizada, profissional, domínios, 4 campos","Guardar"
+    ], expect:"Nota gravada. Aparece na timeline ordenada por data desc." },
+    { id:"T5.2", title:"Marcar falta rápido (Pro portal)", steps:[
+      "Login como professional vinculado","Tab Início → sessão de hoje","Clicar 'Falta' → confirmar"
+    ], expect:"Cria session_note com status=cancelado ou falta + cancelled_by_user=false. Audit log." },
+    { id:"T5.3", title:"Cancelar sessão (Parent via push)", steps:[
+      "Receber push lembrete (ou abrir /confirmar/:patientId/:date)","Clicar 'Não posso ir'","Inserir motivo opcional","Confirmar"
+    ], expect:"Cria session_note status=cancelado, cancelled_by_user=true. Director vê na lista." },
+    { id:"T5.4", title:"Eliminar nota (ConfirmModal)", steps:[
+      "PatientDetail → nota → ícone trash","Confirmar"
+    ], expect:"Nota removida via ConfirmModal — sem confirm() nativo." },
+  ]},
+  { id:"T6", title:"Agenda", tests:[
+    { id:"T6.1", title:"Vista semana (desktop)", steps:[
+      "/agenda em janela ≥900px"
+    ], expect:"Grelha 5 dias × N horas. Sessões em cards coloridos. Cada card navegável por teclado (Enter/Space)." },
+    { id:"T6.2", title:"Segmented control dias (mobile)", steps:[
+      "/agenda em ≤899px","Tocar tabs Seg/Ter/.../Sex"
+    ], expect:"Lista vertical das sessões do dia escolhido, ordenadas por hora. Default = dia da semana actual." },
+    { id:"T6.3", title:"Portal Pro — agenda filtrada", steps:[
+      "Login pro","Tab Agenda"
+    ], expect:"Mesma grelha mas só com os meus pacientes (filter por professional_id ∈ myProfessionalId)." },
+  ]},
+  { id:"T7", title:"Pagamentos & Financeiro", tests:[
+    { id:"T7.1", title:"Registar pagamento", steps:[
+      "PatientDetail → 'Registar pagamento'","Mês + valor + estado"
+    ], expect:"Pagamento na lista do paciente + dashboard financeiro." },
+    { id:"T7.2", title:"Toggle pago/pendente", steps:[
+      "Financeiro → linha de pagamento","Click tag de estado"
+    ], expect:"Estado alterna. paid_date actualizado se passa a pago." },
+    { id:"T7.3", title:"P&L mensal", steps:[
+      "Financeiro → secção P&L"
+    ], expect:"Tabela meses 2026 com receitas (soma pagamentos pagos), custos fixos+variáveis, EBITDA, resultado líquido." },
+  ]},
+  { id:"T8", title:"Pedidos de troca", tests:[
+    { id:"T8.1", title:"Parent submete pedido", steps:[
+      "Portal Responsável → tab Pedidos → 'Novo pedido'","Selecionar filho, novo dia, nova hora, motivo","Enviar"
+    ], expect:"Doc em schedule_requests status=pendente. Director vê em /pedidos." },
+    { id:"T8.2", title:"Director aprova", steps:[
+      "/pedidos","Clicar 'Aprovar'"
+    ], expect:"Status='aprovado', updated_at gravado. Parent recebe push (se FCM activo) + badge vermelho na tab Pedidos." },
+    { id:"T8.3", title:"Histórico de pedidos no portal", steps:[
+      "Portal Responsável → tab Pedidos"
+    ], expect:"Lista todos os pedidos do utilizador (pendente / aprovado / recusado) com horários antes→depois." },
+  ]},
+  { id:"T9", title:"Comunicações", tests:[
+    { id:"T9.1", title:"Director publica anúncio", steps:[
+      "/comunicacoes → 'Nova comunicação'","Título + mensagem + audience=All","Publicar"
+    ], expect:"Anúncio em announcements. Banner âmbar aparece no topo da Home dos portais Pro e Parent." },
+    { id:"T9.2", title:"Filtragem por audience", steps:[
+      "Publicar 3 anúncios: all, professional, parent","Verificar cada portal"
+    ], expect:"Parent vê all+parent. Pro vê all+professional. Director vê todos em /comunicacoes." },
+    { id:"T9.3", title:"Desativar e reativar", steps:[
+      "Toggle 'Desativar' num anúncio","Verificar portais","Reativar"
+    ], expect:"Desativado: sai dos portais, vai para arquivo. Reativado: volta a aparecer." },
+  ]},
+  { id:"T10", title:"Portal Responsável", tests:[
+    { id:"T10.1", title:"Matching por parent_user_ids", steps:[
+      "Director vincula parent a paciente","Parent faz login"
+    ], expect:"Cartão do filho aparece em Início. Plano + notas + pagamentos visíveis." },
+    { id:"T10.2", title:"Fallback por nome", steps:[
+      "Director NÃO vincula explicitamente","Mas patient.parent_mother contém profile.full_name","Parent login"
+    ], expect:"Match por nome funciona (case-insensitive includes). Cartão do filho aparece." },
+    { id:"T10.3", title:"Empty state sem vínculo", steps:[
+      "Parent login sem qualquer match"
+    ], expect:"Card âmbar 'Nenhum filho associado' com instruções para contactar direção." },
+    { id:"T10.4", title:"Notificações in-app", steps:[
+      "Pedido do parent é aprovado pelo director","Parent abre app"
+    ], expect:"Badge vermelho na tab Pedidos. Banner azul 'Novidades' na Home com CTA 'Marcar como visto'." },
+  ]},
+  { id:"T11", title:"Portal Profissional", tests:[
+    { id:"T11.1", title:"Matching por profile_id", steps:[
+      "Director vincula conta a professional record","Pro faz login"
+    ], expect:"Caso(s) atribuídos aparecem em 'Início' → 'Meus casos'." },
+    { id:"T11.2", title:"Aniversários 30d", steps:[
+      "Pro com pacientes que fazem anos nos próximos 30d","Tab Início"
+    ], expect:"Card 'Aniversários · 30 dias' com top 5, ordenados por proximidade." },
+    { id:"T11.3", title:"Adicionar nota de sessão via portal", steps:[
+      "Tab Pacientes → paciente → 'Registar nota de sessão'"
+    ], expect:"Modal sessionNote abre. Após guardar, contador 'notas' incrementa." },
+  ]},
+  { id:"T12", title:"PWA · Instalação", tests:[
+    { id:"T12.1", title:"Install no iPhone (Safari ≥16.4)", steps:[
+      "Abrir app.acasadapsicomotricidade.pt no Safari","Partilhar → 'Adicionar ao Ecrã Principal'","Abrir do home screen"
+    ], expect:"Ícone navy com brand mark. Abre em standalone (sem chrome browser). Theme color preto-navy." },
+    { id:"T12.2", title:"Install no Android (Chrome)", steps:[
+      "Chrome → menu → 'Adicionar à tela inicial'"
+    ], expect:"Prompt nativo Android. Após install, app abre em standalone." },
+    { id:"T12.3", title:"Offline shell", steps:[
+      "Abrir app online uma vez","Activar modo avião","Abrir app outra vez"
+    ], expect:"Shell HTML serve do cache do SW. Conteúdo dinâmico (Firestore) falha silenciosamente, mostra última versão cacheada via persistentLocalCache." },
+  ]},
+  { id:"T13", title:"Push Notifications", tests:[
+    { id:"T13.1", title:"Banner aparece só com VAPID config", steps:[
+      "Sem VITE_FCM_VAPID_KEY definida","Login"
+    ], expect:"Banner NÃO aparece (FCM_VAPID_KEY vazia desactiva). Com VAPID definida e redeploy, banner aparece." },
+    { id:"T13.2", title:"Activar e guardar token", steps:[
+      "Banner → 'Ativar'","Aceitar permissão browser"
+    ], expect:"FCM token gravado em profiles.{uid}.fcm_tokens. Banner some." },
+    { id:"T13.3", title:"Push de anúncio chega", steps:[
+      "Após Cloud Functions deploy","Director publica anúncio audience=all"
+    ], expect:"Pro/Parent recebem push title=título do anúncio. Tap abre app." },
+    { id:"T13.4", title:"Lembrete diário 18:00", steps:[
+      "Cloud Scheduler activo","Esperar 18:00 Lisboa","Verificar push aos parents com filho com sessão amanhã"
+    ], expect:"Push 'Sessão amanhã às HH:MM'. Doc dedup em reminders/{patientId}_{date}." },
+  ]},
+  { id:"T14", title:"Acessibilidade", tests:[
+    { id:"T14.1", title:"Navegação por teclado", steps:[
+      "Tab pela app inteira sem rato","Verificar focus rings em cada elemento interactivo"
+    ], expect:"Outline amber 2px em todos os botões/links/role=button. Skip link 'Saltar para conteúdo' aparece em focus." },
+    { id:"T14.2", title:"Screen reader", steps:[
+      "VoiceOver/NVDA","Abrir /dashboard"
+    ], expect:"Eyebrow lida como tal. KPIs anunciados com label + value. Toast com aria-live." },
+    { id:"T14.3", title:"prefers-reduced-motion", steps:[
+      "OS settings → reduce motion","Abrir app"
+    ], expect:"Animações fade/slide desligadas. Transições instantâneas." },
+    { id:"T14.4", title:"Contraste cor", steps:[
+      "DevTools accessibility audit"
+    ], expect:"Todos os textos ≥4.5:1 vs background. Eyebrow muted ≥3:1 (large text). Sem cor como único indicador." },
+  ]},
+  { id:"T15", title:"Performance & Cache", tests:[
+    { id:"T15.1", title:"Initial bundle", steps:[
+      "Lighthouse / Network tab","Hard refresh de /dashboard"
+    ], expect:"index-*.js ~95KB gzip. firebase chunk separado ~105KB gzip. Outros pages on-demand via React.lazy." },
+    { id:"T15.2", title:"Code split funciona", steps:[
+      "Navegar /pacientes pela primeira vez","Network tab"
+    ], expect:"Patients-*.js carrega só ao entrar em /pacientes (~6KB gzip)." },
+    { id:"T15.3", title:"Auto-recovery chunk órfão", steps:[
+      "Deploy novo (hashes mudam)","Manter tab antiga aberta","Navegar para nova página"
+    ], expect:"lazyWithRetry detecta erro de chunk → location.reload() automático → tudo funciona sem mostrar erro." },
+    { id:"T15.4", title:"Firestore reads — baseline", steps:[
+      "Login → /dashboard","Verificar Firebase Console → Firestore → Usage"
+    ], expect:"Após open inicial, sessão ociosa = 0 reads (listeners não custam até algo mudar). Visits limitadas a 30d." },
+  ]},
+  { id:"T16", title:"Privacidade & RGPD", tests:[
+    { id:"T16.1", title:"Política de privacidade acessível", steps:[
+      "Footer/Conta → 'Política de Privacidade'"
+    ], expect:"Página /privacidade carrega secções dinâmicas: dados coletados, finalidades, retenção, direitos do titular." },
+    { id:"T16.2", title:"Direitos do titular", steps:[
+      "Parent solicita acesso aos dados / eliminação"
+    ], expect:"Director consegue exportar dados do paciente associado (CSV em Definições). Eliminação manual via PatientDetail." },
+    { id:"T16.3", title:"Aceitação RGPD no registo", steps:[
+      "Criar conta nova"
+    ], expect:"Checkbox 'Li e aceito a Política de Privacidade' obrigatório antes de poder submeter." },
+  ]},
+];
+
+// ────────── MAPA DE DADOS ──────────
+const LAYERS = [
+  { title:"Entradas", items:["Auth (email/Google)","Form pacientes/profs","Form anamnese/plano/notas","Form pagamentos","Pedidos do parent","Push permission","Anúncios do director"] },
+  { title:"Dados", items:["profiles","professionals","patients","session_notes","intervention_plans","anamnesis","payments","schedule_requests","announcements","audit_log","visits","reminders","overheads","variable_costs"] },
+  { title:"Derivações", items:["KPIs dashboard","P&L mensal","Aniversários 30d","Risco drop-out","Today widget","Histórico pedidos","Recentemente resolvidos"] },
+  { title:"Ecrãs", items:["AdminLayout (9 secções)","ParentPortal (4 tabs)","ProfessionalPortal (4 tabs)","ConfirmSession","Login","Privacy","StyleLab","Announcements"] },
+];
+
+const ENTITIES = [
+  { name:"profiles", desc:"Conta de utilizador. ID = Firebase Auth UID.", fields:[
+    "id : string (uid)","email : string","full_name : string","role : 'director'|'professional'|'parent'","active : bool","fcm_tokens : string[]","push_enabled_at : iso","created_at : iso"
+  ], links:["fcm_tokens populated por enablePush()","role determina routing"] },
+  { name:"professionals", desc:"Registo de terapeuta na equipa.", fields:[
+    "id : string","name : string","role_title : string","profile_id : string?","avatar_initials : string","avatar_color : hex","active : bool"
+  ], links:["profile_id → profiles.id","patients.professional_id|professional_ids → professionals.id"] },
+  { name:"patients", desc:"Criança em acompanhamento.", fields:[
+    "id : string","name : string","age : int","birth_date : iso?","nif : string?","parent_mother / parent_father : string?","parent_user_ids : string[]","professional_id : string","professional_ids : string[]","session_type : 'individual'|'grupo'","day_of_week : string","hour : string","insurance_name / insurance_number : string?","active : bool"
+  ], links:["parent_user_ids[] → profiles.id (role=parent)","professional_ids[] → professionals.id"] },
+  { name:"session_notes", desc:"Nota clínica por sessão.", fields:[
+    "id : string","patient_id : string","professional_id : string?","date : 'AAAA-MM-DD'","status : 'realizada'|'falta'|'cancelado'","domains : string[]","work_done : string","observations : string","progress : string","next_plan : string","cancelled_by_user : bool","created_by : profile.id"
+  ], links:["patient_id → patients.id","professional_id → professionals.id"] },
+  { name:"intervention_plans", desc:"Plano com objectivos. 1:1 com patient.", fields:[
+    "id = patient_id","area : string","objectives : [{text, domain, status, progress}]","start_date / review_date : iso?","notes : string","updated_at : iso","updated_by : profile.id"
+  ], links:["id = patient_id (upsert)"] },
+  { name:"anamnesis", desc:"Ficha de admissão. 1:1 com patient.", fields:[
+    "id = patient_id","referral_reason","chief_complaints","birth_history","developmental_milestones","school_context","family_context","previous_interventions","general_notes"
+  ], links:["id = patient_id"] },
+  { name:"payments", desc:"Pagamento mensal.", fields:[
+    "id : string","patient_id : string","month : string","amount : float","status : 'pago'|'pendente'","paid_date : iso?","created_at : iso"
+  ], links:["patient_id → patients.id"] },
+  { name:"schedule_requests", desc:"Pedido de troca de horário.", fields:[
+    "id : string","patient_id : string","patient_name : string","requested_by_id : profile.id","requested_by_name : string","from_day / from_hour : string","new_day / new_hour : string","reason : string","status : 'pendente'|'aprovado'|'recusado'","created_at / updated_at : iso"
+  ], links:["patient_id → patients.id","requested_by_id → profiles.id"] },
+  { name:"announcements", desc:"Comunicação da direção.", fields:[
+    "id : string","title : string","body : string","audience : 'all'|'professional'|'parent'","author_id : profile.id","author_name : string","active : bool","created_at : iso"
+  ], links:["author_id → profiles.id"] },
+  { name:"audit_log", desc:"Registo de acções. Read só director.", fields:[
+    "id : string","who_id : profile.id","who_name : string","who_role : string","action : string","target : 'colection:id'","summary : string","ts : iso"
+  ], links:["who_id → profiles.id"] },
+  { name:"visits", desc:"Log de logins (analytics). Read só director, últimos 30d.", fields:[
+    "id : string","profile_id : profile.id","name : string","role : string","ts : iso"
+  ], links:["profile_id → profiles.id"] },
+  { name:"reminders", desc:"Dedup de envios. Escrito pela Cloud Function.", fields:[
+    "id = patientId_date","patient_id : string","session_date : iso","push_sent : int","email_sent : int","recipients : profile.id[]","status : 'sent'|'dry_run'|'skipped'","created_at : iso"
+  ], links:["patient_id → patients.id"] },
+];
+
+// ────────── SEGURANÇA ──────────
+const SECURITY = [
+  { sev:"high", status:"fixed", title:"SPA rewrite Vercel não funcionava — todas as rotas não-root devolviam 404", loc:"vercel.json", risk:"App inacessível em deep links + push tap.", fix:"Removido cleanUrls + framework:null. Rewrite simples /(.*)→/index.html." },
+  { sev:"med", status:"fixed", title:"Banner push pedia activação sem VAPID configurada", loc:"PushPermissionBanner.jsx", risk:"Promessa falsa ao utilizador. Erro 'servidor não configurado' a cada tap.", fix:"Verifica FCM_VAPID_KEY antes de mostrar banner. Sem key → oculto." },
+  { sev:"med", status:"fixed", title:"Páginas Pacientes/Definições em branco após deploy", loc:"App.jsx (React.lazy)", risk:"User com tab antiga abre página lazy → chunk hash já não existe → ErrorBoundary.", fix:"lazyWithRetry detecta falha de fetch → location.reload() automático com flag em sessionStorage." },
+  { sev:"med", status:"fixed", title:"Polling de 14 getDocs() a cada open + cada mutação", loc:"store.jsx load()", risk:"~2000 reads facturados por abertura. Tier grátis Firestore esgotava rapidamente.", fix:"onSnapshot listeners + IndexedDB persistent cache + visits 30d. Redução ~95%." },
+  { sev:"high", status:"rec", title:"Parent pode criar session_note em qualquer paciente", loc:"firestore.rules /session_notes create", risk:"Rules só verificam status=cancelado + cancelled_by_user=true, NÃO verificam que patient.parent_user_ids inclui request.auth.uid. Parent malicioso podia spam cancelamentos.", fix:"Adicionar regra: get(/patients/$(request.resource.data.patient_id)).data.parent_user_ids has [request.auth.uid]." },
+  { sev:"med", status:"rec", title:"Audit log de visits aberto a director — pode ser massivo", loc:"firestore.rules /visits read + store query", risk:"Director pode ler até 30d × N users de visitas. Reads facturados.", fix:"Cloud Function aggregate diário → /visit_stats/{date}. Director lê stats não visits crus." },
+  { sev:"med", status:"rec", title:"FCM tokens não rotacionados", loc:"profiles.fcm_tokens[]", risk:"Tokens antigos acumulam-se. Tokens revogados pelo browser ficam até Cloud Function tentar enviar e falhar.", fix:"Cloud Function pruneInvalidTokens já implementado. Adicionar TTL no client (rotate token a cada login)." },
+  { sev:"low", status:"rec", title:"Service worker importa firebase via CDN externa (gstatic)", loc:"app/public/sw.js", risk:"Dependência de gstatic em runtime. Se gstatic falhar, SW inactivo (cache+push falham).", fix:"Bundle firebase-messaging-compat localmente em /assets/. Trade-off: +KB no SW." },
+  { sev:"low", status:"rec", title:"VAPID key embebida no build (env var Vite)", loc:"VITE_FCM_VAPID_KEY", risk:"Key pública por design (FCM aceita), mas qualquer um pode usar para enviar push em nome do projecto se obtiver server key. VAPID isolado é seguro.", fix:"OK. Apenas notar que rotação anual é boa prática." },
+];
+
+const SEC_GOOD = [
+  "Firestore Rules com isDirector / isStaff / isSignedIn — least privilege",
+  "session_notes write reservado a staff, com excepção explícita para parent cancelar (não criar livremente)",
+  "audit_log create=isStaff, read=isDirector, update/delete=false — append-only",
+  "Visits create open mas read só director — utilizador não vê visitas de outros",
+  "Anamnesis/notes/plans read=isSignedIn (aberto) com filtragem por parent_user_ids no cliente — trade-off documentado em rules",
+  "PWA service worker scope = root + cache-first imutável só em /assets/ (hashed)",
+  "ErrorBoundary global a envolver Outlet — falhas de página não derrubam app inteira",
+  "Auto-recovery de chunks órfãos via lazyWithRetry — protege contra deploy + tab antiga",
+  "Persistent IndexedDB cache + multi-tab manager — multi-device safe",
+];
+
+const SEC_ACTIONS = [
+  "Tighten /session_notes create rule com get(patients).parent_user_ids check",
+  "Mover anamnesis/notes/plans para sub-colecções patients/{id}/... permitindo rules granulares por documento",
+  "Aggregate /visits via Cloud Function (não expor raw a director)",
+  "Bundle firebase-messaging localmente no SW para eliminar dependência gstatic",
+  "Implementar exportação RGPD por solicitação do titular (parent solicita → director exporta JSON)",
+  "Rotação anual da VAPID key",
+];
+
+// ────────── render ──────────
+const $ = (q)=>document.querySelector(q);
+const $$ = (q)=>document.querySelectorAll(q);
+const slug = (s)=>s.replace(/[^a-zA-Z0-9]/g,'_');
+
+function readState(){
+  try{return JSON.parse(localStorage.getItem('psm.qa.state')||'{}');}catch(_){return {};}
+}
+function writeState(s){
+  try{localStorage.setItem('psm.qa.state',JSON.stringify(s));}catch(_){}
+}
+
+function renderPlan(){
+  const state = readState();
+  const filter = ($('#filter').value||'').toLowerCase().trim();
+  const root = $('#groups'); root.innerHTML='';
+  let total=0, pass=0, fail=0, na=0;
+  GROUPS.forEach(g=>{
+    const matched = g.tests.filter(t=>{
+      if(!filter) return true;
+      const blob = (g.id+' '+g.title+' '+t.id+' '+t.title+' '+t.steps.join(' ')+' '+t.expect).toLowerCase();
+      return blob.includes(filter);
+    });
+    if(matched.length===0) return;
+    const div = document.createElement('div'); div.className='group';
+    div.innerHTML = `<h2><span><span class="gid">${g.id}</span>${g.title}</span><span class="gcount">${matched.length} testes</span></h2>`;
+    matched.forEach(t=>{
+      total++;
+      const tstate = state[t.id] || {status:null,note:''};
+      if(tstate.status==='pass') pass++;
+      else if(tstate.status==='fail') fail++;
+      else if(tstate.status==='na') na++;
+      const test = document.createElement('div'); test.className='test';
+      test.innerHTML = `
+        <header>
+          <div style="flex:1;min-width:0">
+            <h3><span class="tid">${t.id}</span>${t.title}</h3>
+            <div class="steps"><ol>${t.steps.map(s=>'<li>'+s+'</li>').join('')}</ol></div>
+            <div class="expect">Esperado: ${t.expect}</div>
+          </div>
+        </header>
+        <div class="actions">
+          <button class="pass ${tstate.status==='pass'?'set':''}" data-set="pass" data-tid="${t.id}">✓ Passou</button>
+          <button class="fail ${tstate.status==='fail'?'set':''}" data-set="fail" data-tid="${t.id}">✗ Falhou</button>
+          <button class="na ${tstate.status==='na'?'set':''}" data-set="na" data-tid="${t.id}">N/A</button>
+          <input type="text" placeholder="Nota (opcional)…" data-note="${t.id}" value="${(tstate.note||'').replace(/"/g,'&quot;')}" />
+        </div>
+      `;
+      div.appendChild(test);
+    });
+    root.appendChild(div);
+  });
+  $('#cTotal').textContent = total;
+  $('#cPass').textContent = pass;
+  $('#cFail').textContent = fail;
+  $('#cNa').textContent = na;
+  $('#cTodo').textContent = total - pass - fail - na;
+}
+
+document.addEventListener('click',(e)=>{
+  const btn = e.target.closest('button[data-set]');
+  if(btn){
+    const s = readState();
+    const tid = btn.dataset.tid;
+    const newStatus = btn.dataset.set;
+    s[tid] = s[tid] || {note:''};
+    s[tid].status = s[tid].status === newStatus ? null : newStatus;
+    writeState(s);
+    renderPlan();
+  }
+});
+document.addEventListener('input',(e)=>{
+  const inp = e.target.closest('input[data-note]');
+  if(inp){
+    const s = readState();
+    const tid = inp.dataset.note;
+    s[tid] = s[tid] || {status:null};
+    s[tid].note = inp.value;
+    writeState(s);
+  }
+  if(e.target.id==='filter'){ renderPlan(); }
+});
+
+function resetAll(){
+  if(!confirm('Apagar todos os estados de teste e notas?')) return;
+  localStorage.removeItem('psm.qa.state');
+  renderPlan();
+}
+
+// ────────── render mapa ──────────
+function renderData(){
+  $('#layers').innerHTML = LAYERS.map(l=>`
+    <div class="layer">
+      <h3>— ${l.title.toUpperCase()}</h3>
+      <ul>${l.items.map(i=>'<li>'+i+'</li>').join('')}</ul>
+    </div>`).join('');
+  $('#entities').innerHTML = ENTITIES.map(e=>`
+    <div class="entity">
+      <h4>${e.name}</h4>
+      <div class="desc">${e.desc}</div>
+      <div class="fields">${e.fields.map(f=>'• '+f).join('<br>')}</div>
+      <div class="links">${e.links.map(l=>'<span>'+l+'</span>').join('')}</div>
+    </div>`).join('');
+}
+
+// ────────── render segurança ──────────
+function renderSec(){
+  const fixedItems = SECURITY.filter(s=>s.status==='fixed');
+  const recItems = SECURITY.filter(s=>s.status==='rec');
+  $('#security').innerHTML = `
+    <div class="sec">
+      <h3>— RISCOS RESOLVIDOS (${fixedItems.length})</h3>
+      ${fixedItems.map(secItem).join('')}
+    </div>
+    <div class="sec">
+      <h3>— RECOMENDADO / POR FAZER (${recItems.length})</h3>
+      ${recItems.map(secItem).join('')}
+    </div>
+    <div class="sec">
+      <h3>— CONTROLOS JÁ IMPLEMENTADOS</h3>
+      <ul>${SEC_GOOD.map(g=>'<li>'+g+'</li>').join('')}</ul>
+    </div>
+    <div class="sec">
+      <h3>— ACÇÕES PRÓXIMAS</h3>
+      <ul>${SEC_ACTIONS.map(a=>'<li>'+a+'</li>').join('')}</ul>
+    </div>
+  `;
+}
+function secItem(s){
+  return `<div class="sitem ${s.sev}">
+    <div class="sh">
+      <div class="title">${s.title}</div>
+      <div class="badges">
+        <span class="badge ${s.status==='fixed'?'fix':'rec'}">${s.status==='fixed'?'RESOLVIDO':'RECOMENDADO'}</span>
+        <span class="badge ${s.sev}">${s.sev.toUpperCase()}</span>
+      </div>
+    </div>
+    <div class="loc">${s.loc}</div>
+    <div class="body"><b>Risco:</b> ${s.risk}</div>
+    <div class="fix-text"><b>Fix:</b> ${s.fix}</div>
+  </div>`;
+}
+
+// ────────── tabs ──────────
+$$('.tab-btn').forEach(b=>{
+  b.addEventListener('click',()=>{
+    $$('.tab-btn').forEach(x=>x.classList.remove('active'));
+    $$('.tab').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    $('#tab-'+b.dataset.tab).classList.add('active');
+  });
+});
+
+// ────────── meta ──────────
+$('#metaVer').textContent = 'v2.0.0-alpha.15';
+$('#metaDate').textContent = '2026-06-13';
+
+// initial render
+renderPlan();
+renderData();
+renderSec();
+</script>
+
+</body>
+</html>

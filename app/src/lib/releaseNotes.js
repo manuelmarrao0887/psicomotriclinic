@@ -6,6 +6,19 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.16",
+    date: "2026-06-13",
+    title: "Privacidade dinâmica + testes.html + skill psm-testes",
+    added: [
+      "app/src/lib/privacyPolicy.js — política RGPD em estrutura data-driven (13 secções, blocos p/list/table/kv/callout) com PRIVACY_VERSION + LAST_UPDATE. Editar conteúdo = mexer só nesse ficheiro.",
+      "Privacy.jsx refeita: índice sticky lateral (desktop) / topo (mobile), search interno, scroll-to-section via id, renderer por tipo de bloco, link Voltar, contador de versão. Conteúdo cobre: controller, dados, finalidades, base legal RGPD, papéis de acesso, retenção, subprocessadores, direitos, segurança, cookies, menores, alterações, contacto.",
+      "testes.html na raiz — documento vivo de QA. 3 tabs (plano/mapa/segurança). Gate Firebase Auth (locked por defeito; só visível com sessão na app). 16 grupos de testes (T1-T16) com persistência em localStorage, contador, filtro, print. Mapa de dados (4 layers + 12 entidades Firestore com fields e links). Segurança (resolvidos + recomendados + controlos implementados + acções próximas).",
+      ".claude/skills/psm-testes/SKILL.md — skill instala-vel localmente que guia atualizações ao testes.html (estrutura GROUPS/LAYERS/ENTITIES/SECURITY, regra obrigatória de gate, comando de validação JS).",
+    ],
+    changed: [],
+    removed: [],
+  },
+  {
     version: "v2.0.0-alpha.15",
     date: "2026-06-13",
     title: "Redesign Brand Aligned — primeira passagem (whites + navy + amber)",
