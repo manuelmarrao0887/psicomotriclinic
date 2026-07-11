@@ -6,6 +6,21 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.31",
+    date: "2026-07-12",
+    title: "Manual + Testes + idade auto + fix Sel duplicado \"—\"",
+    added: [
+      "Página /manual — Manual de utilização com 4 secções (Geral / Diretor / Profissional / Responsável) e ~28 procedimentos passo-a-passo. Nav lateral sticky. Botão imprimir.",
+      "Página /testes — Plano de testes de QA com 34 testes distribuídos por 6 grupos (Auth / Diretor / Pro / Parent / UI / Data). Estado por teste (Passa / Falha / N/A) + notas guardados em localStorage. KPIs no topo (total, passa, falha, N/A, por testar, taxa). Filtro + reset.",
+      "Links Manual e Testes na sidebar admin secção SISTEMA.",
+    ],
+    changed: [
+      "Form Novo paciente: campo Idade agora é calculado automaticamente ao preencher a Data de nascimento. Torna-se read-only com fundo cinza quando há data.",
+      "Fix Sel duplicava \"—\" e \"Todos os meses\": Sel já inclui a option de placeholder (value=\"\"); options com { v: \"\", l: ... } criavam duplicação. Removidos os inputs redundantes no form de pagamento e no filtro mensal do ProFinance.",
+    ],
+    removed: [],
+  },
+  {
     version: "v2.0.0-alpha.30",
     date: "2026-07-12",
     title: "Fix — Btn agora aceita icon como string + label \"Novo registo\"",

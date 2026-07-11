@@ -64,6 +64,8 @@ const Waitlist = lazyWithRetry(() => import("./pages/admin/Waitlist.jsx"));
 const HomePracticeLibrary = lazyWithRetry(() => import("./pages/admin/HomePracticeLibrary.jsx"));
 const Privacy = lazyWithRetry(() => import("./pages/Privacy.jsx"));
 const FAQ = lazyWithRetry(() => import("./pages/FAQ.jsx"));
+const Manual = lazyWithRetry(() => import("./pages/Manual.jsx"));
+const Testes = lazyWithRetry(() => import("./pages/Testes.jsx"));
 const ParentPortal = lazyWithRetry(() => import("./pages/portals/ParentPortal.jsx"));
 const ProfessionalPortal = lazyWithRetry(() => import("./pages/portals/ProfessionalPortal.jsx"));
 const ConfirmSession = lazyWithRetry(() => import("./pages/ConfirmSession.jsx"));
@@ -286,6 +288,8 @@ export default function App() {
                 <Route path="exercicios" element={<HomePracticeLibrary />} />
                 <Route path="privacidade" element={<Privacy />} />
                 <Route path="faq" element={<FAQ />} />
+                <Route path="manual" element={<Manual />} />
+                <Route path="testes" element={<Testes />} />
               </Route>
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
@@ -295,6 +299,8 @@ export default function App() {
               <Route path="/style-lab" element={<StyleLab />} />
               <Route path="/faq" element={<FAQ />} />
               <Route path="/privacidade" element={<Privacy />} />
+              <Route path="/manual" element={<Manual />} />
+              <Route path="/testes" element={<Testes />} />
               <Route path="*" element={<ProfessionalPortal profile={effectiveProfile} onLogout={logout} theme={theme} setTheme={setTheme} />} />
             </Routes>
           ) : isParent ? (
@@ -303,6 +309,8 @@ export default function App() {
               <Route path="/style-lab" element={<StyleLab />} />
               <Route path="/faq" element={<FAQ />} />
               <Route path="/privacidade" element={<Privacy />} />
+              <Route path="/manual" element={<Manual />} />
+              <Route path="/testes" element={<Testes />} />
               <Route path="*" element={<ParentPortal profile={effectiveProfile} onLogout={logout} theme={theme} setTheme={setTheme} />} />
             </Routes>
           ) : (

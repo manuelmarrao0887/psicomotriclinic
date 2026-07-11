@@ -131,8 +131,27 @@ export default function ModalsHost() {
       <Modal open={modal === "addPatient"} onClose={() => setModal(null)} title={form.editingId ? "Editar paciente" : "Novo paciente"} eyebrow="— NOVO CASO" width={640}>
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1fr 1fr", gap: 12 }}>
           <Field label="Nome"><Inp placeholder="Ex: Maria S." value={form.name || ""} onChange={(e) => set("name", e.target.value)} /></Field>
-          <Field label="Idade"><Inp type="number" placeholder="12" value={form.age || ""} onChange={(e) => set("age", e.target.value)} /></Field>
-          <Field label="Data nascimento"><Inp type="date" value={form.birth || ""} onChange={(e) => set("birth", e.target.value)} /></Field>
+          <Field label="Data nascimento">
+            <Inp
+              type="date"
+              value={form.birth || ""}
+              onChange={(e) => {
+                const birth = e.target.value;
+                set("birth", birth);
+                if (birth) {
+                  const b = new Date(birth);
+                  const now = new Date();
+                  let age = now.getFullYear() - b.getFullYear();
+                  const m = now.getMonth() - b.getMonth();
+                  if (m < 0 || (m === 0 && now.getDate() < b.getDate())) age--;
+                  if (age >= 0 && age < 130) set("age", String(age));
+                }
+              }}
+            />
+          </Field>
+          <Field label="Idade" hint={form.birth ? "Calculada da data" : "Preencha a data"}>
+            <Inp type="number" placeholder="—" value={form.age || ""} readOnly={!!form.birth} onChange={(e) => set("age", e.target.value)} style={form.birth ? { background: "#F5F2EC", color: "#8A8A86", cursor: "not-allowed" } : undefined} />
+          </Field>
         </div>
         <Field label="NIF"><Inp placeholder="123456789" value={form.nif || ""} onChange={(e) => set("nif", e.target.value)} /></Field>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>

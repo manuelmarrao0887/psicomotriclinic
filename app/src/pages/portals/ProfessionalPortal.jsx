@@ -750,7 +750,7 @@ export function ProFinance({ myPatients, myPayments, createPayment, togglePaymen
 
       <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
         <div style={{ flex: 1, minWidth: 180 }}>
-          <Sel value={month} onChange={setMonth} options={[{ v: "", l: "Todos os meses" }, ...months.map((m) => ({ v: m, l: m }))]} placeholder="Todos os meses" />
+          <Sel value={month} onChange={setMonth} options={months.map((m) => ({ v: m, l: m }))} placeholder="Todos os meses" />
         </div>
         <Btn variant="secondary" onClick={exportCsv} disabled={filtered.length === 0}>Exportar CSV</Btn>
         <Btn onClick={() => setAddOpen(true)} icon="plus">Novo registo</Btn>
@@ -911,7 +911,7 @@ export function ProFinance({ myPatients, myPayments, createPayment, togglePaymen
             <Field label="Mês"><Sel value={addForm.month} onChange={(v) => setAddForm((f) => ({ ...f, month: v }))} options={MONTHS_2026.map((m) => ({ v: m, l: m }))} placeholder="Selecionar..." /></Field>
             <Field label="Valor (€)"><Inp value={addForm.amount} onChange={(e) => setAddForm((f) => ({ ...f, amount: e.target.value }))} placeholder="Ex: 60" inputMode="decimal" /></Field>
             <Field label="Estado"><Sel value={addForm.status} onChange={(v) => setAddForm((f) => ({ ...f, status: v }))} options={[{ v: "pendente", l: "Pendente" }, { v: "pago", l: "Pago" }]} /></Field>
-            <Field label="Método (opcional)"><Sel value={addForm.method} onChange={(v) => setAddForm((f) => ({ ...f, method: v }))} options={[{ v: "", l: "—" }, { v: "Transferência", l: "Transferência" }, { v: "MB WAY", l: "MB WAY" }, { v: "Numerário", l: "Numerário" }, { v: "Multibanco", l: "Multibanco" }]} placeholder="—" /></Field>
+            <Field label="Método (opcional)"><Sel value={addForm.method} onChange={(v) => setAddForm((f) => ({ ...f, method: v }))} options={[{ v: "Transferência", l: "Transferência" }, { v: "MB WAY", l: "MB WAY" }, { v: "Numerário", l: "Numerário" }, { v: "Multibanco", l: "Multibanco" }]} placeholder="Não definido" /></Field>
             <Field label="Notas (opcional)"><Inp value={addForm.notes} onChange={(e) => setAddForm((f) => ({ ...f, notes: e.target.value }))} placeholder="Ex: sessão extra" /></Field>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 10 }}>
               <Btn variant="secondary" onClick={() => setAddOpen(false)} disabled={busy}>Cancelar</Btn>

@@ -26,6 +26,8 @@ const SIDEBAR_SECTIONS = [
   { title: "SISTEMA", items: [
     { id: "utilizadores", label: "Utilizadores", icon: "shield", to: "/utilizadores" },
     { id: "definicoes", label: "Definições", icon: "cog", to: "/definicoes" },
+    { id: "manual", label: "Manual", icon: "clipboard", to: "/manual" },
+    { id: "testes", label: "Testes", icon: "check", to: "/testes" },
     { id: "faq", label: "FAQ", icon: "question", to: "/faq" },
   ]},
 ];
@@ -55,6 +57,8 @@ const titles = {
   "/agenda":       { e: "— AGENDA",       t: "Sessões",              s: "" },
   "/financeiro":   { e: "— FINANCEIRO",   t: "Pagamentos & custos",  s: "Vista agregada da Casa" },
   "/meu-financeiro": { e: "— MEU CONSULTÓRIO", t: "Meu financeiro", s: "Pagamentos dos seus pacientes" },
+  "/manual":       { e: "— MANUAL",         t: "Procedimentos",       s: "Guia passo-a-passo por perfil" },
+  "/testes":       { e: "— QA",             t: "Plano de testes",     s: "Checklist smoke para promover release" },
   "/pedidos":      { e: "— PEDIDOS",      t: "Trocas de horário",    s: "" },
   "/comunicacoes": { e: "— ANÚNCIOS",     t: "Comunicações",         s: "Mensagens visíveis nos portais" },
   "/definicoes":   { e: "— PREFERÊNCIAS", t: "Definições",           s: "" },
