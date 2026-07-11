@@ -159,7 +159,7 @@ export default function ParentPortal({ profile, onLogout, theme, setTheme }) {
           </div>
         </div>
 
-        {tab === "home" && <HomeTab profile={profile} myChildren={myChildren} profs={profs} plans={plans} notes={notes} pays={pays} announcements={visibleAnnouncements} recentlyResolved={recentlyResolved} onAck={markAllSeen} onRequest={() => setRequestOpen(true)} />}
+        {tab === "home" && <HomeTab profile={profile} myChildren={myChildren} profs={profs} plans={plans} notes={notes} pays={pays} announcements={visibleAnnouncements} recentlyResolved={recentlyResolved} onAck={markAllSeen} onRequest={() => setRequestOpen(true)} addBehaviorEntry={addBehaviorEntry} behaviorDiary={behaviorDiary} sendParentMessage={sendParentMessage} parentMessages={parentMessages} />}
         {tab === "practice" && <PracticeTab myChildren={myChildren} homeExercises={homeExercises} homeAssignments={homeAssignments} homeCompletions={homeCompletions} markCompletion={markCompletion} />}
         {tab === "requests" && <RequestsTab myChildren={myChildren} myRequests={myRequests} onNew={() => setRequestOpen(true)} onOpen={() => markAllSeen()} />}
         {tab === "account" && <AccountTab profile={profile} onLogout={onLogout} theme={theme} setTheme={setTheme} setNotificationPrefs={setNotificationPrefs} users={users} />}
@@ -249,7 +249,9 @@ export default function ParentPortal({ profile, onLogout, theme, setTheme }) {
 
 // ─────────── Sub-componentes (tabs) ───────────
 
-function HomeTab({ myChildren, profs, plans, notes, pays, announcements, recentlyResolved, onAck, onRequest }) {
+function HomeTab({ myChildren, profs, plans, notes, pays, announcements, recentlyResolved, onAck, onRequest, addBehaviorEntry, behaviorDiary, sendParentMessage, parentMessages }) {
+  const [diaryFor, setDiaryFor] = useState(null);
+  const [chatFor, setChatFor] = useState(null);
   return (
     <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 18 }}>
       {/* Notificações de pedidos resolvidos */}
@@ -288,13 +290,129 @@ function HomeTab({ myChildren, profs, plans, notes, pays, announcements, recentl
       {myChildren.length === 0 ? (
         <NoChildrenHelp />
       ) : (
-        myChildren.map((child) => <ChildCard key={child.id} child={child} profs={profs} plans={plans} notes={notes} pays={pays} onRequest={onRequest} />)
+        myChildren.map((child) => <ChildCard key={child.id} child={child} profs={profs} plans={plans} notes={notes} pays={pays} onRequest={onRequest} onOpenDiary={() => setDiaryFor(child)} onOpenChat={() => setChatFor(child)} />)
       )}
+
+      {diaryFor && <DiaryModal child={diaryFor} onClose={() => setDiaryFor(null)} onSave={async (d) => { await addBehaviorEntry(diaryFor.id, d); setDiaryFor(null); }} recent={behaviorDiary.filter((x) => x.patient_id === diaryFor.id).slice(0, 5)} />}
+      {chatFor && <ChatModal child={chatFor} profs={profs} onClose={() => setChatFor(null)} onSend={async (body) => { const ids = chatFor.professional_ids?.length ? chatFor.professional_ids : (chatFor.professional_id ? [chatFor.professional_id] : []); await sendParentMessage(chatFor.id, ids[0], body); }} messages={parentMessages.filter((m) => m.patient_id === chatFor.id)} />}
     </div>
   );
 }
 
-function ChildCard({ child, profs, plans, notes, pays, onRequest }) {
+function DiaryModal({ child, onClose, onSave, recent }) {
+  const [mood, setMood] = useState(3);
+  const [sleep, setSleep] = useState("");
+  const [events, setEvents] = useState([]);
+  const [concerns, setConcerns] = useState("");
+  const MOODS = ["😞", "😕", "😐", "🙂", "😄"];
+  const EVENT_TAGS = ["Boa noite de sono", "Birra", "Nova conquista", "Escola difícil", "Doença", "Mudança rotina"];
+  const toggleEvent = (t) => setEvents((e) => e.includes(t) ? e.filter((x) => x !== t) : [...e, t]);
+
+  return (
+    <div onClick={onClose} className="modal-overlay" role="dialog" aria-modal="true" style={{ position: "fixed", inset: 0, background: "rgba(21,39,65,.4)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <div onClick={(e) => e.stopPropagation()} className="modal-panel" style={{ background: "#FFFFFF", borderRadius: 18, width: "100%", maxWidth: 480, padding: 22, maxHeight: "86vh", overflow: "auto" }}>
+        <Eyebrow>— DIÁRIO DE COMPORTAMENTO</Eyebrow>
+        <div className="serif" style={{ fontSize: 20, fontWeight: 400, color: "#152741", marginTop: 4, marginBottom: 14 }}>Hoje · {child.name}</div>
+
+        <div style={{ fontSize: 12, color: "#5A5A58", marginBottom: 8, fontWeight: 500 }}>Humor</div>
+        <div style={{ display: "flex", gap: 6, marginBottom: 16, justifyContent: "space-between" }}>
+          {MOODS.map((m, i) => (
+            <button key={i} onClick={() => setMood(i + 1)} aria-label={`Humor ${i + 1}`} style={{ flex: 1, padding: 10, fontSize: 24, borderRadius: 10, border: `2px solid ${mood === i + 1 ? "#E8A13C" : "#EAE6DD"}`, background: mood === i + 1 ? "#FEF3C7" : "#FFFFFF", cursor: "pointer" }}>{m}</button>
+          ))}
+        </div>
+
+        <Field label="Horas de sono"><Inp type="number" value={sleep} onChange={(e) => setSleep(e.target.value)} placeholder="Ex: 10" /></Field>
+
+        <div style={{ fontSize: 12, color: "#5A5A58", marginBottom: 6, fontWeight: 500 }}>Eventos notáveis</div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 14 }}>
+          {EVENT_TAGS.map((t) => (
+            <button key={t} onClick={() => toggleEvent(t)} style={{ padding: "6px 12px", borderRadius: 99, fontSize: 12, fontWeight: 500, cursor: "pointer", border: `1px solid ${events.includes(t) ? "#152741" : "#D9D3C5"}`, background: events.includes(t) ? "#152741" : "#FFFFFF", color: events.includes(t) ? "#F7F4EE" : "#152741", fontFamily: "inherit" }}>{t}</button>
+          ))}
+        </div>
+
+        <Field label="Preocupações (opcional)">
+          <textarea value={concerns} onChange={(e) => setConcerns(e.target.value)} placeholder="Algo que gostaria que o terapeuta soubesse antes da próxima sessão…" style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FFFFFF", minHeight: 70, resize: "vertical", fontFamily: "inherit" }} />
+        </Field>
+
+        {recent.length > 0 && (
+          <div style={{ marginTop: 14, padding: 10, background: "#F5F2EC", borderRadius: 10 }}>
+            <div className="mono" style={{ fontSize: 10, color: "#8A8A86", marginBottom: 6 }}>ÚLTIMAS ENTRADAS · {recent.length}</div>
+            {recent.map((r) => (
+              <div key={r.id} style={{ fontSize: 11.5, color: "#5A5A58", padding: "3px 0" }}>
+                <b style={{ color: "#152741" }}>{r.date}</b> · {MOODS[(r.mood || 3) - 1]}
+                {r.sleep_hours && <span> · {r.sleep_hours}h sono</span>}
+                {r.notable_events?.length > 0 && <span> · {r.notable_events.join(", ")}</span>}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 16 }}>
+          <Btn variant="secondary" onClick={onClose}>Cancelar</Btn>
+          <Btn onClick={() => onSave({ mood, sleep_hours: sleep ? parseFloat(sleep) : null, notable_events: events, concerns })}>Guardar</Btn>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ChatModal({ child, profs, onClose, onSend, messages }) {
+  const [body, setBody] = useState("");
+  const ids = child.professional_ids?.length ? child.professional_ids : (child.professional_id ? [child.professional_id] : []);
+  const pr = profs.find((x) => x.id === ids[0]);
+  const unrepliedActive = messages.some((m) => !m.replied_at);
+
+  return (
+    <div onClick={onClose} className="modal-overlay" role="dialog" aria-modal="true" style={{ position: "fixed", inset: 0, background: "rgba(21,39,65,.4)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <div onClick={(e) => e.stopPropagation()} className="modal-panel" style={{ background: "#FFFFFF", borderRadius: 18, width: "100%", maxWidth: 500, padding: 22, maxHeight: "86vh", overflow: "auto" }}>
+        <Eyebrow>— MENSAGEM AO TERAPEUTA</Eyebrow>
+        <div className="serif" style={{ fontSize: 20, fontWeight: 400, color: "#152741", marginTop: 4, marginBottom: 4 }}>Sobre {child.name}</div>
+        <div style={{ fontSize: 12.5, color: "#8A8A86", marginBottom: 14 }}>Para {pr?.name || "profissional"}. Resposta em até 48h em dias úteis.</div>
+
+        {messages.length > 0 && (
+          <div style={{ marginBottom: 14, maxHeight: 260, overflow: "auto", display: "flex", flexDirection: "column", gap: 8 }}>
+            {messages.slice(0, 10).map((m) => (
+              <div key={m.id}>
+                <div style={{ padding: "8px 12px", background: "#F5F2EC", borderRadius: "12px 12px 12px 3px", fontSize: 13, color: "#152741", maxWidth: "85%" }}>
+                  {m.body}
+                  <div style={{ fontSize: 10, color: "#8A8A86", marginTop: 4 }}>{m.created_at ? new Date(m.created_at).toLocaleString("pt-PT", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : ""}</div>
+                </div>
+                {m.reply && (
+                  <div style={{ padding: "8px 12px", background: "#DCE7F0", borderRadius: "12px 12px 3px 12px", fontSize: 13, color: "#152741", maxWidth: "85%", marginLeft: "15%", marginTop: 4 }}>
+                    {m.reply}
+                    <div style={{ fontSize: 10, color: "#5A6473", marginTop: 4 }}>Terapeuta · {m.replied_at ? new Date(m.replied_at).toLocaleString("pt-PT", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : ""}</div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {unrepliedActive ? (
+          <div style={{ padding: 12, background: "#F5E5CD", color: "#C97A1F", borderRadius: 10, fontSize: 12.5, lineHeight: 1.5 }}>
+            Aguarde a resposta ao seu último pedido antes de enviar outro. Rate limit: 1 mensagem por vez.
+          </div>
+        ) : (
+          <>
+            <Field label="Nova mensagem">
+              <textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="Descreva a questão em 2-3 frases…" maxLength={500} style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FFFFFF", minHeight: 90, resize: "vertical", fontFamily: "inherit" }} />
+            </Field>
+            <div style={{ fontSize: 11, color: "#8A8A86", marginBottom: 10 }}>{body.length}/500</div>
+          </>
+        )}
+
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 10 }}>
+          <Btn variant="secondary" onClick={onClose}>Fechar</Btn>
+          {!unrepliedActive && (
+            <Btn onClick={async () => { await onSend(body); setBody(""); onClose(); }} disabled={!body.trim()}>Enviar</Btn>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ChildCard({ child, profs, plans, notes, pays, onRequest, onOpenDiary, onOpenChat }) {
   const ids = (child.professional_ids?.length ? child.professional_ids : (child.professional_id ? [child.professional_id] : []));
   const profNames = ids.map((id) => profs.find((x) => x.id === id)?.name).filter(Boolean);
   const plan = plans.find((p) => p.patient_id === child.id);
@@ -390,7 +508,11 @@ function ChildCard({ child, profs, plans, notes, pays, onRequest }) {
 
       {/* CTA pedir troca */}
       <div style={{ padding: 14 }}>
-        <Btn variant="secondary" icon={<Icon name="swap" size={14} />} onClick={onRequest} style={{ width: "100%" }}>Pedir troca de horário</Btn>
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 6 }}>
+          <Btn size="sm" variant="secondary" icon={<Icon name="edit" size={12} />} onClick={onOpenDiary}>Diário</Btn>
+          <Btn size="sm" variant="secondary" icon={<Icon name="mail" size={12} />} onClick={onOpenChat}>Falar</Btn>
+          <Btn size="sm" variant="secondary" icon={<Icon name="swap" size={12} />} onClick={onRequest}>Troca</Btn>
+        </div>
       </div>
     </Card>
   );
@@ -482,7 +604,7 @@ function RequestsTab({ myChildren, myRequests, onNew }) {
 }
 
 function AccountTab({ profile, onLogout, theme, setTheme }) {
-  const { users = [], updateMyPhoto, removeMyPhoto } = useStore();
+  const { users = [], updateMyPhoto, removeMyPhoto, setNotificationPrefs } = useStore();
   const me = users.find((u) => u.id === profile?.id);
   const myPhoto = me?.photo_url || null;
   const fileRef = useRef(null);
@@ -538,6 +660,8 @@ function AccountTab({ profile, onLogout, theme, setTheme }) {
           </div>
         )}
       </Card>
+
+      <NotifPrefs prefs={me?.notification_prefs} onSave={setNotificationPrefs} />
 
       <Card pad={0}>
         <button
@@ -643,6 +767,34 @@ function PracticeTab({ myChildren, homeExercises, homeAssignments, homeCompletio
     </div>
   );
 }
+function NotifPrefs({ prefs, onSave }) {
+  const cur = prefs || { reminders: true, announcements: true, requests: true };
+  const toggle = (key) => onSave({ ...cur, [key]: !cur[key] });
+  const items = [
+    { key: "reminders", label: "Lembretes de sessão", desc: "Push do lembrete diário 18h" },
+    { key: "announcements", label: "Anúncios da direção", desc: "Novidades e comunicações" },
+    { key: "requests", label: "Estado de pedidos", desc: "Aprovado / recusado" },
+  ];
+  return (
+    <Card pad={0}>
+      <div style={{ padding: "12px 18px 4px" }}>
+        <Eyebrow>— NOTIFICAÇÕES</Eyebrow>
+      </div>
+      {items.map((it) => (
+        <div key={it.key} style={{ display: "flex", alignItems: "center", padding: "12px 18px", borderTop: "1px solid #F5F2EC" }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 500, color: "#152741" }}>{it.label}</div>
+            <div style={{ fontSize: 12, color: "#8A8A86" }}>{it.desc}</div>
+          </div>
+          <button onClick={() => toggle(it.key)} aria-pressed={!!cur[it.key]} style={{ position: "relative", width: 44, height: 26, borderRadius: 13, background: cur[it.key] ? "#E8A13C" : "#D9D3C5", border: "none", cursor: "pointer", padding: 0, transition: "background .18s" }}>
+            <span aria-hidden="true" style={{ position: "absolute", top: 2, left: cur[it.key] ? 20 : 2, width: 22, height: 22, borderRadius: 11, background: "#FFFFFF", transition: "left .18s", boxShadow: "0 1px 3px rgba(0,0,0,.15)" }} />
+          </button>
+        </div>
+      ))}
+    </Card>
+  );
+}
+
 function calcStreak(completions, patientId, exerciseId) {
   const dates = new Set(completions.filter((c) => c.patient_id === patientId && c.exercise_id === exerciseId).map((c) => c.date));
   let streak = 0;

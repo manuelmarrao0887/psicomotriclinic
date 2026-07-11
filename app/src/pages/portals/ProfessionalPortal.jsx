@@ -99,7 +99,7 @@ export default function ProfessionalPortal({ profile, onLogout, theme, setTheme 
           </div>
         </div>
 
-        {tab === "home"     && <ProHome myProfId={myProfId} myPatients={myPatients} todaysSessions={todaysSessions} todayLabel={todayLabel} notes={notes} announcements={announcements} onSessionNote={openSessionNote} onMarkFalta={(p) => quickMarkFalta(p.id, myProfId)} />}
+        {tab === "home"     && <ProHome myProfId={myProfId} myPatients={myPatients} todaysSessions={todaysSessions} todayLabel={todayLabel} notes={notes} announcements={announcements} onSessionNote={openSessionNote} onMarkFalta={(p) => quickMarkFalta(p.id, myProfId)} parentMessages={parentMessages} replyToParent={replyToParent} markMessageRead={markMessageRead} />}
         {tab === "agenda"   && <ProAgenda myPatients={myPatients} profs={profs} />}
         {tab === "patients" && <ProPatients myPatients={myPatients} notes={notes} onSessionNote={openSessionNote} homeExercises={homeExercises} homeAssignments={homeAssignments} assignHomeExercise={assignHomeExercise} unassignHomeExercise={unassignHomeExercise} />}
         {tab === "account"  && <ProAccount profile={profile} onLogout={onLogout} theme={theme} setTheme={setTheme} />}
@@ -144,7 +144,12 @@ export default function ProfessionalPortal({ profile, onLogout, theme, setTheme 
 
 // ─────────── Sub-componentes ───────────
 
-function ProHome({ myProfId, myPatients, todaysSessions, todayLabel, notes, announcements, onSessionNote, onMarkFalta }) {
+function ProHome({ myProfId, myPatients, todaysSessions, todayLabel, notes, announcements, onSessionNote, onMarkFalta, parentMessages = [], replyToParent, markMessageRead }) {
+  const [replyFor, setReplyFor] = useState(null);
+  const [replyBody, setReplyBody] = useState("");
+  const myPatientIds = new Set(myPatients.map((p) => p.id));
+  const inbox = parentMessages.filter((m) => myPatientIds.has(m.patient_id));
+  const unreplied = inbox.filter((m) => !m.replied_at);
   if (!myProfId) return <NoProfRecord />;
 
   // Próximos: amanhã + dia seguinte
@@ -170,6 +175,45 @@ function ProHome({ myProfId, myPatients, todaysSessions, todayLabel, notes, anno
   return (
     <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 16 }}>
       {visibleAnn.length > 0 && <AnnouncementsBanner items={visibleAnn} />}
+
+      {unreplied.length > 0 && (
+        <Card pad={18} style={{ background: "#FEF3C7", borderColor: "#ECC58A" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+            <Icon name="mail" size={16} color="#C97A1F" />
+            <span className="mono" style={{ fontSize: 10.5, fontWeight: 600, color: "#C97A1F" }}>MENSAGENS POR RESPONDER · {unreplied.length}</span>
+          </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {unreplied.slice(0, 5).map((m) => {
+              const pt = myPatients.find((p) => p.id === m.patient_id);
+              return (
+                <button key={m.id} onClick={() => { setReplyFor(m); markMessageRead(m.id); }} style={{ padding: 10, background: "#FFFFFF", border: "1px solid #ECC58A", borderRadius: 10, textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: "#152741", marginBottom: 3 }}>Sobre {pt?.name || "paciente"}</div>
+                  <div style={{ fontSize: 12.5, color: "#5A5A58", lineHeight: 1.4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{m.body}</div>
+                </button>
+              );
+            })}
+          </div>
+        </Card>
+      )}
+
+      {replyFor && (
+        <div onClick={() => setReplyFor(null)} className="modal-overlay" role="dialog" aria-modal="true" style={{ position: "fixed", inset: 0, background: "rgba(21,39,65,.4)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div onClick={(e) => e.stopPropagation()} className="modal-panel" style={{ background: "#FFFFFF", borderRadius: 18, width: "100%", maxWidth: 480, padding: 22 }}>
+            <Eyebrow>— RESPONDER</Eyebrow>
+            <div className="serif" style={{ fontSize: 20, fontWeight: 400, color: "#152741", marginTop: 4, marginBottom: 10 }}>
+              {(myPatients.find((p) => p.id === replyFor.patient_id) || {}).name || "Mensagem"}
+            </div>
+            <div style={{ padding: 10, background: "#F5F2EC", borderRadius: 10, fontSize: 13, color: "#152741", marginBottom: 14, lineHeight: 1.5 }}>
+              {replyFor.body}
+            </div>
+            <textarea value={replyBody} onChange={(e) => setReplyBody(e.target.value)} placeholder="A sua resposta…" style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FFFFFF", minHeight: 100, resize: "vertical", fontFamily: "inherit" }} />
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 14 }}>
+              <Btn variant="secondary" onClick={() => setReplyFor(null)}>Fechar</Btn>
+              <Btn onClick={async () => { await replyToParent(replyFor.id, replyBody); setReplyBody(""); setReplyFor(null); }} disabled={!replyBody.trim()}>Enviar resposta</Btn>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Card pad={18}>
         <Eyebrow>— HOJE · {todayLabel?.toUpperCase()}</Eyebrow>
@@ -447,7 +491,7 @@ function ProPatients({ myPatients, notes, onSessionNote, homeExercises, homeAssi
 }
 
 function ProAccount({ profile, onLogout, theme, setTheme }) {
-  const { users = [], updateMyPhoto, removeMyPhoto } = useStore();
+  const { users = [], updateMyPhoto, removeMyPhoto, setNotificationPrefs } = useStore();
   const me = users.find((u) => u.id === profile?.id);
   const myPhoto = me?.photo_url || null;
   const fileRef = useRef(null);
@@ -504,6 +548,8 @@ function ProAccount({ profile, onLogout, theme, setTheme }) {
         )}
       </Card>
 
+      <ProNotifPrefs prefs={me?.notification_prefs} onSave={setNotificationPrefs} />
+
       <Card pad={0}>
         <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="ch tap-target" style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", color: "#3C3C3B", fontSize: 15, fontWeight: 500, textAlign: "left", borderBottom: "1px solid #F5F2EC" }}>
           <span style={{ color: "#5A5A58", display: "flex" }}><Icon name={theme === "dark" ? "sun" : "moon"} size={20} /></span>
@@ -539,6 +585,34 @@ function NoProfRecord() {
       <p style={{ fontSize: 13.5, color: "#5A5A58", lineHeight: 1.6, marginTop: 8, maxWidth: 360, marginLeft: "auto", marginRight: "auto" }}>
         Não encontrámos um registo de profissional com o seu nome. Contacte a direção para associar a sua conta ao perfil de terapeuta.
       </p>
+    </Card>
+  );
+}
+
+function ProNotifPrefs({ prefs, onSave }) {
+  const cur = prefs || { reminders: true, announcements: true, requests: true, messages: true };
+  const toggle = (key) => onSave({ ...cur, [key]: !cur[key] });
+  const items = [
+    { key: "announcements", label: "Anúncios da direção", desc: "Comunicações internas" },
+    { key: "messages",      label: "Mensagens de responsáveis", desc: "Chat parent-terapeuta" },
+    { key: "reminders",     label: "Lembretes de sessão", desc: "Push do lembrete diário" },
+  ];
+  return (
+    <Card pad={0}>
+      <div style={{ padding: "12px 18px 4px" }}>
+        <Eyebrow>— NOTIFICAÇÕES</Eyebrow>
+      </div>
+      {items.map((it) => (
+        <div key={it.key} style={{ display: "flex", alignItems: "center", padding: "12px 18px", borderTop: "1px solid #F5F2EC" }}>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 500, color: "#152741" }}>{it.label}</div>
+            <div style={{ fontSize: 12, color: "#8A8A86" }}>{it.desc}</div>
+          </div>
+          <button onClick={() => toggle(it.key)} aria-pressed={!!cur[it.key]} style={{ position: "relative", width: 44, height: 26, borderRadius: 13, background: cur[it.key] ? "#8DBF94" : "#D9D3C5", border: "none", cursor: "pointer", padding: 0 }}>
+            <span aria-hidden="true" style={{ position: "absolute", top: 2, left: cur[it.key] ? 20 : 2, width: 22, height: 22, borderRadius: 11, background: "#FFFFFF", transition: "left .18s", boxShadow: "0 1px 3px rgba(0,0,0,.15)" }} />
+          </button>
+        </div>
+      ))}
     </Card>
   );
 }

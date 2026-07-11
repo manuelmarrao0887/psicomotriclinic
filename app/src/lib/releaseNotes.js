@@ -6,6 +6,21 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.20",
+    date: "2026-06-22",
+    title: "Sprint 4 quase — Diário comportamento + Chat + Notificação prefs",
+    added: [
+      "Diário de comportamento (B4): botão 'Diário' em cada ChildCard do Portal Responsável. Modal com escala humor (5 emojis), horas sono, chips eventos notáveis (birra, conquista, escola difícil...), preocupações. Últimas 5 entradas mostradas inline. Insert em behavior_diary.",
+      "Chat parent ↔ terapeuta (B3): botão 'Falar' em ChildCard do Responsável abre modal com histórico + textarea (rate limit: 1 mensagem por vez, aguarda resposta). ProHome do Profissional mostra card amarelo 'Mensagens por responder' com contador; click abre modal de resposta e marca como lida.",
+      "Notification preferences (C3): componente NotifPrefs em Account tab do Responsável (Lembretes / Anúncios / Estado pedidos) e ProNotifPrefs no Profissional (Anúncios / Mensagens / Lembretes). Toggles iOS-style guardados em profiles.notification_prefs. Cloud Functions respeitam a leitura no envio.",
+    ],
+    changed: [
+      "ChildCard do Portal Responsável: CTA único 'Pedir troca de horário' passa a grid 3-col com Diário + Falar + Troca (small buttons).",
+      "ProHome Profissional: quando há mensagens não respondidas, aparece card amarelo destacado no topo antes de anúncios e sessões.",
+    ],
+    removed: [],
+  },
+  {
     version: "v2.0.0-alpha.19",
     date: "2026-06-22",
     title: "Sprint 3 partial — Pro atribui exercícios + Speech-to-text",
