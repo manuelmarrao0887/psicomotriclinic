@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
 import { Mark, Icon } from "../../lib/icons.jsx";
 import { Av, Btn, Card, Eyebrow, Tag } from "../../lib/ui.jsx";
 import { APP_VERSION, formatBuildDate, DAYS, HOURS } from "../../lib/constants.js";
@@ -19,7 +19,9 @@ function findMyProfRecord(profs, userId, fullName) {
 }
 
 export default function ProfessionalPortal({ profile, onLogout, theme, setTheme }) {
-  const { pts, profs, notes, announcements, setForm, setModal, quickMarkFalta } = useStore();
+  const { pts, profs, notes, announcements, users = [], setForm, setModal, quickMarkFalta } = useStore();
+  const meDoc = users.find((u) => u.id === profile?.id);
+  const myPhoto = meDoc?.photo_url || null;
   const [tab, setTab] = useState("home"); // home | agenda | patients | account
 
   const myProfRecord = useMemo(() => findMyProfRecord(profs, profile?.id, profile?.full_name), [profs, profile?.id, profile?.full_name]);
@@ -76,22 +78,25 @@ export default function ProfessionalPortal({ profile, onLogout, theme, setTheme 
             </span>
           </div>
           <button onClick={() => setTab("account")} className="ch tap-target" aria-label="Conta" style={{ borderRadius: 999, padding: 0 }}>
-            <Av t={initials} bg="#8DBF94" sz={34} color="#152741" />
+            <Av t={initials} bg="#8DBF94" sz={34} color="#152741" photoUrl={myPhoto} />
           </button>
         </div>
       </header>
 
       <main id="main" style={{ maxWidth: 1100, margin: "0 auto", padding: "12px 16px calc(var(--tabbar-h) + var(--safe-bottom) + 24px)" }}>
-        <div style={{ padding: "8px 2px 6px" }}>
-          <Eyebrow>— PORTAL PROFISSIONAL</Eyebrow>
-          <h1 className="serif" style={{ fontSize: 30, fontWeight: 300, color: "#152741", letterSpacing: "-0.025em", lineHeight: 1.08, marginTop: 6 }}>
-            Bem-vindo{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}<span className="serif-it">.</span>
-          </h1>
-          <p style={{ fontSize: 14, color: "#8A8A86", marginTop: 4 }}>
-            {myProfId
-              ? `${myPatients.length} ${myPatients.length === 1 ? "caso atribuído" : "casos atribuídos"} · ${todaysSessions.length} ${todaysSessions.length === 1 ? "sessão hoje" : "sessões hoje"}`
-              : "Aguardar associação ao registo da equipa."}
-          </p>
+        <div style={{ padding: "8px 2px 6px", display: "flex", alignItems: "flex-start", gap: 14 }}>
+          <Av t={initials} bg="#8DBF94" sz={56} color="#152741" photoUrl={myPhoto} />
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <Eyebrow>— PORTAL PROFISSIONAL</Eyebrow>
+            <h1 className="serif" style={{ fontSize: 28, fontWeight: 300, color: "#152741", letterSpacing: "-0.025em", lineHeight: 1.08, marginTop: 6 }}>
+              Bem-vindo{profile?.full_name ? `, ${profile.full_name.split(" ")[0]}` : ""}<span className="serif-it">.</span>
+            </h1>
+            <p style={{ fontSize: 14, color: "#8A8A86", marginTop: 4 }}>
+              {myProfId
+                ? `${myPatients.length} ${myPatients.length === 1 ? "caso atribuído" : "casos atribuídos"} · ${todaysSessions.length} ${todaysSessions.length === 1 ? "sessão hoje" : "sessões hoje"}`
+                : "Aguardar associação ao registo da equipa."}
+            </p>
+          </div>
         </div>
 
         {tab === "home"     && <ProHome myProfId={myProfId} myPatients={myPatients} todaysSessions={todaysSessions} todayLabel={todayLabel} notes={notes} announcements={announcements} onSessionNote={openSessionNote} onMarkFalta={(p) => quickMarkFalta(p.id, myProfId)} />}
@@ -184,7 +189,7 @@ function ProHome({ myProfId, myPatients, todaysSessions, todayLabel, notes, anno
           <Eyebrow>— PRÓXIMOS DIAS</Eyebrow>
           <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 8 }}>
             {upcoming.map(({ p, day }) => (
-              <div key={`${day}-${p.id}`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: "#FBFAF7", border: "1px solid #F5F2EC", borderRadius: 12 }}>
+              <div key={`${day}-${p.id}`} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: "#FFFFFF", border: "1px solid #F5F2EC", borderRadius: 12 }}>
                 <div style={{ fontSize: 12, color: "#8A8A86", width: 70 }} className="mono">{day.slice(0, 3).toUpperCase()} {p.hour}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 14, fontWeight: 600, color: "#152741", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
@@ -204,7 +209,7 @@ function ProHome({ myProfId, myPatients, todaysSessions, todayLabel, notes, anno
               const d = p.birth_date ? new Date(p.birth_date) : null;
               const label = d ? `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}` : "";
               return (
-                <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: "#FBFAF7", border: "1px solid #F5F2EC", borderRadius: 12 }}>
+                <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 12px", background: "#FFFFFF", border: "1px solid #F5F2EC", borderRadius: 12 }}>
                   <div style={{ width: 32, height: 32, borderRadius: 16, background: "#F5D9A8", color: "#C97A1F", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
                     <Icon name="trend" size={16} />
                   </div>
@@ -272,7 +277,7 @@ function notesByMeRecent(notes, myId, days) {
 
 function CompactStat({ label, value, accent }) {
   return (
-    <div style={{ background: "#FBFAF7", borderRadius: 14, padding: "14px 14px 12px", border: "1px solid #EAE6DD", position: "relative", overflow: "hidden" }}>
+    <div style={{ background: "#FFFFFF", borderRadius: 14, padding: "14px 14px 12px", border: "1px solid #EAE6DD", position: "relative", overflow: "hidden" }}>
       {accent && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: accent }} />}
       <Eyebrow>{label}</Eyebrow>
       <div className="serif" style={{ fontSize: 28, fontWeight: 300, color: "#152741", lineHeight: 1, letterSpacing: "-0.025em", marginTop: 8 }}>{value}</div>
@@ -282,7 +287,7 @@ function CompactStat({ label, value, accent }) {
 
 function SessionRow({ patient, onSessionNote, onMarkFalta }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: "#FBFAF7", border: "1px solid #F5F2EC", borderRadius: 12, flexWrap: "wrap" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 14px", background: "#FFFFFF", border: "1px solid #F5F2EC", borderRadius: 12, flexWrap: "wrap" }}>
       <div style={{ fontSize: 13, color: "#152741", fontWeight: 600, width: 56 }} className="mono">{patient.hour}</div>
       <div style={{ flex: 1, minWidth: 140 }}>
         <div style={{ fontSize: 15, fontWeight: 600, color: "#152741", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{patient.name}</div>
@@ -326,7 +331,7 @@ function ProAgenda({ myPatients, profs }) {
               {DAYS.map((d) => {
                 const items = slot(d, h);
                 return (
-                  <div key={d + h} style={{ padding: 6, borderLeft: "1px solid #F5F2EC", borderBottom: "1px solid #F5F2EC", minHeight: 54, background: items.length === 0 ? "transparent" : "#FBFAF7" }}>
+                  <div key={d + h} style={{ padding: 6, borderLeft: "1px solid #F5F2EC", borderBottom: "1px solid #F5F2EC", minHeight: 54, background: items.length === 0 ? "transparent" : "#FFFFFF" }}>
                     {items.map((p) => (
                       <div key={p.id} style={{ padding: "5px 7px", borderRadius: 6, background: "#DCE7F0", marginBottom: 4, fontSize: 12 }}>
                         <div style={{ fontWeight: 500, color: "#152741", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
@@ -354,7 +359,7 @@ function ProPatients({ myPatients, notes, onSessionNote }) {
       <div style={{ position: "relative" }}>
         <label htmlFor="pro-search" className="sr-only">Procurar paciente</label>
         <div aria-hidden="true" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#8A8A86", display: "flex" }}><Icon name="search" size={16} /></div>
-        <input id="pro-search" type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Procurar paciente…" aria-label="Procurar paciente" style={{ width: "100%", padding: "12px 14px 12px 40px", borderRadius: 12, border: "1px solid #D9D3C5", background: "#FBFAF7" }} />
+        <input id="pro-search" type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Procurar paciente…" aria-label="Procurar paciente" style={{ width: "100%", padding: "12px 14px 12px 40px", borderRadius: 12, border: "1px solid #D9D3C5", background: "#FFFFFF" }} />
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
@@ -386,17 +391,61 @@ function ProPatients({ myPatients, notes, onSessionNote }) {
 }
 
 function ProAccount({ profile, onLogout, theme, setTheme }) {
+  const { users = [], updateMyPhoto, removeMyPhoto } = useStore();
+  const me = users.find((u) => u.id === profile?.id);
+  const myPhoto = me?.photo_url || null;
+  const fileRef = useRef(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const initials = profile?.full_name?.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "P";
+
+  const onPickFile = (e) => {
+    const f = e.target.files?.[0];
+    if (f) updateMyPhoto(f);
+    e.target.value = "";
+    setMenuOpen(false);
+  };
+
   return (
     <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 14, maxWidth: 480, marginLeft: "auto", marginRight: "auto" }}>
       <Card pad={18}>
         <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-          <Av t={profile?.full_name?.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "P"} bg="#8DBF94" sz={56} color="#152741" />
+          <input ref={fileRef} type="file" accept="image/*" onChange={onPickFile} style={{ display: "none" }} aria-hidden="true" />
+          <button
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-label="Trocar foto"
+            className="ch"
+            style={{ padding: 0, background: "transparent", border: "none", position: "relative", borderRadius: 999, cursor: "pointer" }}
+          >
+            <Av t={initials} bg="#8DBF94" sz={56} color="#152741" photoUrl={myPhoto} />
+            <span aria-hidden="true" style={{
+              position: "absolute", bottom: -1, right: -1,
+              width: 20, height: 20, borderRadius: 10,
+              background: "#152741", color: "#8DBF94",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              boxShadow: "0 0 0 2px #FFFFFF",
+            }}>
+              <Icon name="edit" size={10} />
+            </span>
+          </button>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div className="serif" style={{ fontSize: 18, fontWeight: 500, color: "#152741" }}>{profile?.full_name}</div>
             <div style={{ fontSize: 12.5, color: "#8A8A86", marginTop: 2 }}>{profile?.email}</div>
             <Tag type="professional">Profissional</Tag>
           </div>
         </div>
+        {menuOpen && (
+          <div style={{ marginTop: 12, padding: 6, borderRadius: 12, background: "#F5F2EC", border: "1px solid #EAE6DD", display: "flex", gap: 6, flexWrap: "wrap" }}>
+            <Btn size="sm" variant="secondary" icon={<Icon name="edit" size={13} />} onClick={() => fileRef.current?.click()}>
+              {myPhoto ? "Trocar" : "Carregar"} foto
+            </Btn>
+            {myPhoto && (
+              <Btn size="sm" variant="danger" icon={<Icon name="trash" size={13} />} onClick={() => { removeMyPhoto(); setMenuOpen(false); }}>
+                Remover
+              </Btn>
+            )}
+            <Btn size="sm" variant="ghost" onClick={() => setMenuOpen(false)}>Cancelar</Btn>
+          </div>
+        )}
       </Card>
 
       <Card pad={0}>

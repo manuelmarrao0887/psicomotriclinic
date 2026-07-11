@@ -432,6 +432,196 @@ export function StoreProvider({ profile, children }) {
     show("Pedido recusado", "error"); await load();
   };
 
+  // Reset destrutivo + seed demo — apaga tudo excepto director actual, e cria
+  // trio (1 profissional, 1 responsável stub, 1 paciente vinculado a ambos).
+  // Só para conta admin. Usa director.id em parent_user_ids + prof.profile_id
+  // para que o role-switcher funcione (mesma uid vê como todos os papéis).
+  const resetAndSeedDemo = async () => {
+    if (!profile?.id) return { ok: false };
+
+    // 1) DELETE tudo
+    const wipe = ["patients", "professionals", "session_notes", "intervention_plans", "anamnesis", "payments", "schedule_requests", "announcements", "visits", "reminders", "audit_log"];
+    for (const c of wipe) {
+      try { await sb.from(c).delete(); } catch (e) { console.warn("wipe", c, e?.message); }
+    }
+    // Profiles: apagar excepto o director actual + preservar stubs? Apagar tudo excepto self.
+    try {
+      const all = await sb.from("profiles").select("*");
+      for (const p of (all.data || [])) {
+        if (p.id !== profile.id) {
+          try { await sb.from("profiles").delete().eq("id", p.id); } catch (_) {}
+        }
+      }
+    } catch (_) {}
+
+    // 2) CREATE — profile stub responsável
+    const parentStubId = "demo-parent-ana";
+    await sb.from("profiles").upsert({
+      id: parentStubId,
+      email: "ana@demo.local",
+      full_name: "Ana Silva",
+      role: "parent",
+      active: true,
+    });
+
+    // 3) CREATE — profile stub profissional (para aparecer em Utilizadores)
+    const proProfileId = "demo-pro-ines";
+    await sb.from("profiles").upsert({
+      id: proProfileId,
+      email: "ines@demo.local",
+      full_name: "Inês Mota",
+      role: "professional",
+      active: true,
+    });
+
+    // 4) CREATE — registo profissional. profile_id = director.id para RoleSwitcher.
+    const proRes = await sb.from("professionals").insert({
+      name: "Inês Mota",
+      role_title: "Psicomotricista",
+      profile_id: profile.id, // director actua como esta pro no override
+      avatar_initials: "IM",
+      avatar_color: "#8DBF94",
+      active: true,
+    });
+    const proId = proRes.data?.id;
+
+    // 5) CREATE — paciente vinculado ao director (parent_user_ids) + ao pro
+    const ptRes = await sb.from("patients").insert({
+      name: "Beatriz Sá",
+      age: 6,
+      birth_date: "2020-03-15",
+      nif: null,
+      professional_id: proId,
+      professional_ids: [proId],
+      parent_user_ids: [profile.id, parentStubId], // director + parent stub
+      parent_mother: "Ana Silva",
+      parent_father: "João Sá",
+      session_type: "individual",
+      day_of_week: "Segunda",
+      hour: "15:00",
+      periodicity: "Semanal",
+      active: true,
+    });
+    const ptId = ptRes.data?.id;
+
+    // 6) Anamnese
+    await sb.from("anamnesis").upsert({
+      id: ptId, patient_id: ptId,
+      referral_reason: "Encaminhamento pela pediatra por dificuldades de coordenação motora observadas em contexto escolar.",
+      chief_complaints: "Tropeça com frequência. Dificuldade em amarrar atacadores. Escrita ainda irregular.",
+      birth_history: "Gestação normal, parto de termo, sem complicações. Amamentação até aos 8 meses.",
+      developmental_milestones: "Marcha aos 14 meses. Primeiras palavras aos 12 meses. Frases aos 24 meses. Ligeiro atraso motor desde os 3 anos.",
+      school_context: "1º ano de escolaridade. Educadora reporta dificuldades em Educação Física e destrezas manuais. Comportamento adequado.",
+      family_context: "Filha única. Ambos pais activos profissionalmente. Sem antecedentes familiares relevantes.",
+      previous_interventions: "Nenhuma até à data.",
+      general_notes: "Criança colaborante e motivada. Boa recetividade à intervenção.",
+    });
+
+    // 7) Plano de intervenção
+    await sb.from("intervention_plans").upsert({
+      id: ptId, patient_id: ptId,
+      area: "Coordenação motora, esquema corporal e praxias finas",
+      objectives: [
+        { text: "Melhorar coordenação bilateral em saltos e obstáculos", domain: "Coordenação motora", status: "ativo", progress: 40 },
+        { text: "Consolidar esquema corporal com actividades de espelho", domain: "Esquema corporal", status: "ativo", progress: 25 },
+        { text: "Autonomia em amarrar atacadores e abotoar", domain: "Praxias", status: "ativo", progress: 15 },
+        { text: "Reforçar regulação em contexto de frustração", domain: "Regulação emocional", status: "ativo", progress: 30 },
+      ],
+      start_date: "2026-04-01",
+      review_date: "2026-09-01",
+      notes: "Reavaliação trimestral. Próxima em Setembro.",
+      updated_at: new Date().toISOString(),
+      updated_by: profile.id,
+    });
+
+    // 8) Notas de sessão (últimas 3)
+    const notes = [
+      { date: "2026-06-15", status: "realizada",
+        work_done: "Circuito psicomotor com obstáculos horizontais e verticais. Jogo de espelho com par.",
+        observations: "Motivada e colaborante. Frustração inicial no espelho, resolvida com apoio verbal.",
+        progress: "Melhoria notória na coordenação bilateral. Salta a pés juntos com fluidez.",
+        next_plan: "Introduzir jogos de imitação e sequências mais complexas." },
+      { date: "2026-06-08", status: "realizada",
+        work_done: "Trabalho de pinça fina e nós simples. Sequência com lã e argolas.",
+        observations: "Frustração inicial ao 3º nó falhado — respirou e retomou.",
+        progress: "Ainda revela dificuldade em amarrar atacadores autonomamente.",
+        next_plan: "Continuar sequência de nós. Introduzir laços em cartão." },
+      { date: "2026-06-01", status: "realizada",
+        work_done: "Avaliação psicomotora inicial. M-ABC-2. Provas de esquema corporal.",
+        observations: "Criança adaptada. Estabeleceu contacto de imediato.",
+        progress: "Resultado M-ABC-2: percentil 15 (motor global). Plano em preparação.",
+        next_plan: "Reunião de definição de plano com responsável na próxima semana." },
+    ];
+    for (const n of notes) {
+      await sb.from("session_notes").insert({
+        patient_id: ptId,
+        professional_id: proId,
+        domains: ["Coordenação motora", "Esquema corporal", "Praxias"],
+        created_by: profile.id,
+        ...n,
+      });
+    }
+
+    // 9) Pagamentos (1 pago, 1 pendente)
+    await sb.from("payments").insert({ patient_id: ptId, month: "Maio 2026", amount: 160, status: "pago", paid_date: "2026-05-30" });
+    await sb.from("payments").insert({ patient_id: ptId, month: "Junho 2026", amount: 160, status: "pendente" });
+
+    // 10) Anúncio de boas-vindas
+    await sb.from("announcements").insert({
+      title: "Bem-vindos ao novo Portal Psicomotriclinic Hub",
+      body: "Estamos a estrear o novo portal. Aqui podem consultar o plano de intervenção, notas de sessão, pagamentos e comunicar directamente com a direção. Qualquer questão, estamos à disposição.",
+      audience: "all",
+      author_id: profile.id,
+      author_name: profile.full_name || "Direção",
+      active: true,
+    });
+
+    await audit("reset_and_seed_demo", "", `paciente=${ptId} pro=${proId} parent=${parentStubId}`);
+    show("Dados demo criados. Recarrega se necessário.");
+    return { ok: true };
+  };
+
+  // Upload avatar — resize client-side (256×256 max, JPEG 0.85) e guarda como
+  // data URL em profiles.{uid}.photo_url. Evita depender de Firebase Storage.
+  // Ficheiro raw comprimido ~15-30KB por imagem — cabe no doc Firestore.
+  const updateMyPhoto = async (file) => {
+    if (!file || !profile?.id) return;
+    if (file.size > 5 * 1024 * 1024) { show("Imagem demasiado grande (máx 5MB).", "error"); return; }
+    try {
+      const dataUrl = await new Promise((res, rej) => {
+        const img = new Image();
+        const reader = new FileReader();
+        reader.onload = () => { img.src = reader.result; };
+        reader.onerror = rej;
+        img.onload = () => {
+          const MAX = 256;
+          let { width, height } = img;
+          if (width > height) { height = Math.round(height * (MAX / width)); width = MAX; }
+          else { width = Math.round(width * (MAX / height)); height = MAX; }
+          const canvas = document.createElement("canvas");
+          canvas.width = width; canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, width, height);
+          res(canvas.toDataURL("image/jpeg", 0.85));
+        };
+        img.onerror = rej;
+        reader.readAsDataURL(file);
+      });
+      await sb.from("profiles").update({ photo_url: dataUrl }).eq("id", profile.id);
+      await audit("update_photo", `profiles:${profile.id}`, "");
+      show("Foto atualizada");
+    } catch (e) {
+      show("Não foi possível guardar a foto.", "error");
+    }
+  };
+
+  const removeMyPhoto = async () => {
+    if (!profile?.id) return;
+    await sb.from("profiles").update({ photo_url: null }).eq("id", profile.id);
+    await audit("remove_photo", `profiles:${profile.id}`, "");
+    show("Foto removida");
+  };
+
   const changeMyPassword = async () => {
     const pw = (form.newPw || "").trim();
     if (pw.length < 6) { show("Password: mínimo 6 caracteres", "error"); return; }
@@ -587,7 +777,8 @@ export function StoreProvider({ profile, children }) {
     inviteUser,
     approveRequest, rejectRequest,
     saveAnamnesis, addSessionNote, deleteSessionNote, savePlan,
-    genPassword, changeMyPassword,
+    genPassword, changeMyPassword, updateMyPhoto, removeMyPhoto,
+    resetAndSeedDemo,
     addAnnouncement, toggleAnnouncementActive, deleteAnnouncement,
     quickMarkFalta, setPatientParents, setProfessionalUser,
     pushState, enablePush, disablePush, cancelSession,

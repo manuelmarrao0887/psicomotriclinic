@@ -5,14 +5,15 @@ export const Eyebrow = ({ children, color = "#8A8A86" }) => (
   <span className="mono" style={{ color, fontSize: 11, fontWeight: 500 }}>{children}</span>
 );
 
-export const Av = ({ t, bg, sz = 40, color = "#152741" }) => (
+export const Av = ({ t, bg, sz = 40, color = "#152741", photoUrl }) => (
   <div style={{
     width: sz, height: sz, borderRadius: sz * 0.5,
-    background: bg || "#DCE7F0",
+    background: photoUrl ? `center/cover no-repeat url(${photoUrl})` : (bg || "#DCE7F0"),
     display: "flex", alignItems: "center", justifyContent: "center",
     fontFamily: "DM Sans", fontSize: sz * 0.36, fontWeight: 600,
     color, flexShrink: 0, letterSpacing: "-0.01em",
-  }}>{t}</div>
+    overflow: "hidden",
+  }}>{photoUrl ? null : t}</div>
 );
 
 export const Tag = ({ children, type = "default" }) => {
@@ -37,7 +38,7 @@ export const Tag = ({ children, type = "default" }) => {
 
 export const Card = ({ children, style, onClick, delay = 0, pad = 22 }) => (
   <div className="ch fu" onClick={onClick} style={{
-    background: "#FBFAF7", borderRadius: 14, padding: pad,
+    background: "#FFFFFF", borderRadius: 14, padding: pad,
     border: "1px solid #EAE6DD",
     cursor: onClick ? "pointer" : "default",
     animationDelay: `${delay}ms`,
@@ -49,7 +50,7 @@ export const Card = ({ children, style, onClick, delay = 0, pad = 22 }) => (
   >{children}</div>
 );
 
-export const Stat = ({ label, value, suffix, color = "#152741", bg = "#FBFAF7", trend, accent }) => (
+export const Stat = ({ label, value, suffix, color = "#152741", bg = "#FFFFFF", trend, accent }) => (
   <div style={{
     background: bg, borderRadius: 14, padding: "22px 22px 20px",
     border: "1px solid #EAE6DD", flex: 1, position: "relative", overflow: "hidden",
@@ -115,7 +116,7 @@ export const Btn = ({ children, onClick, disabled, variant = "primary", size = "
     secondary: { bg: "#FFFFFF", c: "#152741", bd: "#D9D3C5", hbg: "#F5F2EC" },
     ghost: { bg: "transparent", c: "#152741", bd: "transparent", hbg: "#F5F2EC" },
     accent: { bg: "#E8A13C", c: "#152741", bd: "#E8A13C", hbg: "#D89030" },
-    danger: { bg: "#FBFAF7", c: "#B83A3A", bd: "#F4E0E0", hbg: "#F4E0E0" },
+    danger: { bg: "#FFFFFF", c: "#B83A3A", bd: "#F4E0E0", hbg: "#F4E0E0" },
   };
   const v = variants[variant] || variants.primary;
   const sizes = { sm: "8px 14px", md: "11px 20px", lg: "14px 26px" };
@@ -152,7 +153,7 @@ export const Inp = (props) => (
   <input {...props} style={{
     width: "100%", padding: "11px 14px", borderRadius: 10,
     border: "1px solid #D9D3C5", fontSize: 14,
-    background: "#FBFAF7", color: "#3C3C3B",
+    background: "#FFFFFF", color: "#3C3C3B",
     transition: "border-color .15s ease, box-shadow .15s ease",
     ...(props.style || {}),
   }} />
@@ -162,7 +163,7 @@ export const Sel = ({ value, onChange, options, placeholder }) => (
   <select value={value} onChange={(e) => onChange(e.target.value)} style={{
     width: "100%", padding: "11px 14px", borderRadius: 10,
     border: "1px solid #D9D3C5", fontSize: 14,
-    background: "#FBFAF7", color: "#3C3C3B", appearance: "none",
+    background: "#FFFFFF", color: "#3C3C3B", appearance: "none",
     backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238A8A86' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")",
     backgroundRepeat: "no-repeat", backgroundPosition: "right 14px center", paddingRight: 36,
   }}>
@@ -189,7 +190,7 @@ export const Modal = ({ open, onClose, title, eyebrow, children, width = 520 }) 
       tabIndex={-1}
     >
       <div onClick={(e) => e.stopPropagation()} className="modal-panel" style={{
-        background: "#FBFAF7", borderRadius: 18,
+        background: "#FFFFFF", borderRadius: 18,
         width: "100%", maxWidth: width, maxHeight: "86vh",
         overflowY: "auto", animation: "ti .25s ease both",
         border: "1px solid #EAE6DD",

@@ -21,7 +21,7 @@ export default function Privacy() {
   }, [search]);
 
   return (
-    <div style={{ minHeight: "100vh", background: "#FFFFFF" }}>
+    <div style={{ minHeight: "100vh", background: "#F7F9FB" }}>
       {/* Header */}
       <header style={{
         position: "sticky", top: 0, zIndex: 50,
@@ -70,7 +70,7 @@ export default function Privacy() {
               style={{
                 width: "100%", padding: "8px 12px 8px 32px",
                 borderRadius: 10, border: "1px solid #D9D3C5",
-                fontSize: 13, background: "#FBFAF7",
+                fontSize: 13, background: "#FFFFFF",
               }}
             />
             <span aria-hidden="true" style={{ position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", color: "#8A8A86", display: "flex" }}>

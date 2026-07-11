@@ -49,7 +49,7 @@ export default function Agenda() {
                   return (
                     <div key={d + h} style={{
                       padding: 8, borderLeft: "1px solid #F5F2EC", borderBottom: "1px solid #F5F2EC",
-                      minHeight: 62, background: items.length === 0 ? "transparent" : "#FBFAF7",
+                      minHeight: 62, background: items.length === 0 ? "transparent" : "#FFFFFF",
                     }}>
                       {items.map((p) => {
                         const ids = (p.professional_ids && p.professional_ids.length) ? p.professional_ids : (p.professional_id ? [p.professional_id] : []);
@@ -110,7 +110,7 @@ export default function Agenda() {
             aria-pressed={activeDay === d}
             style={{
               flex: 1, padding: "9px 6px", borderRadius: 9,
-              background: activeDay === d ? "#FBFAF7" : "transparent",
+              background: activeDay === d ? "#FFFFFF" : "transparent",
               color: activeDay === d ? "#152741" : "#5A5A58",
               fontSize: 13, fontWeight: activeDay === d ? 600 : 500,
               boxShadow: activeDay === d ? "0 1px 3px rgba(21,39,65,.08)" : "none",
@@ -148,7 +148,7 @@ export default function Agenda() {
                       style={{
                         display: "flex", alignItems: "center", gap: 12,
                         padding: "14px 16px", borderRadius: 14,
-                        background: "#FBFAF7", border: "1px solid #F5F2EC", cursor: "pointer",
+                        background: "#FFFFFF", border: "1px solid #F5F2EC", cursor: "pointer",
                       }}
                     >
                       <div style={{

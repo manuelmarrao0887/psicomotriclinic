@@ -98,7 +98,7 @@ export function ProfDetail() {
               </Btn>
             </div>
             {linkedUser ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "#FBFAF7", border: "1px solid #F5F2EC", borderRadius: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", background: "#FFFFFF", border: "1px solid #F5F2EC", borderRadius: 10 }}>
                 <Av t={linkedUser.full_name?.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "?"} bg="#DCE7F0" sz={32} />
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 500, color: "#152741", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{linkedUser.full_name}</div>
@@ -168,7 +168,7 @@ function LinkProfessionalUserModal({ open, onClose, professional, users, current
         Selecione a conta que corresponde a este profissional. Será a conta que vê o portal com a agenda e os casos atribuídos.
       </p>
       <Field label="Procurar">
-        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Nome ou email…" style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FBFAF7" }} />
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Nome ou email…" style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FFFFFF" }} />
       </Field>
       <div style={{ maxHeight: 280, overflowY: "auto", border: "1px solid #F5F2EC", borderRadius: 10, marginTop: 4 }}>
         <label style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderBottom: "1px solid #F5F2EC", cursor: "pointer", background: selected === null ? "#F5F2EC" : "transparent" }}>

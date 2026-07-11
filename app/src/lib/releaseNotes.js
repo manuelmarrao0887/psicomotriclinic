@@ -6,6 +6,32 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.17",
+    date: "2026-06-22",
+    title: "Fotos de perfil em todos os portais + reset+seed demo + tokens body cool-gray",
+    added: [
+      "Photo upload em todos os perfis: sidebar director (Lote anterior), agora também tab Conta do Portal Responsável e do Portal Profissional. Popover com Carregar/Trocar/Remover.",
+      "Store: updateMyPhoto(file) e removeMyPhoto — resize 256×256 client-side (canvas), JPEG 0.85, guarda como data URL em profiles.photo_url.",
+      "Store: resetAndSeedDemo — apaga tudo excepto director actual e cria trio Inês Mota (pro) + Ana Silva (parent stub) + Beatriz Sá (paciente vinculada aos 2) com plano, anamnese, 3 notas, 2 pagamentos, 1 anúncio.",
+      "Settings: nova secção 'DEMO / TESTE' com botão para executar reset+seed (só admin).",
+      "Av component: prop photoUrl — mostra imagem cover em vez de iniciais quando presente.",
+      "Sidebar director com 4 secções + dividers (PRINCIPAL / CLÍNICO / GESTÃO / SISTEMA) + badge âmbar com contador de pedidos pendentes.",
+      "RoleSwitcher (chip top-right, só ADMIN_EMAIL): trocar entre Diretor / Profissional / Responsável para testar layouts sem sair da conta admin.",
+      "Fotos no greeting: Dashboard 'Boa tarde' com Av 64px, portais Home com Av 56px, top bar mobile com Av 34px.",
+      "Design doc: docs/superpowers/plans/2026-06-22-portals-parity-plus-winning-features.md com plano de sprints para A1/A2 (desktop portals), B1-B7 (features vencedoras), C1-C3 (polish).",
+    ],
+    changed: [
+      "Body pages passam de branco #FFFFFF para cool-gray #F7F9FB (AdminLayout desktop+mobile, Privacy, ConfirmSession). Cards mantêm-se brancos puros — hierarquia visual clara.",
+      "Cards paper de #FBFAF7 (cream tint) para #FFFFFF (branco puro) via sed global .jsx.",
+      "Btn secondary: hover #F7F4EE → #F5F2EC (mais fresco, alinhado com nova palette).",
+      "Sidebar director: remove eyebrow 'NAVEGAÇÃO' global; secções têm eyebrows próprias com letras mais espaçadas.",
+      "Portais top bar / bottom tab bar mobile: blur translúcido sobre branco (era cream).",
+    ],
+    removed: [
+      "Item 'Auditoria' da sidebar admin (fica acessível via Definições se necessário) — reduz ruído.",
+    ],
+  },
+  {
     version: "v2.0.0-alpha.16",
     date: "2026-06-13",
     title: "Privacidade dinâmica + testes.html + skill psm-testes",

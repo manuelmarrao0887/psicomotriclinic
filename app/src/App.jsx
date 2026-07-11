@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { sb, ADMIN_EMAIL, fcmOnForegroundMessage } from "./lib/firebase.js";
 import { Mark } from "./lib/icons.jsx";
@@ -7,6 +7,8 @@ import { Toast } from "./lib/ui.jsx";
 import ModalsHost from "./components/ModalsHost.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import PushPermissionBanner from "./components/PushPermissionBanner.jsx";
+import RoleSwitcher from "./components/RoleSwitcher.jsx";
+import { applyRoleOverride, getRoleOverride } from "./lib/roleOverride.js";
 
 // Páginas críticas (shell + login + dashboard) carregadas eagerly
 import Login from "./pages/Login.jsx";
@@ -204,6 +206,22 @@ export default function App() {
   const [theme, setTheme] = useTheme();
   const location = useLocation();
 
+  // Role override state — hooks têm de ser chamados antes de qualquer early return
+  const [override, setOverride] = useState(() => getRoleOverride());
+  useEffect(() => {
+    const h = () => setOverride(getRoleOverride());
+    window.addEventListener("psm-role-override", h);
+    window.addEventListener("storage", h);
+    return () => {
+      window.removeEventListener("psm-role-override", h);
+      window.removeEventListener("storage", h);
+    };
+  }, []);
+  const effectiveProfile = useMemo(
+    () => applyRoleOverride(profile, ADMIN_EMAIL),
+    [profile, override]
+  );
+
   if (loading) {
     return (
       <div style={{ minHeight: "100vh", background: "#152741", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -228,12 +246,12 @@ export default function App() {
     );
   }
 
-  const isAdmin = profile.role === "director" || profile.email === ADMIN_EMAIL;
-  const isProfessional = profile.role === "professional";
-  const isParent = profile.role === "parent";
+  const isAdmin = effectiveProfile.role === "director" || (effectiveProfile.email === ADMIN_EMAIL && !effectiveProfile._overridden);
+  const isProfessional = effectiveProfile.role === "professional";
+  const isParent = effectiveProfile.role === "parent";
 
   return (
-    <StoreProvider profile={profile}>
+    <StoreProvider profile={effectiveProfile}>
       <VisitLogger profile={profile} />
       <PushListener />
       <ErrorBoundary>
@@ -242,7 +260,7 @@ export default function App() {
             <Routes>
               <Route path="/confirmar/:patientId/:date" element={<ConfirmSession />} />
               <Route path="/style-lab" element={<StyleLab />} />
-              <Route path="/" element={<AdminLayout profile={profile} onLogout={logout} theme={theme} setTheme={setTheme} />}>
+              <Route path="/" element={<AdminLayout profile={effectiveProfile} onLogout={logout} theme={theme} setTheme={setTheme} />}>
                 <Route index element={<Navigate to="/dashboard" replace />} />
                 <Route path="dashboard" element={<Dashboard />} />
                 <Route path="utilizadores" element={<Users />} />
@@ -265,13 +283,13 @@ export default function App() {
             <Routes>
               <Route path="/confirmar/:patientId/:date" element={<ConfirmSession />} />
               <Route path="/style-lab" element={<StyleLab />} />
-              <Route path="*" element={<ProfessionalPortal profile={profile} onLogout={logout} theme={theme} setTheme={setTheme} />} />
+              <Route path="*" element={<ProfessionalPortal profile={effectiveProfile} onLogout={logout} theme={theme} setTheme={setTheme} />} />
             </Routes>
           ) : isParent ? (
             <Routes>
               <Route path="/confirmar/:patientId/:date" element={<ConfirmSession />} />
               <Route path="/style-lab" element={<StyleLab />} />
-              <Route path="*" element={<ParentPortal profile={profile} onLogout={logout} theme={theme} setTheme={setTheme} />} />
+              <Route path="*" element={<ParentPortal profile={effectiveProfile} onLogout={logout} theme={theme} setTheme={setTheme} />} />
             </Routes>
           ) : (
             <div style={{ padding: 40, textAlign: "center" }}>
@@ -285,6 +303,7 @@ export default function App() {
       </ErrorBoundary>
       <ModalsHost />
       <ToastHost />
+      <RoleSwitcher profile={profile} />
       <PushPermissionBanner />
     </StoreProvider>
   );

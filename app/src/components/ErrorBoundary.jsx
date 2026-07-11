@@ -29,7 +29,7 @@ export default class ErrorBoundary extends Component {
       return (
         <div style={{
           maxWidth: 720, margin: "40px auto", padding: 24,
-          background: "#FBFAF7", color: "#3C3C3B",
+          background: "#FFFFFF", color: "#3C3C3B",
           border: "1px solid #EAE6DD", borderRadius: 14,
           fontFamily: "-apple-system, BlinkMacSystemFont, sans-serif", fontSize: 14, lineHeight: 1.6,
         }}>
@@ -78,7 +78,7 @@ export default class ErrorBoundary extends Component {
             }}>Tentar outra vez</button>
             <button onClick={() => window.location.assign("/dashboard")} style={{
               padding: "10px 18px", borderRadius: 10, border: "1px solid #D9D3C5",
-              background: "#FBFAF7", color: "#152741", fontSize: 14, fontWeight: 500,
+              background: "#FFFFFF", color: "#152741", fontSize: 14, fontWeight: 500,
             }}>Voltar ao Dashboard</button>
           </div>
         </div>

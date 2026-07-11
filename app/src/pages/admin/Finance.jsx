@@ -85,7 +85,7 @@ export default function Finance() {
                   <div key={v.id || v.month} style={{
                     display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr 1fr 1fr",
                     fontSize: 13.5, padding: "7px 0", borderTop: "1px solid #F2EEE5", alignItems: "center",
-                    background: v.month === refMonth ? "#FBFAF7" : "transparent",
+                    background: v.month === refMonth ? "#FFFFFF" : "transparent",
                   }}>
                     <span style={{ color: "#152741", fontWeight: 500 }}>{v.month}</span>
                     <span style={{ color: "#5A5A58" }}>{eur(v.power)}€</span>

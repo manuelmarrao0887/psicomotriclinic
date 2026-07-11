@@ -39,7 +39,7 @@ export default function ConfirmSession() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#FFFFFF", display: "flex", flexDirection: "column", paddingTop: "var(--safe-top)" }}>
+    <div style={{ minHeight: "100vh", background: "#F7F9FB", display: "flex", flexDirection: "column", paddingTop: "var(--safe-top)" }}>
       <header style={{ padding: "20px 20px 0", display: "flex", alignItems: "center", gap: 10 }}>
         <Mark size={32} />
         <span style={{ fontFamily: "DM Sans", fontWeight: 700, fontSize: 15, letterSpacing: "-0.01em", color: "#152741" }}>

@@ -17,7 +17,7 @@ const PSM_DOMAINS = [
   "Cooperação / social",
 ];
 
-const taStyle = { width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FBFAF7", color: "#3C3C3B", fontFamily: "inherit", resize: "vertical", minHeight: 70 };
+const taStyle = { width: "100%", boxSizing: "border-box", padding: "10px 12px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FFFFFF", color: "#3C3C3B", fontFamily: "inherit", resize: "vertical", minHeight: 70 };
 const Ta = (props) => <textarea {...props} style={{ ...taStyle, ...(props.style || {}) }} />;
 
 export default function ModalsHost() {
@@ -77,7 +77,7 @@ export default function ModalsHost() {
         </p>
         <textarea value={form.bulk || ""} onChange={(e) => set("bulk", e.target.value)} rows={8}
           placeholder={"Maria Santos, Psicomotricista\nJoão Lopes, Terapeuta Ocupacional\nInês Castro"}
-          style={{ width: "100%", boxSizing: "border-box", padding: "12px 14px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FBFAF7", color: "#3C3C3B", fontFamily: "inherit", resize: "vertical" }} />
+          style={{ width: "100%", boxSizing: "border-box", padding: "12px 14px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FFFFFF", color: "#3C3C3B", fontFamily: "inherit", resize: "vertical" }} />
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 14 }}>
           <Btn variant="secondary" onClick={() => setModal(null)}>Cancelar</Btn>
           <Btn onClick={s.addProfsBulk} disabled={!(form.bulk || "").trim()}>Importar</Btn>
@@ -86,7 +86,7 @@ export default function ModalsHost() {
 
       <Modal open={modal === "bulkPatient"} onClose={() => setModal(null)} title="Importar pacientes" eyebrow="— EM MASSA" width={620}>
         {/* Toggle de formato */}
-        <div style={{ display: "flex", gap: 6, marginBottom: 14, padding: 4, background: "#FBFAF7", border: "1px solid #EAE6DD", borderRadius: 10 }}>
+        <div style={{ display: "flex", gap: 6, marginBottom: 14, padding: 4, background: "#FFFFFF", border: "1px solid #EAE6DD", borderRadius: 10 }}>
           {[
             { v: "schedule", l: "Com horário", h: "Nome, Idade, Profissional, Dia, Hora, Tipo" },
             { v: "admin", l: "Só dados administrativos", h: "Nome, NIF, Seguro, Nº seguro" },
@@ -120,7 +120,7 @@ export default function ModalsHost() {
           placeholder={(form.bulkMode || "schedule") === "admin"
             ? "Maria Silva, 245678901, ADSE, M-4421889\nJoão Pereira, 267781234, SAMS, S-9921003\nAna Costa, 289112344, ADM, ADM-553219"
             : "Maria S., 12, Maria Santos, Segunda, 17:00, individual\nTiago R., 8, João Lopes, Terça, 10:00, grupo"}
-          style={{ width: "100%", boxSizing: "border-box", padding: "12px 14px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FBFAF7", color: "#3C3C3B", fontFamily: "inherit", resize: "vertical" }} />
+          style={{ width: "100%", boxSizing: "border-box", padding: "12px 14px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FFFFFF", color: "#3C3C3B", fontFamily: "inherit", resize: "vertical" }} />
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 14 }}>
           <Btn variant="secondary" onClick={() => setModal(null)}>Cancelar</Btn>
           <Btn onClick={s.addPatientsBulk} disabled={!(form.bulk || "").trim()}>Importar</Btn>
@@ -161,7 +161,7 @@ export default function ModalsHost() {
                 return (
                   <button key={p.id} type="button" className="ch" onClick={() => setForm((f) => { const cur = f.profs || []; return { ...f, profs: cur.includes(p.id) ? cur.filter((x) => x !== p.id) : [...cur, p.id] }; })} style={{
                     padding: "8px 12px", borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: "pointer",
-                    background: sel ? "#152741" : "#FBFAF7", color: sel ? "#F7F4EE" : "#3C3C3B",
+                    background: sel ? "#152741" : "#FFFFFF", color: sel ? "#F7F4EE" : "#3C3C3B",
                     border: `1px solid ${sel ? "#152741" : "#D9D3C5"}`,
                   }}>{sel ? "✓ " : ""}{p.name}</button>
                 );
@@ -288,7 +288,7 @@ export default function ModalsHost() {
               return (
                 <button key={d} type="button" className="ch" onClick={() => setForm((f) => { const cur = f.snDomains || []; return { ...f, snDomains: cur.includes(d) ? cur.filter((x) => x !== d) : [...cur, d] }; })} style={{
                   padding: "7px 12px", borderRadius: 8, fontSize: 12.5, fontWeight: 500, cursor: "pointer",
-                  background: sel ? "#152741" : "#FBFAF7", color: sel ? "#F7F4EE" : "#3C3C3B",
+                  background: sel ? "#152741" : "#FFFFFF", color: sel ? "#F7F4EE" : "#3C3C3B",
                   border: `1px solid ${sel ? "#152741" : "#D9D3C5"}`,
                 }}>{sel ? "✓ " : ""}{d}</button>
               );
@@ -321,7 +321,7 @@ export default function ModalsHost() {
         <div style={{ fontSize: 12, color: "#5A5A58", marginBottom: 6, fontWeight: 500 }}>Objetivos</div>
         <div style={{ display: "flex", flexDirection: "column", gap: 8, marginBottom: 10 }}>
           {(form.planObjectives || []).map((o, idx) => (
-            <div key={idx} style={{ padding: 12, borderRadius: 10, background: "#FBFAF7", border: "1px solid #EAE6DD" }}>
+            <div key={idx} style={{ padding: 12, borderRadius: 10, background: "#FFFFFF", border: "1px solid #EAE6DD" }}>
               <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: 10, alignItems: "start" }}>
                 <Ta rows={2} value={o.text} onChange={(e) => {
                   const arr = [...(form.planObjectives || [])]; arr[idx] = { ...arr[idx], text: e.target.value };

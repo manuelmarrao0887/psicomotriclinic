@@ -41,7 +41,7 @@ const VARIANTS = [
     description: "Navy + amber CTA. Cream tint suave. Mantém identidade actual mas mais branco/limpo.",
     tokens: {
       bg: "#FFFFFF",
-      surface: "#FBFAF7",
+      surface: "#FFFFFF",
       surfaceAlt: "#F5F2EC",
       border: "#EAE6DD",
       borderStrong: "#D9D3C5",

@@ -25,7 +25,7 @@ export default function Patients() {
           <div className="only-desktop" style={{ position: "relative", width: 260 }}>
             <label htmlFor="patient-search" className="sr-only">Procurar paciente</label>
             <div aria-hidden="true" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#8A8A86", display: "flex" }}><Icon name="search" size={16} /></div>
-            <input id="patient-search" type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Procurar paciente…" aria-label="Procurar paciente" style={{ width: "100%", padding: "10px 14px 10px 40px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FBFAF7" }} />
+            <input id="patient-search" type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Procurar paciente…" aria-label="Procurar paciente" style={{ width: "100%", padding: "10px 14px 10px 40px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FFFFFF" }} />
           </div>
           <Btn variant="secondary" icon={<Icon name="copy" size={15} />} onClick={() => { setForm({}); setModal("bulkPatient"); }}>Importar</Btn>
           <Btn icon={<Icon name="plus" size={16} />} onClick={() => { setForm({}); setModal("addPatient"); }}>Novo paciente</Btn>
@@ -35,7 +35,7 @@ export default function Patients() {
       <div className="only-mobile" style={{ position: "relative", marginBottom: 14 }}>
         <label htmlFor="patient-search-m" className="sr-only">Procurar paciente</label>
         <div aria-hidden="true" style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#8A8A86", display: "flex" }}><Icon name="search" size={16} /></div>
-        <input id="patient-search-m" type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Procurar paciente…" aria-label="Procurar paciente" style={{ width: "100%", padding: "12px 14px 12px 40px", borderRadius: 12, border: "1px solid #D9D3C5", background: "#FBFAF7" }} />
+        <input id="patient-search-m" type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Procurar paciente…" aria-label="Procurar paciente" style={{ width: "100%", padding: "12px 14px 12px 40px", borderRadius: 12, border: "1px solid #D9D3C5", background: "#FFFFFF" }} />
       </div>
 
       <Card pad={0} style={{ overflow: "hidden" }}>
@@ -240,7 +240,7 @@ export function PatientDetail() {
                 {plan.area && <div style={{ fontSize: 14, color: "#152741", fontWeight: 500, marginBottom: 12 }}>{plan.area}</div>}
                 <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                   {(plan.objectives || []).map((o, i) => (
-                    <div key={i} style={{ padding: 14, borderRadius: 10, background: "#FBFAF7", border: "1px solid #F5F2EC" }}>
+                    <div key={i} style={{ padding: 14, borderRadius: 10, background: "#FFFFFF", border: "1px solid #F5F2EC" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, marginBottom: 8 }}>
                         <div style={{ fontSize: 13.5, color: "#152741", lineHeight: 1.5 }}>{o.text}</div>
                         <Tag type={o.status === "atingido" ? "sage" : o.status === "em_pausa" ? "pendente" : "default"}>
@@ -291,7 +291,7 @@ export function PatientDetail() {
                 {ptNotes.map((n) => {
                   const pr = profs.find((x) => x.id === n.professional_id);
                   return (
-                    <div key={n.id} style={{ padding: 14, borderRadius: 10, background: "#FBFAF7", border: "1px solid #F5F2EC" }}>
+                    <div key={n.id} style={{ padding: 14, borderRadius: 10, background: "#FFFFFF", border: "1px solid #F5F2EC" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                           <span className="mono" style={{ fontSize: 11, color: "#152741", fontWeight: 600 }}>{n.date && new Date(n.date).toLocaleDateString("pt-PT")}</span>
@@ -393,7 +393,7 @@ function LinkedParents({ patient, users }) {
       <div className="mono" style={{ fontSize: 10, color: "#8A8A86", marginBottom: 6 }}>RESPONSÁVEIS VINCULADOS · {linked.length}</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         {linked.map((u) => (
-          <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: "#FBFAF7", border: "1px solid #F5F2EC", borderRadius: 10 }}>
+          <div key={u.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", background: "#FFFFFF", border: "1px solid #F5F2EC", borderRadius: 10 }}>
             <Av t={u.full_name?.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "?"} bg="#DCE7F0" sz={28} />
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: 13, fontWeight: 500, color: "#152741", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{u.full_name}</div>
@@ -428,7 +428,7 @@ function LinkParentsModal({ open, onClose, patient, users, onSave }) {
         Selecione as contas (perfis com papel "Responsável") que devem ver este paciente nos seus portais.
       </p>
       <Field label="Procurar">
-        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Nome ou email…" style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FBFAF7" }} />
+        <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Nome ou email…" style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FFFFFF" }} />
       </Field>
       <div style={{ maxHeight: 280, overflowY: "auto", border: "1px solid #F5F2EC", borderRadius: 10, marginTop: 4 }}>
         {parents.length === 0 ? (

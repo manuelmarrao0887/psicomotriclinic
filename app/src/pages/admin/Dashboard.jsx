@@ -10,11 +10,11 @@ import { DAYS, MES_PT } from "../../lib/constants.js";
    mim?". A leitura assenta no modelo da agenda — sessões recorrentes
    semanais por paciente (day_of_week + hour). A barra de proporção é a
    assinatura: equilíbrio, como as pedras empilhadas do logótipo.
-   Tokens "Brand Aligned": paper #FBFAF7 · linha #EAEE… (#EAE6DD) ·
+   Tokens "Brand Aligned": paper #FFFFFF · linha #EAEE… (#EAE6DD) ·
    inset #F5F2EC — combinam com o dark-mode em index.css.
 ──────────────────────────────────────────────────────────────────── */
 
-const PAPER = "#FBFAF7", LINE = "#EAE6DD", INSET = "#F5F2EC";
+const PAPER = "#FFFFFF", LINE = "#EAE6DD", INSET = "#F5F2EC";
 const INK = "#152741", SUB = "#8A8A86", BODY = "#5A5A58";
 
 const pad = (n) => String(n).padStart(2, "0");
@@ -38,7 +38,10 @@ function ageOnNext(dateStr) {
 }
 
 export default function Dashboard() {
-  const { profile, profs, pts, notes = [], pays = [], reqs = [], visits = [] } = useStore();
+  const { profile, profs, pts, notes = [], pays = [], reqs = [], visits = [], users = [] } = useStore();
+  const meDoc = users.find((u) => u.id === profile?.id);
+  const myPhoto = meDoc?.photo_url || null;
+  const myInitials = (profile?.full_name || "").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
   const navigate = useNavigate();
 
   // entrada das barras (uma vez; reduced-motion neutraliza a transição no CSS)
@@ -117,7 +120,9 @@ export default function Dashboard() {
 
       {/* ── HERO: briefing de hoje + pulso da semana ── */}
       <section className="dash-hero" style={{ background: PAPER, border: `1px solid ${LINE}`, borderRadius: 18, padding: "26px 28px" }}>
-        <div>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 18 }}>
+          <Av t={myInitials} bg="#E8A13C" sz={64} color="#152741" photoUrl={myPhoto} />
+          <div style={{ flex: 1, minWidth: 0 }}>
           <div className="mono" style={{ color: SUB, fontSize: 11 }}>
             {WEEKDAY[jsDay].toUpperCase()} · {pad(now.getDate())} {MES_PT[now.getMonth()].toUpperCase()}
           </div>
@@ -156,6 +161,7 @@ export default function Dashboard() {
               ))}
             </div>
           )}
+          </div>
         </div>
 
         {/* Pulso da semana — assinatura: carga recorrente por dia útil, hoje aceso */}

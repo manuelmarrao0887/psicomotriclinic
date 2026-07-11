@@ -1,9 +1,31 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { NavLink, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Mark, Icon } from "../lib/icons.jsx";
 import { Eyebrow, Av } from "../lib/ui.jsx";
 import { APP_VERSION, formatBuildDate } from "../lib/constants.js";
+import { useStore } from "../lib/store.jsx";
 import ErrorBoundary from "../components/ErrorBoundary.jsx";
+
+// Sidebar sections com dividers (inspiração Untitled UI sidebar-section-dividers).
+const SIDEBAR_SECTIONS = [
+  { title: "PRINCIPAL", items: [
+    { id: "dashboard", label: "Dashboard", icon: "home", to: "/dashboard" },
+  ]},
+  { title: "CLÍNICO", items: [
+    { id: "pacientes", label: "Pacientes", icon: "clipboard", to: "/pacientes" },
+    { id: "agenda", label: "Agenda", icon: "calendar", to: "/agenda" },
+    { id: "equipa", label: "Equipa", icon: "users", to: "/equipa" },
+  ]},
+  { title: "GESTÃO", items: [
+    { id: "financeiro", label: "Financeiro", icon: "wallet", to: "/financeiro" },
+    { id: "pedidos", label: "Pedidos", icon: "swap", to: "/pedidos", countKey: "pending_requests" },
+    { id: "comunicacoes", label: "Comunicações", icon: "mail", to: "/comunicacoes" },
+  ]},
+  { title: "SISTEMA", items: [
+    { id: "utilizadores", label: "Utilizadores", icon: "shield", to: "/utilizadores" },
+    { id: "definicoes", label: "Definições", icon: "cog", to: "/definicoes" },
+  ]},
+];
 
 // 8 secções para a sidebar (desktop). No mobile mostramos 4 principais na tab bar
 // e o resto via menu "Mais" para evitar uma tab bar entupida (padrão iOS).
@@ -71,7 +93,7 @@ export default function AdminLayout({ profile, onLogout, theme, setTheme }) {
 
       {/* ─────────────── DESKTOP — sidebar à esquerda ─────────────── */}
       {!isMobile && (
-        <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", minHeight: "100vh", background: "#FFFFFF" }}>
+        <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", minHeight: "100vh", background: "#F7F9FB" }}>
           <aside aria-label="Navegação principal" style={{
             background: "#152741", color: "#F7F4EE",
             display: "flex", flexDirection: "column",
@@ -91,47 +113,7 @@ export default function AdminLayout({ profile, onLogout, theme, setTheme }) {
               </div>
             </div>
 
-            <div style={{ padding: "0 6px 8px" }}><Eyebrow color="rgba(247,244,238,.4)">— NAVEGAÇÃO</Eyebrow></div>
-            <nav aria-label="Secções" style={{ display: "flex", flexDirection: "column", gap: 2, flex: 1 }}>
-              {allItems.map((it) => (
-                <NavLink key={it.id} to={it.to} className="ch" style={({ isActive }) => ({
-                  display: "flex", alignItems: "center", gap: 12,
-                  padding: "10px 12px", borderRadius: 9,
-                  background: isActive ? "rgba(247,244,238,.08)" : "transparent",
-                  color: isActive ? "#F7F4EE" : "rgba(247,244,238,.78)",
-                  fontSize: 14, fontWeight: isActive ? 500 : 400,
-                  textDecoration: "none", position: "relative",
-                })}>
-                  {({ isActive }) => (
-                    <>
-                      {isActive && <span aria-hidden="true" style={{ position: "absolute", left: -16, top: 8, bottom: 8, width: 3, background: "#E8A13C", borderRadius: "0 3px 3px 0" }} />}
-                      <span aria-hidden="true" style={{ display: "flex", color: isActive ? "#E8A13C" : "rgba(247,244,238,.65)" }}><Icon name={it.icon} size={18} /></span>
-                      <span style={{ flex: 1 }}>{it.label}</span>
-                    </>
-                  )}
-                </NavLink>
-              ))}
-            </nav>
-
-            <div style={{ padding: "14px 12px", borderTop: "1px solid rgba(247,244,238,.08)", marginTop: 14, display: "flex", alignItems: "center", gap: 8 }}>
-              <Av t={initials} bg="#E8A13C" sz={36} color="#152741" />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13.5, fontWeight: 500, color: "#F7F4EE", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{profile?.full_name || "Admin"}</div>
-                <div style={{ fontSize: 11.5, color: "rgba(247,244,238,.7)" }}>{profile?.role === "director" ? "Diretor" : "Admin"}</div>
-              </div>
-              <button
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="ch"
-                aria-label={theme === "dark" ? "Mudar para modo claro" : "Mudar para modo escuro"}
-                title={theme === "dark" ? "Modo claro" : "Modo escuro"}
-                style={{ padding: 7, borderRadius: 8, color: "rgba(247,244,238,.78)", display: "flex" }}
-              >
-                <Icon name={theme === "dark" ? "sun" : "moon"} size={17} />
-              </button>
-              <button onClick={onLogout} className="ch" aria-label="Terminar sessão" title="Terminar sessão" style={{ padding: 7, borderRadius: 8, color: "rgba(247,244,238,.78)", display: "flex" }}>
-                <Icon name="logout" size={18} />
-              </button>
-            </div>
+            <SidebarBody profile={profile} onLogout={onLogout} theme={theme} setTheme={setTheme} initials={initials} />
 
             <div style={{ padding: "6px 12px 0", fontSize: 10, lineHeight: 1.5, color: "rgba(247,244,238,.55)" }}>
               <div style={{ fontWeight: 600, color: "rgba(247,244,238,.7)" }}>{APP_VERSION}</div>
@@ -154,7 +136,7 @@ export default function AdminLayout({ profile, onLogout, theme, setTheme }) {
 
       {/* ─────────────── MOBILE — topbar + bottom tab bar (iOS-feel) ─────────────── */}
       {isMobile && (
-        <div style={{ minHeight: "100vh", background: "#FFFFFF", display: "flex", flexDirection: "column" }}>
+        <div style={{ minHeight: "100vh", background: "#F7F9FB", display: "flex", flexDirection: "column" }}>
           {/* Top app bar — fixo, transparente com blur sob scroll */}
           <header style={{
             position: "sticky", top: 0, zIndex: 50,
@@ -253,7 +235,7 @@ export default function AdminLayout({ profile, onLogout, theme, setTheme }) {
               }}
             >
               <div onClick={(e) => e.stopPropagation()} style={{
-                width: "100%", background: "#FBFAF7",
+                width: "100%", background: "#FFFFFF",
                 borderRadius: "20px 20px 0 0",
                 paddingBottom: "calc(var(--safe-bottom) + 12px)",
                 animation: "sheet-up .32s cubic-bezier(.32,.72,0,1) both",
@@ -333,6 +315,163 @@ export default function AdminLayout({ profile, onLogout, theme, setTheme }) {
         </div>
       )}
 
+    </>
+  );
+}
+
+// ────────── SidebarBody — sections + dividers + bottom perfil com upload ──────────
+function SidebarBody({ profile, onLogout, theme, setTheme, initials }) {
+  const { reqs, users, updateMyPhoto, removeMyPhoto } = useStore();
+  const fileRef = useRef(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const pendingCount = (reqs || []).filter((r) => r.status === "pendente" || !r.status).length;
+  const countValue = (key) => ({ pending_requests: pendingCount })[key] || 0;
+
+  // Foto vem do users store (dados frescos por listener) — não do profile prop
+  const me = (users || []).find((u) => u.id === profile?.id);
+  const photoUrl = me?.photo_url || null;
+  const displayName = profile?.full_name || me?.full_name || "Admin";
+  const roleLabel = profile?.role === "director" ? "Diretor" :
+                    profile?.role === "professional" ? "Profissional" :
+                    profile?.role === "parent" ? "Responsável" : "Admin";
+
+  const onPickFile = (e) => {
+    const f = e.target.files?.[0];
+    if (f) updateMyPhoto(f);
+    e.target.value = "";
+    setMenuOpen(false);
+  };
+
+  return (
+    <>
+      <nav aria-label="Secções" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflowY: "auto" }}>
+        {SIDEBAR_SECTIONS.map((section, sIdx) => (
+          <div key={section.title} style={{ marginBottom: sIdx < SIDEBAR_SECTIONS.length - 1 ? 6 : 0 }}>
+            <div style={{ padding: "8px 8px 6px", fontSize: 9.5, letterSpacing: ".14em", fontWeight: 700, color: "rgba(247,244,238,.42)" }}>
+              — {section.title}
+            </div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+              {section.items.map((it) => {
+                const count = it.countKey ? countValue(it.countKey) : 0;
+                return (
+                  <NavLink key={it.id} to={it.to} className="ch" style={({ isActive }) => ({
+                    display: "flex", alignItems: "center", gap: 12,
+                    padding: "9px 12px", borderRadius: 9,
+                    background: isActive ? "rgba(247,244,238,.08)" : "transparent",
+                    color: isActive ? "#F7F4EE" : "rgba(247,244,238,.78)",
+                    fontSize: 14, fontWeight: isActive ? 500 : 400,
+                    textDecoration: "none", position: "relative",
+                  })}>
+                    {({ isActive }) => (
+                      <>
+                        {isActive && <span aria-hidden="true" style={{ position: "absolute", left: -16, top: 8, bottom: 8, width: 3, background: "#E8A13C", borderRadius: "0 3px 3px 0" }} />}
+                        <span aria-hidden="true" style={{ display: "flex", color: isActive ? "#E8A13C" : "rgba(247,244,238,.6)" }}><Icon name={it.icon} size={17} /></span>
+                        <span style={{ flex: 1 }}>{it.label}</span>
+                        {count > 0 && (
+                          <span aria-label={`${count} pendentes`} style={{
+                            fontSize: 10.5, fontWeight: 700, padding: "1px 7px",
+                            borderRadius: 999, background: "#E8A13C", color: "#152741",
+                            minWidth: 18, textAlign: "center",
+                          }}>{count}</span>
+                        )}
+                      </>
+                    )}
+                  </NavLink>
+                );
+              })}
+            </div>
+            {sIdx < SIDEBAR_SECTIONS.length - 1 && (
+              <div aria-hidden="true" style={{ height: 1, background: "rgba(247,244,238,.08)", margin: "10px 8px 4px" }} />
+            )}
+          </div>
+        ))}
+      </nav>
+
+      {/* Bottom perfil com upload de foto */}
+      <div style={{ marginTop: 12, borderTop: "1px solid rgba(247,244,238,.08)", paddingTop: 14, position: "relative" }}>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          onChange={onPickFile}
+          style={{ display: "none" }}
+          aria-hidden="true"
+        />
+        <div style={{ display: "flex", alignItems: "center", gap: 12, padding: "4px 8px" }}>
+          <button
+            onClick={() => setMenuOpen((o) => !o)}
+            aria-label="Trocar foto de perfil"
+            className="ch"
+            style={{
+              padding: 0, borderRadius: 999, position: "relative",
+              background: "transparent", border: "none",
+            }}
+          >
+            <Av t={initials} bg="#E8A13C" sz={44} color="#152741" photoUrl={photoUrl} />
+            <span aria-hidden="true" style={{
+              position: "absolute", bottom: -2, right: -2,
+              width: 18, height: 18, borderRadius: 9,
+              background: "#152741", border: "2px solid #152741",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "#E8A13C", fontSize: 10, boxShadow: "0 0 0 2px rgba(232,161,60,.4)",
+            }}>
+              <Icon name="edit" size={9} />
+            </span>
+          </button>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontSize: 13.5, fontWeight: 600, color: "#F7F4EE", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{displayName}</div>
+            <div style={{ fontSize: 11, color: "rgba(247,244,238,.6)", marginTop: 1 }}>{roleLabel}</div>
+          </div>
+          <button
+            onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+            className="ch"
+            aria-label={theme === "dark" ? "Mudar para modo claro" : "Mudar para modo escuro"}
+            title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+            style={{ padding: 6, borderRadius: 8, color: "rgba(247,244,238,.72)", display: "flex", background: "transparent", border: "none", cursor: "pointer" }}
+          >
+            <Icon name={theme === "dark" ? "sun" : "moon"} size={16} />
+          </button>
+          <button
+            onClick={onLogout}
+            className="ch"
+            aria-label="Terminar sessão"
+            title="Terminar sessão"
+            style={{ padding: 6, borderRadius: 8, color: "rgba(247,244,238,.72)", display: "flex", background: "transparent", border: "none", cursor: "pointer" }}
+          >
+            <Icon name="logout" size={16} />
+          </button>
+        </div>
+
+        {/* Popover foto */}
+        {menuOpen && (
+          <>
+            <div onClick={() => setMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 60 }} />
+            <div role="dialog" aria-label="Foto de perfil" style={{
+              position: "absolute", bottom: 68, left: 8, zIndex: 61,
+              background: "#FFFFFF", color: "#152741",
+              borderRadius: 12, padding: 6, minWidth: 200,
+              boxShadow: "0 20px 50px rgba(0,0,0,.35)",
+              animation: "fu .18s ease both",
+            }}>
+              <button
+                onClick={() => { fileRef.current?.click(); }}
+                style={{ width: "100%", padding: "10px 12px", background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, fontWeight: 500, color: "#152741", borderRadius: 8, textAlign: "left", fontFamily: "inherit" }}
+              >
+                <Icon name="edit" size={14} /> {photoUrl ? "Trocar foto" : "Carregar foto"}
+              </button>
+              {photoUrl && (
+                <button
+                  onClick={() => { removeMyPhoto(); setMenuOpen(false); }}
+                  style={{ width: "100%", padding: "10px 12px", background: "transparent", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, fontWeight: 500, color: "#B83A3A", borderRadius: 8, textAlign: "left", fontFamily: "inherit" }}
+                >
+                  <Icon name="trash" size={14} /> Remover foto
+                </button>
+              )}
+            </div>
+          </>
+        )}
+      </div>
     </>
   );
 }

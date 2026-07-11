@@ -22,7 +22,7 @@ export default function Users() {
             padding: "14px 20px", alignItems: "center", cursor: "pointer",
             borderBottom: i < users.length - 1 ? "1px solid #F5F2EC" : "none",
           }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "#FBFAF7"; }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "#FFFFFF"; }}
             onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}>
             <Av t={u.full_name?.split(" ").map((w) => w[0]).join("").slice(0, 2) || "?"} bg={u.role === "director" ? "#F5F2EC" : u.role === "professional" ? "#C7DDCB" : "#DCE7F0"} sz={36} />
             <span style={{ fontSize: 14, fontWeight: 500, color: "#152741" }}>{u.full_name || "—"}{u.email === profile?.email && <span style={{ fontSize: 11, color: "#8A8A86", marginLeft: 8, fontWeight: 400 }}>(tu)</span>}</span>
@@ -83,7 +83,7 @@ export function UserDetail() {
             {["parent", "professional", "director"].map((r) => (
               <Card key={r} pad={18} onClick={() => changeRole(u.id, r)} style={{
                 cursor: "pointer", textAlign: "center",
-                background: u.role === r ? "#152741" : "#FBFAF7",
+                background: u.role === r ? "#152741" : "#FFFFFF",
                 borderColor: u.role === r ? "#152741" : "#EAE6DD",
               }}>
                 <div style={{ color: u.role === r ? "#E8A13C" : "#152741", marginBottom: 8, display: "flex", justifyContent: "center" }}>

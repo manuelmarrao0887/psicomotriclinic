@@ -152,6 +152,8 @@ export default function Settings({ theme, setTheme }) {
         ))}
       </div>
 
+      <DemoResetSection />
+
       <Section eyebrow="— SISTEMA" title="Sobre" />
       <Card pad={26}>
         <div className="kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 24 }}>
@@ -227,5 +229,50 @@ function ReleaseSection({ eyebrow, items, color, bg }) {
         ))}
       </ul>
     </div>
+  );
+}
+
+function DemoResetSection() {
+  const { profile, resetAndSeedDemo } = useStore();
+  const [busy, setBusy] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  if (profile?.email !== ADMIN_EMAIL) return null;
+
+  const run = async () => {
+    setBusy(true);
+    await resetAndSeedDemo();
+    setBusy(false);
+    setConfirming(false);
+  };
+
+  return (
+    <>
+      <Section eyebrow="— DEMO / TESTE" title="Reset + Seed dataset demo" sub="Apaga todos os dados e cria trio: 1 Diretor · 1 Profissional · 1 Responsável · 1 Paciente vinculados." />
+      <Card pad={22}>
+        <div style={{ fontSize: 13.5, color: "#5A5A58", lineHeight: 1.6, marginBottom: 14 }}>
+          Ação destrutiva. Todos os pacientes, sessões, plano, notas, pagamentos, pedidos, anúncios,
+          auditoria e visitas são eliminados. Perfis excepto o teu são apagados. Depois cria:
+          <ul style={{ marginTop: 8, marginLeft: 18, listStyle: "disc" }}>
+            <li><b>Inês Mota</b> — profissional (ligada à tua conta para RoleSwitcher)</li>
+            <li><b>Ana Silva</b> — perfil responsável stub (sem login, para vinculação)</li>
+            <li><b>Beatriz Sá</b> — paciente vinculada aos 2 (tu + stub) com plano, 3 notas, 2 pagamentos, 1 anamnese</li>
+            <li>1 anúncio de boas-vindas</li>
+          </ul>
+        </div>
+        {!confirming ? (
+          <Btn variant="danger" icon={<Icon name="trash" size={14} />} onClick={() => setConfirming(true)}>Executar reset + seed</Btn>
+        ) : (
+          <div style={{ padding: 14, background: "#F4E0E0", borderRadius: 12, border: "1px solid #E8A0A0" }}>
+            <div style={{ fontSize: 13.5, color: "#B83A3A", fontWeight: 600, marginBottom: 10 }}>
+              Confirmas? Não é reversível.
+            </div>
+            <div style={{ display: "flex", gap: 10 }}>
+              <Btn variant="secondary" onClick={() => setConfirming(false)} disabled={busy}>Cancelar</Btn>
+              <Btn variant="danger" onClick={run} disabled={busy}>{busy ? "A executar…" : "Sim, apagar tudo"}</Btn>
+            </div>
+          </div>
+        )}
+      </Card>
+    </>
   );
 }
