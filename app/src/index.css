@@ -18,6 +18,15 @@
   /* Layout chrome heights — usadas para reservar espaço nas páginas */
   --topbar-h: 56px;
   --tabbar-h: 64px;
+
+  /* Breakpoint tokens — spacing/typo per screen */
+  --card-pad: 22px;
+  --page-pad: 28px 40px 60px;
+  --heading-lg: 30px;
+  --heading-md: 22px;
+}
+@media (max-width: 899.98px) {
+  :root { --card-pad: 16px; --page-pad: 16px 16px 60px; --heading-lg: 26px; --heading-md: 20px; }
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -98,9 +107,18 @@ html.dark {
   --ink: #E8E3D7; --line: #2A3D5C; --line-2: #3A4D6C;
 }
 html.dark body { background: #0E1A2C; color: #E8E3D7; }
-html.dark [style*="background:#F7F4EE"], html.dark [style*="background: #F7F4EE"] { background: #0E1A2C !important; }
-html.dark [style*="background:#FBFAF7"], html.dark [style*="background: #FBFAF7"] { background: #1A2A44 !important; }
+/* Novos hex Brand Aligned + retrocompatibilidade */
+html.dark [style*="background:#F7F9FB"], html.dark [style*="background: #F7F9FB"] { background: #0E1A2C !important; }
+html.dark [style*="background:#FFFFFF"], html.dark [style*="background: #FFFFFF"] { background: #1A2A44 !important; }
 html.dark [style*="background:#F5F2EC"], html.dark [style*="background: #F5F2EC"] { background: #152741 !important; }
+html.dark [style*="background:#FBFAF7"], html.dark [style*="background: #FBFAF7"] { background: #1A2A44 !important; }
+html.dark [style*="background:#F7F4EE"], html.dark [style*="background: #F7F4EE"] { background: #0E1A2C !important; }
+/* Border escuro */
+html.dark [style*="border: 1px solid #EAE6DD"], html.dark [style*="border:1px solid #EAE6DD"] { border-color: #2A3D5C !important; }
+html.dark [style*="border-bottom: 1px solid #EAE6DD"], html.dark [style*="border-bottom:1px solid #EAE6DD"] { border-bottom-color: #2A3D5C !important; }
+html.dark [style*="border-top: 1px solid #EAE6DD"], html.dark [style*="border-top:1px solid #EAE6DD"] { border-top-color: #2A3D5C !important; }
+html.dark [style*="border: 1px solid #F5F2EC"] { border-color: #22344E !important; }
+html.dark [style*="border-bottom: 1px solid #F5F2EC"] { border-bottom-color: #22344E !important; }
 html.dark [style*="color:#152741"], html.dark [style*="color: #152741"] { color: #E8E3D7 !important; }
 html.dark [style*="color:#3C3C3B"] { color: #D8D3C7 !important; }
 html.dark [style*="color:#5A5A58"] { color: #A9A39A !important; }
@@ -153,6 +171,12 @@ html.dark [style*="background:#152741"] { background: #08111F !important; }
 /* Desktop: ≥ 900px */
 @media (min-width: 900px) {
   .only-mobile { display: none !important; }
+  /* Portal desktop tweaks — nav vira horizontal no topo, sem bottom fixo */
+  .portal-shell { padding-bottom: 40px !important; }
+  .portal-tabbar { position: sticky !important; top: var(--topbar-h) !important; left: auto !important; right: auto !important; bottom: auto !important; padding-bottom: 0 !important; border-top: none !important; border-bottom: 1px solid #EAE6DD !important; }
+  .portal-tabbar > div { max-width: 1100px !important; grid-template-columns: repeat(4, auto) !important; justify-content: center !important; gap: 8px !important; }
+  .portal-tabbar button, .portal-tabbar a { padding: 12px 24px !important; flex-direction: row !important; gap: 8px !important; font-size: 13px !important; }
+  .portal-content { max-width: 1100px !important; padding-top: 24px !important; }
 }
 
 /* Padding nativo para botões grandes em mobile (44px alvo táctil) */

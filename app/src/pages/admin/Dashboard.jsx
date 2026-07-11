@@ -189,6 +189,9 @@ export default function Dashboard() {
         </div>
       </section>
 
+      {/* ── HOJE widget: sessões + alertas em 2 col ── */}
+      <TodayWidget pts={pts} profs={profs} notes={notes} pays={pays} reqs={reqs} todayIdx={todayIdx} todayISO={todayISO} navigate={navigate} />
+
       {/* ── Fila de pedras: totais de identidade ── */}
       <div className="kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginTop: 14 }}>
         {STONES.map((s) => {
@@ -356,5 +359,91 @@ function EmptyLine({ icon, text }) {
       <span style={{ display: "flex", color: "#B9CDE0" }}><Icon name={icon} size={18} /></span>
       {text}
     </div>
+  );
+}
+
+function TodayWidget({ pts, profs, notes, pays, reqs, todayIdx, todayISO, navigate }) {
+  const todayLabel = todayIdx >= 0 ? DAYS[todayIdx] : null;
+  const todaySessions = todayLabel ? pts.filter((p) => p.day_of_week === todayLabel).sort((a, b) => (a.hour || "").localeCompare(b.hour || "")) : [];
+
+  // Aniversários -3d/+3d
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const birthdaysSoon = pts.map((p) => {
+    if (!p.birth_date) return null;
+    const d = new Date(p.birth_date);
+    if (isNaN(d)) return null;
+    const next = new Date(today.getFullYear(), d.getMonth(), d.getDate());
+    if (next < today) next.setFullYear(next.getFullYear() + 1);
+    const days = Math.round((next - today) / 86400000);
+    return days <= 3 ? { p, days } : null;
+  }).filter(Boolean).sort((a, b) => a.days - b.days);
+
+  const pendReqs = (reqs || []).filter((r) => r.status === "pendente" || !r.status);
+  const overduePays = (pays || []).filter((p) => p.status === "pendente").slice(0, 5);
+  const notesToday = (notes || []).filter((n) => n.date === todayISO);
+  const faltas = notesToday.filter((n) => n.status === "falta");
+
+  const alerts = [
+    ...birthdaysSoon.map((b) => ({ icon: "trend", label: `${b.p.name} faz anos ${b.days === 0 ? "hoje" : b.days === 1 ? "amanhã" : `em ${b.days}d`}`, tone: "#C97A1F", bg: "#F5E5CD", to: `/pacientes/${b.p.id}` })),
+    ...pendReqs.map((r) => ({ icon: "swap", label: `${r.patient_name || "Pedido"} — troca pendente`, tone: "#1E3556", bg: "#DCE7F0", to: "/pedidos" })),
+    ...faltas.map((n) => ({ icon: "warn", label: `Falta: ${(pts.find((p) => p.id === n.patient_id) || {}).name || "?"}`, tone: "#B83A3A", bg: "#F4E0E0", to: `/pacientes/${n.patient_id}` })),
+    ...overduePays.slice(0, 3).map((p) => ({ icon: "wallet", label: `${(pts.find((x) => x.id === p.patient_id) || {}).name || "?"} — ${p.month} por cobrar`, tone: "#C97A1F", bg: "#F5E5CD", to: "/financeiro" })),
+  ];
+
+  return (
+    <section style={{ background: "#FFFFFF", border: "1px solid #EAE6DD", borderRadius: 18, padding: "22px 24px", marginTop: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }} className="today-grid">
+        <div>
+          <div className="mono" style={{ fontSize: 10.5, letterSpacing: ".12em", color: "#8A8A86", marginBottom: 10 }}>— SESSÕES DE HOJE</div>
+          {todaySessions.length === 0 ? (
+            <div style={{ fontSize: 14, color: "#8A8A86" }}>{todayLabel ? "Sem sessões marcadas para hoje." : "Fim de semana."}</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 240, overflow: "auto" }}>
+              {todaySessions.slice(0, 8).map((p) => {
+                const ids = p.professional_ids?.length ? p.professional_ids : (p.professional_id ? [p.professional_id] : []);
+                const pr = profs.find((x) => x.id === ids[0]);
+                const done = notesToday.some((n) => n.patient_id === p.id && n.status === "realizada");
+                return (
+                  <button key={p.id} onClick={() => navigate(`/pacientes/${p.id}`)} className="ch" style={{
+                    display: "flex", alignItems: "center", gap: 10,
+                    padding: "8px 10px", borderRadius: 10,
+                    background: done ? "#F5F2EC" : "transparent",
+                    border: "1px solid #EAE6DD", textAlign: "left", cursor: "pointer",
+                  }}>
+                    <div className="mono" style={{ fontSize: 11, color: "#5A5A58", fontWeight: 600, width: 48 }}>{p.hour}</div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13.5, fontWeight: 500, color: "#152741", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</div>
+                      <div style={{ fontSize: 11.5, color: "#8A8A86" }}>{pr?.name || "—"}</div>
+                    </div>
+                    {done && <span style={{ fontSize: 10.5, padding: "2px 7px", borderRadius: 99, background: "#DDEADE", color: "#3D7A4A", fontWeight: 600 }}>OK</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+        <div>
+          <div className="mono" style={{ fontSize: 10.5, letterSpacing: ".12em", color: "#8A8A86", marginBottom: 10 }}>— A ATENDER</div>
+          {alerts.length === 0 ? (
+            <div style={{ fontSize: 14, color: "#8A8A86" }}>Tudo em ordem.</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: 6, maxHeight: 240, overflow: "auto" }}>
+              {alerts.slice(0, 10).map((a, i) => (
+                <button key={i} onClick={() => navigate(a.to)} className="ch" style={{
+                  display: "flex", alignItems: "center", gap: 10,
+                  padding: "8px 10px", borderRadius: 10,
+                  background: a.bg, color: a.tone,
+                  border: "none", textAlign: "left", cursor: "pointer", fontSize: 13, fontWeight: 500,
+                }}>
+                  <span style={{ display: "flex" }}><Icon name={a.icon} size={14} /></span>
+                  <span style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{a.label}</span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+      <style>{`@media (max-width:899.98px){.today-grid{grid-template-columns:1fr!important;gap:16px!important;}}`}</style>
+    </section>
   );
 }

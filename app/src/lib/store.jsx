@@ -22,6 +22,12 @@ export function StoreProvider({ profile, children }) {
   const [plans, setPlans]     = useState([]);
   const [auditLog, setAuditLog] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
+  const [waitlist, setWaitlist] = useState([]);
+  const [homeExercises, setHomeExercises] = useState([]);
+  const [homeAssignments, setHomeAssignments] = useState([]);
+  const [homeCompletions, setHomeCompletions] = useState([]);
+  const [parentMessages, setParentMessages] = useState([]);
+  const [behaviorDiary, setBehaviorDiary] = useState([]);
   const [toast, setToast]   = useState(null);
   const [modal, setModal]   = useState(null);
   const [form, setForm]     = useState({});
@@ -81,6 +87,14 @@ export function StoreProvider({ profile, children }) {
     // pedidos & comunicações
     sub(collection(db, "schedule_requests"), setReqs);
     sub(query(collection(db, "announcements"), orderBy("created_at", "desc"), limit(50)), setAnnouncements);
+
+    // Novas colecções Sprint 2-4
+    sub(query(collection(db, "waitlist"), orderBy("created_at", "desc"), limit(100)), setWaitlist);
+    sub(query(collection(db, "home_exercises_library"), orderBy("created_at", "desc"), limit(200)), setHomeExercises);
+    sub(collection(db, "home_practice_assignments"), setHomeAssignments);
+    sub(query(collection(db, "home_practice_completions"), orderBy("date", "desc"), limit(500)), setHomeCompletions);
+    sub(query(collection(db, "parent_messages"), orderBy("created_at", "desc"), limit(200)), setParentMessages);
+    sub(query(collection(db, "behavior_diary"), orderBy("date", "desc"), limit(300)), setBehaviorDiary);
 
     // colecções restritas (só director lê — rules) — só subscrever se for director
     if (profile.role === "director") {
@@ -432,6 +446,92 @@ export function StoreProvider({ profile, children }) {
     show("Pedido recusado", "error"); await load();
   };
 
+  // ───── Sprint 2-4 actions ─────
+  const addWaitlist = async (data) => {
+    await sb.from("waitlist").insert({ status: "new", ...data });
+    await audit("add_waitlist", "waitlist", data.name || "");
+    show("Adicionado à lista de espera");
+  };
+  const updateWaitlist = async (id, patch) => {
+    await sb.from("waitlist").update({ ...patch, updated_at: new Date().toISOString() }).eq("id", id);
+    await audit("update_waitlist", `waitlist:${id}`, Object.keys(patch).join(","));
+  };
+  const deleteWaitlist = async (id) => {
+    await sb.from("waitlist").delete().eq("id", id);
+    await audit("delete_waitlist", `waitlist:${id}`, "");
+    show("Removido da lista");
+  };
+
+  const addHomeExercise = async (data) => {
+    await sb.from("home_exercises_library").insert(data);
+    await audit("add_home_exercise", "library", data.title || "");
+    show("Exercício criado");
+  };
+  const deleteHomeExercise = async (id) => {
+    await sb.from("home_exercises_library").delete().eq("id", id);
+    show("Exercício removido");
+  };
+  const assignHomeExercise = async (patientId, exerciseId, notes) => {
+    await sb.from("home_practice_assignments").insert({
+      patient_id: patientId, exercise_id: exerciseId,
+      professional_id: profile?.id || null,
+      custom_notes: notes || "",
+      active: true,
+    });
+    await audit("assign_exercise", `home_practice:${patientId}`, exerciseId);
+    show("Exercício atribuído");
+  };
+  const unassignHomeExercise = async (id) => {
+    await sb.from("home_practice_assignments").update({ active: false }).eq("id", id);
+  };
+  const markCompletion = async (patientId, exerciseId, note) => {
+    await sb.from("home_practice_completions").insert({
+      patient_id: patientId, exercise_id: exerciseId,
+      date: new Date().toISOString().slice(0, 10),
+      by_user_id: profile?.id || null,
+      note: note || "",
+    });
+    show("Registado");
+  };
+
+  const sendParentMessage = async (patientId, toProId, body) => {
+    await sb.from("parent_messages").insert({
+      patient_id: patientId,
+      from_user_id: profile?.id || null,
+      to_professional_id: toProId,
+      body: body || "",
+    });
+    show("Mensagem enviada");
+  };
+  const replyToParent = async (messageId, replyBody) => {
+    await sb.from("parent_messages").update({
+      reply: replyBody, replied_at: new Date().toISOString(),
+    }).eq("id", messageId);
+    show("Resposta enviada");
+  };
+  const markMessageRead = async (messageId) => {
+    await sb.from("parent_messages").update({ read_by_pro_at: new Date().toISOString() }).eq("id", messageId);
+  };
+
+  const addBehaviorEntry = async (patientId, data) => {
+    await sb.from("behavior_diary").insert({
+      patient_id: patientId,
+      by_user_id: profile?.id || null,
+      date: data.date || new Date().toISOString().slice(0, 10),
+      mood: data.mood ?? null,
+      sleep_hours: data.sleep_hours ?? null,
+      notable_events: data.notable_events || [],
+      concerns: data.concerns || "",
+    });
+    show("Entrada do diário guardada");
+  };
+
+  const setNotificationPrefs = async (prefs) => {
+    if (!profile?.id) return;
+    await sb.from("profiles").update({ notification_prefs: prefs }).eq("id", profile.id);
+    show("Preferências guardadas");
+  };
+
   // Reset destrutivo + seed demo — apaga tudo excepto director actual, e cria
   // trio (1 profissional, 1 responsável stub, 1 paciente vinculado a ambos).
   // Só para conta admin. Usa director.id em parent_user_ids + prof.profile_id
@@ -779,6 +879,12 @@ export function StoreProvider({ profile, children }) {
     saveAnamnesis, addSessionNote, deleteSessionNote, savePlan,
     genPassword, changeMyPassword, updateMyPhoto, removeMyPhoto,
     resetAndSeedDemo,
+    // Sprint 2-4
+    waitlist, homeExercises, homeAssignments, homeCompletions, parentMessages, behaviorDiary,
+    addWaitlist, updateWaitlist, deleteWaitlist,
+    addHomeExercise, deleteHomeExercise, assignHomeExercise, unassignHomeExercise, markCompletion,
+    sendParentMessage, replyToParent, markMessageRead,
+    addBehaviorEntry, setNotificationPrefs,
     addAnnouncement, toggleAnnouncementActive, deleteAnnouncement,
     quickMarkFalta, setPatientParents, setProfessionalUser,
     pushState, enablePush, disablePush, cancelSession,

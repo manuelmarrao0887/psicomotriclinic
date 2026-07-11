@@ -51,7 +51,7 @@ function humanWhen(d) {
 }
 
 export default function ParentPortal({ profile, onLogout, theme, setTheme }) {
-  const { pts, profs, plans, notes, pays, reqs, announcements, users = [], show } = useStore();
+  const { pts, profs, plans, notes, pays, reqs, announcements, users = [], homeExercises = [], homeAssignments = [], homeCompletions = [], markCompletion, parentMessages = [], sendParentMessage, addBehaviorEntry, behaviorDiary = [], setNotificationPrefs, show } = useStore();
   const meDoc = users.find((u) => u.id === profile?.id);
   const myPhoto = meDoc?.photo_url || null;
   const [tab, setTab] = useState("home"); // home | sessions | requests | account
@@ -144,7 +144,7 @@ export default function ParentPortal({ profile, onLogout, theme, setTheme }) {
         </div>
       </header>
 
-      <main id="main" style={{ maxWidth: 720, margin: "0 auto", padding: "12px 16px calc(var(--tabbar-h) + var(--safe-bottom) + 24px)" }}>
+      <main id="main" className="portal-content" style={{ maxWidth: 720, margin: "0 auto", padding: "12px 16px calc(var(--tabbar-h) + var(--safe-bottom) + 24px)" }}>
         {/* Large title */}
         <div style={{ padding: "8px 2px 6px", display: "flex", alignItems: "flex-start", gap: 14 }}>
           <Av t={initials} bg="#E8A13C" sz={56} color="#152741" photoUrl={myPhoto} />
@@ -160,13 +160,13 @@ export default function ParentPortal({ profile, onLogout, theme, setTheme }) {
         </div>
 
         {tab === "home" && <HomeTab profile={profile} myChildren={myChildren} profs={profs} plans={plans} notes={notes} pays={pays} announcements={visibleAnnouncements} recentlyResolved={recentlyResolved} onAck={markAllSeen} onRequest={() => setRequestOpen(true)} />}
-        {tab === "sessions" && <SessionsTab myChildren={myChildren} profs={profs} notes={notes} />}
+        {tab === "practice" && <PracticeTab myChildren={myChildren} homeExercises={homeExercises} homeAssignments={homeAssignments} homeCompletions={homeCompletions} markCompletion={markCompletion} />}
         {tab === "requests" && <RequestsTab myChildren={myChildren} myRequests={myRequests} onNew={() => setRequestOpen(true)} onOpen={() => markAllSeen()} />}
-        {tab === "account" && <AccountTab profile={profile} onLogout={onLogout} theme={theme} setTheme={setTheme} />}
+        {tab === "account" && <AccountTab profile={profile} onLogout={onLogout} theme={theme} setTheme={setTheme} setNotificationPrefs={setNotificationPrefs} users={users} />}
       </main>
 
       {/* BOTTOM TAB BAR */}
-      <nav aria-label="Navegação" style={{
+      <nav className="portal-tabbar" aria-label="Navegação" style={{
         position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 50,
         paddingBottom: "var(--safe-bottom)",
         background: "rgba(255,255,255,.92)",
@@ -177,7 +177,7 @@ export default function ParentPortal({ profile, onLogout, theme, setTheme }) {
         <div style={{ height: "var(--tabbar-h)", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", maxWidth: 720, margin: "0 auto" }}>
           {[
             { id: "home",     label: "Início",  icon: "home" },
-            { id: "sessions", label: "Sessões", icon: "calendar" },
+            { id: "practice", label: "Casa",    icon: "trend" },
             { id: "requests", label: "Pedidos", icon: "swap",  badge: recentlyResolved.length },
             { id: "account",  label: "Conta",   icon: "users" },
           ].map((t) => (
@@ -588,4 +588,70 @@ function NoChildrenHelp() {
       </p>
     </Card>
   );
+}
+
+function PracticeTab({ myChildren, homeExercises, homeAssignments, homeCompletions, markCompletion }) {
+  const todayISO = new Date().toISOString().slice(0, 10);
+  if (myChildren.length === 0) return <div style={{ padding: 24, fontSize: 13, color: "#8A8A86", textAlign: "center" }}>Nenhum filho associado.</div>;
+  return (
+    <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 18 }}>
+      {myChildren.map((child) => {
+        const mine = homeAssignments.filter((a) => a.patient_id === child.id && a.active !== false);
+        return (
+          <Card key={child.id} pad={18}>
+            <div className="serif" style={{ fontSize: 20, fontWeight: 300, color: "#152741", marginBottom: 12 }}>{child.name}</div>
+            {mine.length === 0 ? (
+              <div style={{ fontSize: 13, color: "#8A8A86" }}>Ainda sem exercícios atribuídos. O terapeuta atribui após a sessão.</div>
+            ) : (
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {mine.map((a) => {
+                  const ex = homeExercises.find((x) => x.id === a.exercise_id);
+                  if (!ex) return null;
+                  const doneToday = homeCompletions.some((c) => c.patient_id === child.id && c.exercise_id === a.exercise_id && c.date === todayISO);
+                  const streak = calcStreak(homeCompletions, child.id, a.exercise_id);
+                  return (
+                    <div key={a.id} style={{ padding: 12, background: "#FFFFFF", border: "1px solid #EAE6DD", borderRadius: 12 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: 14, fontWeight: 600, color: "#152741" }}>{ex.title}</div>
+                          <div style={{ fontSize: 12, color: "#8A8A86", marginTop: 2 }}>
+                            {ex.suggested_frequency} · {ex.duration_seconds || 60}s
+                            {streak > 1 && <span style={{ marginLeft: 8, color: "#E8A13C", fontWeight: 600 }}>{streak}d seguidos</span>}
+                          </div>
+                        </div>
+                      </div>
+                      {ex.description && <div style={{ fontSize: 12.5, color: "#5A5A58", marginTop: 8, lineHeight: 1.5 }}>{ex.description}</div>}
+                      {ex.video_url && (
+                        <a href={ex.video_url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 12, color: "#E8A13C", textDecoration: "underline", display: "inline-block", marginTop: 8 }}>Ver vídeo demo →</a>
+                      )}
+                      {a.custom_notes && <div style={{ fontSize: 12, color: "#5A5A58", marginTop: 8, padding: "6px 10px", background: "#F5F2EC", borderRadius: 8, fontStyle: "italic" }}>Terapeuta: {a.custom_notes}</div>}
+                      <div style={{ marginTop: 10 }}>
+                        {doneToday ? (
+                          <Tag type="realizada">Feito hoje</Tag>
+                        ) : (
+                          <Btn size="sm" variant="primary" onClick={() => markCompletion(child.id, a.exercise_id)}>Marcar feito hoje</Btn>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </Card>
+        );
+      })}
+    </div>
+  );
+}
+function calcStreak(completions, patientId, exerciseId) {
+  const dates = new Set(completions.filter((c) => c.patient_id === patientId && c.exercise_id === exerciseId).map((c) => c.date));
+  let streak = 0;
+  const cur = new Date();
+  while (streak < 60) {
+    const iso = cur.toISOString().slice(0, 10);
+    if (!dates.has(iso)) break;
+    streak++;
+    cur.setDate(cur.getDate() - 1);
+  }
+  return streak;
 }

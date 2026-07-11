@@ -15,6 +15,8 @@ const SIDEBAR_SECTIONS = [
     { id: "pacientes", label: "Pacientes", icon: "clipboard", to: "/pacientes" },
     { id: "agenda", label: "Agenda", icon: "calendar", to: "/agenda" },
     { id: "equipa", label: "Equipa", icon: "users", to: "/equipa" },
+    { id: "lista-espera", label: "Lista de espera", icon: "clock", to: "/lista-espera" },
+    { id: "exercicios", label: "Biblioteca exerc.", icon: "trend", to: "/exercicios" },
   ]},
   { title: "GESTÃO", items: [
     { id: "financeiro", label: "Financeiro", icon: "wallet", to: "/financeiro" },

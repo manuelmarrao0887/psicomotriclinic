@@ -6,6 +6,30 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.18",
+    date: "2026-06-22",
+    title: "Sprint 1+2 — Portal desktop tweaks, Dashboard Hoje, Lista de espera, Biblioteca exercícios, Plano de casa",
+    added: [
+      "Dashboard Hoje widget — grid 2 col: sessões de hoje (com marcador OK se nota realizada) + alertas (aniversários 3d, pedidos pendentes, faltas hoje, pagamentos por cobrar). Click qualquer item navega.",
+      "Lista de espera (CRM leads) em /lista-espera — table-style com Av + sort + filter por estado (6 estados: novo, contactado, reunião, anamnese, ativado, arquivado). Adicionar, editar, mudar estado inline, eliminar.",
+      "Biblioteca de exercícios em /exercicios — CRUD com título, descrição, URL vídeo (YouTube/Vimeo), domínios psicomotores multi-select, frequência, duração, dificuldade.",
+      "Portal Responsável — nova tab 'Casa' (substituiu Sessões): mostra exercícios atribuídos pelo terapeuta por filho, com vídeo, notas do terapeuta, e botão 'Marcar feito hoje'. Streak counter para dias seguidos.",
+      "Store novas colecções: waitlist, home_exercises_library, home_practice_assignments, home_practice_completions, parent_messages, behavior_diary — todos com listeners onSnapshot.",
+      "Store novas actions: addWaitlist / updateWaitlist / deleteWaitlist / addHomeExercise / deleteHomeExercise / assignHomeExercise / unassignHomeExercise / markCompletion / sendParentMessage / replyToParent / markMessageRead / addBehaviorEntry / setNotificationPrefs.",
+      "Design plano markdown em docs/superpowers/plans/ com 15 tasks × 4 sprints — Sprint 1 (parity + tweaks) + Sprint 2 (director wins) entregues; Sprint 3 (Home Practice UI restante em Pro + Diary + STT) + Sprint 4 (Chat + Onboarding + FAQ + Prefs) documentados no plano para próximo lote.",
+      "Sidebar director: 2 novas entradas em CLÍNICO — Lista de espera + Biblioteca exerc.",
+      "Design tokens per-breakpoint (--card-pad, --page-pad, --heading-lg, --heading-md) com media query em index.css.",
+      "Portais desktop tweaks (A1+A2): tab bar bottom-fixed vira sticky-top em desktop (≥900px); content max-width 1100px; nav horizontal centrado.",
+    ],
+    changed: [
+      "Dark mode fix — html.dark seletores actualizados para novos hex Brand Aligned (#F7F9FB body, #FFFFFF cards, #F5F2EC surfaceAlt, #EAE6DD border). Antes rules matched hex legacy que já não estão no código, resultando em dark mode a não aplicar.",
+      "ParentPortal AccountTab signature — recebe agora setNotificationPrefs + users para futuro toggle de preferências (Sprint 4).",
+    ],
+    removed: [
+      "Tab 'Sessões' do Portal Responsável — merged em Home (recentes por filho). Substituído por tab 'Casa' de Plano de Casa.",
+    ],
+  },
+  {
     version: "v2.0.0-alpha.17",
     date: "2026-06-22",
     title: "Fotos de perfil em todos os portais + reset+seed demo + tokens body cool-gray",

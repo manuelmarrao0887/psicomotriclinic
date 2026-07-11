@@ -58,6 +58,8 @@ const Requests = lazyWithRetry(() => import("./pages/admin/Requests.jsx"));
 const Settings = lazyWithRetry(() => import("./pages/admin/Settings.jsx"));
 const AuditPage = lazyWithRetry(() => import("./pages/admin/AuditPage.jsx"));
 const Announcements = lazyWithRetry(() => import("./pages/admin/Announcements.jsx"));
+const Waitlist = lazyWithRetry(() => import("./pages/admin/Waitlist.jsx"));
+const HomePracticeLibrary = lazyWithRetry(() => import("./pages/admin/HomePracticeLibrary.jsx"));
 const Privacy = lazyWithRetry(() => import("./pages/Privacy.jsx"));
 const ParentPortal = lazyWithRetry(() => import("./pages/portals/ParentPortal.jsx"));
 const ProfessionalPortal = lazyWithRetry(() => import("./pages/portals/ProfessionalPortal.jsx"));
@@ -275,6 +277,8 @@ export default function App() {
                 <Route path="definicoes" element={<Settings theme={theme} setTheme={setTheme} />} />
                 <Route path="auditoria" element={<AuditPage />} />
                 <Route path="comunicacoes" element={<Announcements />} />
+                <Route path="lista-espera" element={<Waitlist />} />
+                <Route path="exercicios" element={<HomePracticeLibrary />} />
                 <Route path="privacidade" element={<Privacy />} />
               </Route>
               <Route path="*" element={<Navigate to="/dashboard" replace />} />

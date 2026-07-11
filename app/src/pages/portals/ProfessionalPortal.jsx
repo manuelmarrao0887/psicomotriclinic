@@ -83,7 +83,7 @@ export default function ProfessionalPortal({ profile, onLogout, theme, setTheme 
         </div>
       </header>
 
-      <main id="main" style={{ maxWidth: 1100, margin: "0 auto", padding: "12px 16px calc(var(--tabbar-h) + var(--safe-bottom) + 24px)" }}>
+      <main id="main" className="portal-content" style={{ maxWidth: 1100, margin: "0 auto", padding: "12px 16px calc(var(--tabbar-h) + var(--safe-bottom) + 24px)" }}>
         <div style={{ padding: "8px 2px 6px", display: "flex", alignItems: "flex-start", gap: 14 }}>
           <Av t={initials} bg="#8DBF94" sz={56} color="#152741" photoUrl={myPhoto} />
           <div style={{ flex: 1, minWidth: 0 }}>
@@ -105,7 +105,7 @@ export default function ProfessionalPortal({ profile, onLogout, theme, setTheme 
         {tab === "account"  && <ProAccount profile={profile} onLogout={onLogout} theme={theme} setTheme={setTheme} />}
       </main>
 
-      <nav aria-label="Navegação" style={{
+      <nav className="portal-tabbar" aria-label="Navegação" style={{
         position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 50,
         paddingBottom: "var(--safe-bottom)",
         background: "rgba(255,255,255,.92)",
