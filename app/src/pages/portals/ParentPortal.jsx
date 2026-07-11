@@ -790,6 +790,15 @@ function AccountTab({ profile, onLogout, theme, setTheme }) {
           <Icon name="arr" size={16} color="#B9CDE0" />
         </button>
         <button
+          onClick={() => window.open("/faq", "_blank")}
+          className="ch tap-target"
+          style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", color: "#3C3C3B", fontSize: 15, fontWeight: 500, textAlign: "left", borderBottom: "1px solid #F5F2EC" }}
+        >
+          <span style={{ color: "#5A5A58", display: "flex" }}><Icon name="question" size={20} /></span>
+          <span style={{ flex: 1 }}>Perguntas Frequentes</span>
+          <Icon name="arr" size={16} color="#B9CDE0" />
+        </button>
+        <button
           onClick={() => window.open("/privacidade", "_blank")}
           className="ch tap-target"
           style={{ width: "100%", display: "flex", alignItems: "center", gap: 14, padding: "14px 18px", color: "#3C3C3B", fontSize: 15, fontWeight: 500, textAlign: "left", borderBottom: "1px solid #F5F2EC" }}

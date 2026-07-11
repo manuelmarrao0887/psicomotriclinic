@@ -26,6 +26,7 @@ const SIDEBAR_SECTIONS = [
   { title: "SISTEMA", items: [
     { id: "utilizadores", label: "Utilizadores", icon: "shield", to: "/utilizadores" },
     { id: "definicoes", label: "Definições", icon: "cog", to: "/definicoes" },
+    { id: "faq", label: "FAQ", icon: "question", to: "/faq" },
   ]},
 ];
 

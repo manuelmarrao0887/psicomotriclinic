@@ -6,6 +6,19 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.24",
+    date: "2026-07-11",
+    title: "FAQ / Perguntas Frequentes — página dedicada",
+    added: [
+      "Página /faq com 9 perguntas frequentes em PT (psicomotricidade, sessões, trocas, faltas, pagamentos, relatórios, comparticipações ADSE/SAMS/ADM, contactos, exercícios em casa).",
+      "Design: FeaturedIcon (48px, tile creme com border), texto centrado, grid auto-fit, CTA final Falar connosco (mailto).",
+      "Rota acessível para todos os utilizadores (não-autenticado + parent + pro + director) e link em Account tabs (Responsável e Profissional) + AdminLayout sidebar secção SISTEMA.",
+      "Novos ícones em lib/icons.jsx: heart, chat, info, question.",
+    ],
+    changed: [],
+    removed: [],
+  },
+  {
     version: "v2.0.0-alpha.23",
     date: "2026-07-11",
     title: "ViewToggle — alternar mobile/desktop manualmente",

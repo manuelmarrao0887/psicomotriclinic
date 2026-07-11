@@ -62,6 +62,7 @@ const Announcements = lazyWithRetry(() => import("./pages/admin/Announcements.js
 const Waitlist = lazyWithRetry(() => import("./pages/admin/Waitlist.jsx"));
 const HomePracticeLibrary = lazyWithRetry(() => import("./pages/admin/HomePracticeLibrary.jsx"));
 const Privacy = lazyWithRetry(() => import("./pages/Privacy.jsx"));
+const FAQ = lazyWithRetry(() => import("./pages/FAQ.jsx"));
 const ParentPortal = lazyWithRetry(() => import("./pages/portals/ParentPortal.jsx"));
 const ProfessionalPortal = lazyWithRetry(() => import("./pages/portals/ProfessionalPortal.jsx"));
 const ConfirmSession = lazyWithRetry(() => import("./pages/ConfirmSession.jsx"));
@@ -243,6 +244,7 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/privacidade" element={<Privacy />} />
+          <Route path="/faq" element={<FAQ />} />
           <Route path="*" element={<Navigate to="/login" replace state={{ from: location }} />} />
         </Routes>
       </Suspense>
@@ -281,6 +283,7 @@ export default function App() {
                 <Route path="lista-espera" element={<Waitlist />} />
                 <Route path="exercicios" element={<HomePracticeLibrary />} />
                 <Route path="privacidade" element={<Privacy />} />
+                <Route path="faq" element={<FAQ />} />
               </Route>
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
@@ -288,12 +291,16 @@ export default function App() {
             <Routes>
               <Route path="/confirmar/:patientId/:date" element={<ConfirmSession />} />
               <Route path="/style-lab" element={<StyleLab />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/privacidade" element={<Privacy />} />
               <Route path="*" element={<ProfessionalPortal profile={effectiveProfile} onLogout={logout} theme={theme} setTheme={setTheme} />} />
             </Routes>
           ) : isParent ? (
             <Routes>
               <Route path="/confirmar/:patientId/:date" element={<ConfirmSession />} />
               <Route path="/style-lab" element={<StyleLab />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/privacidade" element={<Privacy />} />
               <Route path="*" element={<ParentPortal profile={effectiveProfile} onLogout={logout} theme={theme} setTheme={setTheme} />} />
             </Routes>
           ) : (
