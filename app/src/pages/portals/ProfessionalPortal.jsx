@@ -1,7 +1,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Mark, Icon } from "../../lib/icons.jsx";
-import { Av, Btn, Card, Eyebrow, Tag } from "../../lib/ui.jsx";
-import { APP_VERSION, formatBuildDate, DAYS, HOURS } from "../../lib/constants.js";
+import { Av, Btn, Card, Eyebrow, Tag, Field, Inp, Sel } from "../../lib/ui.jsx";
+import { APP_VERSION, formatBuildDate, DAYS, HOURS, MONTHS_2026, CLINIC_CUT } from "../../lib/constants.js";
 import { useStore } from "../../lib/store.jsx";
 import ViewToggle from "../../components/ViewToggle.jsx";
 import { useViewMode } from "../../lib/useViewMode.js";
@@ -21,10 +21,10 @@ function findMyProfRecord(profs, userId, fullName) {
 }
 
 export default function ProfessionalPortal({ profile, onLogout, theme, setTheme }) {
-  const { pts, profs, notes, announcements, users = [], homeExercises = [], homeAssignments = [], assignHomeExercise, unassignHomeExercise, parentMessages = [], replyToParent, markMessageRead, setNotificationPrefs, setForm, setModal, quickMarkFalta } = useStore();
+  const { pts, profs, notes, announcements, users = [], homeExercises = [], homeAssignments = [], assignHomeExercise, unassignHomeExercise, parentMessages = [], replyToParent, markMessageRead, setNotificationPrefs, setForm, setModal, quickMarkFalta, pays = [], createPayment, togglePayment, deletePayment, updatePayment } = useStore();
   const meDoc = users.find((u) => u.id === profile?.id);
   const myPhoto = meDoc?.photo_url || null;
-  const [tab, setTab] = useState("home"); // home | agenda | patients | account
+  const [tab, setTab] = useState("home"); // home | agenda | patients | finance | account
 
   const myProfRecord = useMemo(() => findMyProfRecord(profs, profile?.id, profile?.full_name), [profs, profile?.id, profile?.full_name]);
   const myProfId = myProfRecord?.id;
@@ -36,6 +36,13 @@ export default function ProfessionalPortal({ profile, onLogout, theme, setTheme 
       return ids.includes(myProfId);
     });
   }, [pts, myProfId]);
+
+  const myPatientIds = useMemo(() => new Set(myPatients.map((p) => p.id)), [myPatients]);
+  const myPayments = useMemo(() => (pays || []).filter((py) => {
+    if (py.professional_id) return py.professional_id === myProfId;
+    return myPatientIds.has(py.patient_id);
+  }), [pays, myPatientIds, myProfId]);
+  const pendingCount = myPayments.filter((p) => p.status !== "pago").length;
 
   const todayIdx = (new Date().getDay() + 6) % 7;
   const todayLabel = todayIdx < DAYS.length ? DAYS[todayIdx] : null;
@@ -72,6 +79,7 @@ export default function ProfessionalPortal({ profile, onLogout, theme, setTheme 
       { id: "home",     label: "Início",    icon: "home",      badge: unrepliedCount },
       { id: "agenda",   label: "Agenda",    icon: "calendar",  badge: 0 },
       { id: "patients", label: "Pacientes", icon: "clipboard", badge: 0 },
+      { id: "finance",  label: "Financeiro", icon: "wallet",   badge: pendingCount },
       { id: "account",  label: "Conta",     icon: "users",     badge: 0 },
     ];
     return (
@@ -152,6 +160,7 @@ export default function ProfessionalPortal({ profile, onLogout, theme, setTheme 
             {tab === "home"     && <ProHome myProfId={myProfId} myPatients={myPatients} todaysSessions={todaysSessions} todayLabel={todayLabel} notes={notes} announcements={announcements} onSessionNote={openSessionNote} onMarkFalta={(p) => quickMarkFalta(p.id, myProfId)} parentMessages={parentMessages} replyToParent={replyToParent} markMessageRead={markMessageRead} />}
             {tab === "agenda"   && <ProAgenda myPatients={myPatients} profs={profs} />}
             {tab === "patients" && <ProPatients myPatients={myPatients} notes={notes} onSessionNote={openSessionNote} homeExercises={homeExercises} homeAssignments={homeAssignments} assignHomeExercise={assignHomeExercise} unassignHomeExercise={unassignHomeExercise} />}
+            {tab === "finance"  && <ProFinance myPatients={myPatients} myPayments={myPayments} createPayment={createPayment} togglePayment={togglePayment} deletePayment={deletePayment} updatePayment={updatePayment} />}
             {tab === "account"  && <ProAccount profile={profile} onLogout={onLogout} theme={theme} setTheme={setTheme} />}
           </main>
         </div>
@@ -205,6 +214,7 @@ export default function ProfessionalPortal({ profile, onLogout, theme, setTheme 
         {tab === "home"     && <ProHome myProfId={myProfId} myPatients={myPatients} todaysSessions={todaysSessions} todayLabel={todayLabel} notes={notes} announcements={announcements} onSessionNote={openSessionNote} onMarkFalta={(p) => quickMarkFalta(p.id, myProfId)} parentMessages={parentMessages} replyToParent={replyToParent} markMessageRead={markMessageRead} />}
         {tab === "agenda"   && <ProAgenda myPatients={myPatients} profs={profs} />}
         {tab === "patients" && <ProPatients myPatients={myPatients} notes={notes} onSessionNote={openSessionNote} homeExercises={homeExercises} homeAssignments={homeAssignments} assignHomeExercise={assignHomeExercise} unassignHomeExercise={unassignHomeExercise} />}
+        {tab === "finance"  && <ProFinance myPatients={myPatients} myPayments={myPayments} createPayment={createPayment} togglePayment={togglePayment} deletePayment={deletePayment} updatePayment={updatePayment} />}
         {tab === "account"  && <ProAccount profile={profile} onLogout={onLogout} theme={theme} setTheme={setTheme} />}
       </main>
 
@@ -216,12 +226,13 @@ export default function ProfessionalPortal({ profile, onLogout, theme, setTheme 
         WebkitBackdropFilter: "saturate(180%) blur(20px)",
         borderTop: "1px solid rgba(234,230,221,.7)",
       }}>
-        <div style={{ height: "var(--tabbar-h)", display: "grid", gridTemplateColumns: "repeat(4, 1fr)", maxWidth: 1100, margin: "0 auto" }}>
+        <div style={{ height: "var(--tabbar-h)", display: "grid", gridTemplateColumns: "repeat(5, 1fr)", maxWidth: 1100, margin: "0 auto" }}>
           {[
-            { id: "home",     label: "Início",    icon: "home" },
-            { id: "agenda",   label: "Agenda",    icon: "calendar" },
-            { id: "patients", label: "Pacientes", icon: "clipboard" },
-            { id: "account",  label: "Conta",     icon: "users" },
+            { id: "home",     label: "Início",    icon: "home",      badge: 0 },
+            { id: "agenda",   label: "Agenda",    icon: "calendar",  badge: 0 },
+            { id: "patients", label: "Pacientes", icon: "clipboard", badge: 0 },
+            { id: "finance",  label: "Finan.",    icon: "wallet",    badge: pendingCount },
+            { id: "account",  label: "Conta",     icon: "users",     badge: 0 },
           ].map((t) => (
             <button
               key={t.id}
@@ -233,10 +244,14 @@ export default function ProfessionalPortal({ profile, onLogout, theme, setTheme 
                 display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
                 color: tab === t.id ? "#E8A13C" : "#5A5A58",
                 fontSize: 10.5, fontWeight: tab === t.id ? 600 : 500,
+                position: "relative",
               }}
             >
               <Icon name={t.icon} size={22} />
               <span style={{ color: tab === t.id ? "#E8A13C" : "#5A5A58" }}>{t.label}</span>
+              {t.badge > 0 && (
+                <span style={{ position: "absolute", top: 4, right: "22%", fontSize: 9, fontWeight: 700, padding: "1px 5px", borderRadius: 999, background: "#B83A3A", color: "#fff", minWidth: 16, textAlign: "center" }}>{t.badge}</span>
+              )}
             </button>
           ))}
         </div>
@@ -586,6 +601,136 @@ function ProPatients({ myPatients, notes, onSessionNote, homeExercises, homeAssi
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
               <Btn variant="secondary" onClick={() => setAssignFor(null)}>Cancelar</Btn>
               <Btn onClick={doAssign} disabled={!assignForm.exercise_id}>Atribuir</Btn>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function ProFinance({ myPatients, myPayments, createPayment, togglePayment, deletePayment, updatePayment }) {
+  const [month, setMonth] = useState("");
+  const [addOpen, setAddOpen] = useState(false);
+  const [addForm, setAddForm] = useState({ patient_id: "", month: "", amount: "", status: "pendente", method: "", notes: "" });
+  const [busy, setBusy] = useState(false);
+
+  const months = useMemo(() => {
+    const set = new Set(myPayments.map((p) => p.month).filter(Boolean));
+    return Array.from(set).sort((a, b) => MONTHS_2026.indexOf(b) - MONTHS_2026.indexOf(a));
+  }, [myPayments]);
+
+  const filtered = useMemo(() => {
+    const list = month ? myPayments.filter((p) => p.month === month) : myPayments;
+    return [...list].sort((a, b) => (b.paid_date || "").localeCompare(a.paid_date || ""));
+  }, [myPayments, month]);
+
+  const total = filtered.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
+  const paid  = filtered.filter((p) => p.status === "pago").reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
+  const pend  = total - paid;
+  const clinicCut = paid * CLINIC_CUT;
+  const netCut = paid - clinicCut;
+
+  const submitAdd = async () => {
+    if (!addForm.patient_id || !addForm.amount || !addForm.month) return;
+    setBusy(true);
+    try {
+      await createPayment({
+        patient_id: addForm.patient_id,
+        month: addForm.month,
+        amount: parseFloat(addForm.amount),
+        status: addForm.status,
+        method: addForm.method || null,
+        notes: addForm.notes || null,
+      });
+      setAddOpen(false);
+      setAddForm({ patient_id: "", month: "", amount: "", status: "pendente", method: "", notes: "" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
+        <Card pad={16}>
+          <div style={{ fontSize: 10.5, letterSpacing: ".14em", fontWeight: 700, color: "#8A8A86" }} className="mono">— TOTAL</div>
+          <div className="serif" style={{ fontSize: 26, fontWeight: 300, color: "#152741", marginTop: 4 }}>{total.toFixed(0)}€</div>
+        </Card>
+        <Card pad={16}>
+          <div style={{ fontSize: 10.5, letterSpacing: ".14em", fontWeight: 700, color: "#8DBF94" }} className="mono">— RECEBIDO</div>
+          <div className="serif" style={{ fontSize: 26, fontWeight: 300, color: "#152741", marginTop: 4 }}>{paid.toFixed(0)}€</div>
+        </Card>
+        <Card pad={16}>
+          <div style={{ fontSize: 10.5, letterSpacing: ".14em", fontWeight: 700, color: "#C97A1F" }} className="mono">— PENDENTE</div>
+          <div className="serif" style={{ fontSize: 26, fontWeight: 300, color: "#152741", marginTop: 4 }}>{pend.toFixed(0)}€</div>
+        </Card>
+      </div>
+
+      <Card pad={16}>
+        <Eyebrow>— DISTRIBUIÇÃO (RECEBIDO)</Eyebrow>
+        <div style={{ marginTop: 10, fontSize: 13, color: "#3C3C3B", lineHeight: 1.6 }}>
+          <div style={{ display: "flex", justifyContent: "space-between" }}>
+            <span>Espaço (Casa · {(CLINIC_CUT * 100).toFixed(0)}%)</span>
+            <span style={{ fontWeight: 600 }}>{clinicCut.toFixed(2)}€</span>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4 }}>
+            <span>Você (líquido · {((1 - CLINIC_CUT) * 100).toFixed(0)}%)</span>
+            <span style={{ fontWeight: 600 }}>{netCut.toFixed(2)}€</span>
+          </div>
+        </div>
+      </Card>
+
+      <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+        <div style={{ flex: 1, minWidth: 180 }}>
+          <Sel value={month} onChange={setMonth} options={[{ v: "", l: "Todos os meses" }, ...months.map((m) => ({ v: m, l: m }))]} placeholder="Todos os meses" />
+        </div>
+        <Btn onClick={() => setAddOpen(true)} icon="plus">Registar</Btn>
+      </div>
+
+      <Card pad={0}>
+        {filtered.length === 0 ? (
+          <div style={{ padding: 24, fontSize: 14, color: "#8A8A86", textAlign: "center" }}>Sem pagamentos {month ? `em ${month}` : "registados"}.</div>
+        ) : (
+          <div>
+            {filtered.map((p, i) => {
+              const pt = myPatients.find((x) => x.id === p.patient_id);
+              return (
+                <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 16px", borderTop: i > 0 ? "1px solid #F5F2EC" : "none" }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 14, fontWeight: 600, color: "#152741", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{pt?.name || "—"}</div>
+                    <div style={{ fontSize: 12, color: "#8A8A86", marginTop: 2 }}>
+                      {p.month || "—"}{p.method ? ` · ${p.method}` : ""}{p.paid_date ? ` · ${p.paid_date}` : ""}
+                    </div>
+                  </div>
+                  <div className="serif" style={{ fontSize: 18, fontWeight: 400, color: "#152741" }}>{parseFloat(p.amount || 0).toFixed(0)}€</div>
+                  <button onClick={() => togglePayment(p)} className="ch" style={{ padding: "5px 10px", borderRadius: 999, background: p.status === "pago" ? "#8DBF94" : "#F5D9A8", color: p.status === "pago" ? "#FFFFFF" : "#5A3B10", fontSize: 11.5, fontWeight: 600, border: "none", cursor: "pointer" }}>
+                    {p.status === "pago" ? "Pago" : "Pendente"}
+                  </button>
+                  <button onClick={() => { if (confirm("Eliminar pagamento?")) deletePayment(p); }} className="ch" aria-label="Eliminar" style={{ padding: 6, borderRadius: 8, color: "#B83A3A", background: "transparent", border: "none", cursor: "pointer", display: "flex" }}>
+                    <Icon name="trash" size={16} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Card>
+
+      {addOpen && (
+        <div onClick={() => setAddOpen(false)} className="modal-overlay" role="dialog" aria-modal="true" style={{ position: "fixed", inset: 0, background: "rgba(21,39,65,.4)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+          <div onClick={(e) => e.stopPropagation()} className="modal-panel" style={{ background: "#FFFFFF", borderRadius: 18, width: "100%", maxWidth: 460, padding: 22 }}>
+            <Eyebrow>— PAGAMENTO</Eyebrow>
+            <div className="serif" style={{ fontSize: 22, fontWeight: 300, color: "#152741", marginTop: 4, marginBottom: 14 }}>Registar pagamento</div>
+            <Field label="Paciente"><Sel value={addForm.patient_id} onChange={(v) => setAddForm((f) => ({ ...f, patient_id: v }))} options={myPatients.map((p) => ({ v: p.id, l: p.name }))} placeholder="Selecionar..." /></Field>
+            <Field label="Mês"><Sel value={addForm.month} onChange={(v) => setAddForm((f) => ({ ...f, month: v }))} options={MONTHS_2026.map((m) => ({ v: m, l: m }))} placeholder="Selecionar..." /></Field>
+            <Field label="Valor (€)"><Inp value={addForm.amount} onChange={(e) => setAddForm((f) => ({ ...f, amount: e.target.value }))} placeholder="Ex: 60" inputMode="decimal" /></Field>
+            <Field label="Estado"><Sel value={addForm.status} onChange={(v) => setAddForm((f) => ({ ...f, status: v }))} options={[{ v: "pendente", l: "Pendente" }, { v: "pago", l: "Pago" }]} /></Field>
+            <Field label="Método (opcional)"><Sel value={addForm.method} onChange={(v) => setAddForm((f) => ({ ...f, method: v }))} options={[{ v: "", l: "—" }, { v: "Transferência", l: "Transferência" }, { v: "MB WAY", l: "MB WAY" }, { v: "Numerário", l: "Numerário" }, { v: "Multibanco", l: "Multibanco" }]} placeholder="—" /></Field>
+            <Field label="Notas (opcional)"><Inp value={addForm.notes} onChange={(e) => setAddForm((f) => ({ ...f, notes: e.target.value }))} placeholder="Ex: sessão extra" /></Field>
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 10 }}>
+              <Btn variant="secondary" onClick={() => setAddOpen(false)} disabled={busy}>Cancelar</Btn>
+              <Btn onClick={submitAdd} disabled={busy || !addForm.patient_id || !addForm.month || !addForm.amount}>{busy ? "A guardar…" : "Guardar"}</Btn>
             </div>
           </div>
         </div>

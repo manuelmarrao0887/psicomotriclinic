@@ -55,6 +55,7 @@ const Patients = lazyWithRetry(() => import("./pages/admin/Patients.jsx"));
 const PatientDetail = lazyWithRetry(() => import("./pages/admin/Patients.jsx").then((m) => ({ default: m.PatientDetail })));
 const Agenda = lazyWithRetry(() => import("./pages/admin/Agenda.jsx"));
 const Finance = lazyWithRetry(() => import("./pages/admin/Finance.jsx"));
+const MyFinance = lazyWithRetry(() => import("./pages/admin/MyFinance.jsx"));
 const Requests = lazyWithRetry(() => import("./pages/admin/Requests.jsx"));
 const Settings = lazyWithRetry(() => import("./pages/admin/Settings.jsx"));
 const AuditPage = lazyWithRetry(() => import("./pages/admin/AuditPage.jsx"));
@@ -276,6 +277,7 @@ export default function App() {
                 <Route path="pacientes/:patientId" element={<PatientDetail />} />
                 <Route path="agenda" element={<Agenda />} />
                 <Route path="financeiro" element={<Finance />} />
+                <Route path="meu-financeiro" element={<MyFinance />} />
                 <Route path="pedidos" element={<Requests />} />
                 <Route path="definicoes" element={<Settings theme={theme} setTheme={setTheme} />} />
                 <Route path="auditoria" element={<AuditPage />} />

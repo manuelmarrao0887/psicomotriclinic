@@ -287,14 +287,18 @@ export function StoreProvider({ profile, children }) {
 
   const addPayment = async () => {
     if (!form.pt || !form.amount) return;
+    const pt = pts.find((x) => x.id === form.pt);
+    const profId = pt?.professional_id || (pt?.professional_ids?.[0]) || null;
     await sb.from("payments").insert({
       patient_id: form.pt,
+      professional_id: profId,
       month: form.payMonth || "Maio 2026",
       amount: parseFloat(form.amount),
       status: form.paySt || "pendente",
       paid_date: form.paySt === "pago" ? new Date().toISOString().slice(0, 10) : null,
+      method: form.payMethod || null,
+      notes: form.payNotes || null,
     });
-    const pt = pts.find((x) => x.id === form.pt);
     await audit("add_payment", "payments", `${pt?.name || form.pt} · ${form.amount}€ · ${form.payMonth || "—"}`);
     setModal(null); setForm({}); show("Pagamento registado"); await load();
   };
@@ -308,6 +312,40 @@ export function StoreProvider({ profile, children }) {
     const pt = pts.find((x) => x.id === p.patient_id);
     await audit("toggle_payment", `payments:${p.id}`, `${pt?.name || ""} · ${p.amount}€ → ${newSt}`);
     show(newSt === "pago" ? "Marcado como pago" : "Marcado como pendente");
+    await load();
+  };
+
+  const deletePayment = async (p) => {
+    await sb.from("payments").delete().eq("id", p.id);
+    const pt = pts.find((x) => x.id === p.patient_id);
+    await audit("delete_payment", `payments:${p.id}`, `${pt?.name || ""} · ${p.amount}€ · ${p.month}`);
+    show("Pagamento eliminado");
+    await load();
+  };
+
+  const updatePayment = async (id, patch) => {
+    await sb.from("payments").update(patch).eq("id", id);
+    await audit("update_payment", `payments:${id}`, JSON.stringify(patch).slice(0, 200));
+    show("Pagamento atualizado");
+    await load();
+  };
+
+  // Cria um pagamento diretamente (sem passar pelo modal). Útil para o Pro portal.
+  const createPayment = async ({ patient_id, month, amount, status = "pendente", method = null, notes = null }) => {
+    const pt = pts.find((x) => x.id === patient_id);
+    const profId = pt?.professional_id || (pt?.professional_ids?.[0]) || null;
+    await sb.from("payments").insert({
+      patient_id,
+      professional_id: profId,
+      month,
+      amount: parseFloat(amount),
+      status,
+      paid_date: status === "pago" ? new Date().toISOString().slice(0, 10) : null,
+      method,
+      notes,
+    });
+    await audit("add_payment", "payments", `${pt?.name || patient_id} · ${amount}€ · ${month}`);
+    show("Pagamento registado");
     await load();
   };
 
@@ -872,7 +910,7 @@ export function StoreProvider({ profile, children }) {
     changeRole, removeUser, toggleUserActive,
     addProf, deleteProfessional, addProfsBulk,
     addPatient, deletePatient, addPatientsBulk,
-    addPayment, togglePayment,
+    addPayment, togglePayment, createPayment, deletePayment, updatePayment,
     saveOverheads, saveVarCost,
     inviteUser,
     approveRequest, rejectRequest,

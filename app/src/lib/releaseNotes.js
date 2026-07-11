@@ -6,6 +6,25 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.25",
+    date: "2026-07-11",
+    title: "Sprint 1 — Pagamentos passam a ser geridos pelo Profissional",
+    added: [
+      "Novo tab Financeiro no Portal Profissional (desktop + mobile) com KPIs (Total / Recebido / Pendente), distribuição Casa {CLINIC_CUT}% / você {1-CLINIC_CUT}%, filtro por mês, lista de pagamentos e ações inline (togglePayment, deletePayment).",
+      "Registar pagamento inline sem passar pelo admin: paciente, mês, valor, estado, método (Transferência / MB WAY / Numerário / Multibanco), notas.",
+      "Store actions: createPayment (headless), deletePayment, updatePayment. addPayment agora grava professional_id denormalizado no doc payments (inferido do paciente).",
+      "Director-também-profissional: se o utilizador Diretor estiver ligado a um registo em professionals via profile_id, a sidebar admin ganha secção MEU CONSULTÓRIO com atalho /meu-financeiro — vista pessoal, separada do agregado Finance da Casa.",
+      "MyFinance (app/src/pages/admin/MyFinance.jsx) reusa o componente ProFinance exportado do Portal Profissional.",
+      "Payload de pagamento estendido com campos method e notes.",
+    ],
+    changed: [
+      "Tab bar mobile do Portal Profissional passa de 4 para 5 slots (Início / Agenda / Pacientes / Finan. / Conta) com badge de pendentes.",
+      "NAV desktop do Portal Profissional adiciona Financeiro entre Pacientes e Conta.",
+      "ProFinance é agora um named export do ProfessionalPortal.jsx.",
+    ],
+    removed: [],
+  },
+  {
     version: "v2.0.0-alpha.24",
     date: "2026-07-11",
     title: "FAQ / Perguntas Frequentes — página dedicada",

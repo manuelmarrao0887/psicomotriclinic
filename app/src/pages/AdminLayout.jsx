@@ -53,7 +53,8 @@ const titles = {
   "/equipa":       { e: "— EQUIPA",       t: "Profissionais",        s: "" },
   "/pacientes":    { e: "— CASOS",        t: "Pacientes",            s: "" },
   "/agenda":       { e: "— AGENDA",       t: "Sessões",              s: "" },
-  "/financeiro":   { e: "— FINANCEIRO",   t: "Pagamentos & custos",  s: "" },
+  "/financeiro":   { e: "— FINANCEIRO",   t: "Pagamentos & custos",  s: "Vista agregada da Casa" },
+  "/meu-financeiro": { e: "— MEU CONSULTÓRIO", t: "Meu financeiro", s: "Pagamentos dos seus pacientes" },
   "/pedidos":      { e: "— PEDIDOS",      t: "Trocas de horário",    s: "" },
   "/comunicacoes": { e: "— ANÚNCIOS",     t: "Comunicações",         s: "Mensagens visíveis nos portais" },
   "/definicoes":   { e: "— PREFERÊNCIAS", t: "Definições",           s: "" },
@@ -324,12 +325,23 @@ export default function AdminLayout({ profile, onLogout, theme, setTheme }) {
 
 // ────────── SidebarBody — sections + dividers + bottom perfil com upload ──────────
 function SidebarBody({ profile, onLogout, theme, setTheme, initials }) {
-  const { reqs, users, updateMyPhoto, removeMyPhoto } = useStore();
+  const { reqs, users, profs = [], updateMyPhoto, removeMyPhoto } = useStore();
   const fileRef = useRef(null);
   const [menuOpen, setMenuOpen] = useState(false);
 
   const pendingCount = (reqs || []).filter((r) => r.status === "pendente" || !r.status).length;
   const countValue = (key) => ({ pending_requests: pendingCount })[key] || 0;
+
+  // Director que também é profissional (professionals.profile_id === user.id)
+  // ganha secção MEU CONSULTÓRIO com atalhos para o seu financeiro pessoal.
+  const myProfRecord = profs.find((p) => p.profile_id === profile?.id);
+  const sections = myProfRecord ? [
+    ...SIDEBAR_SECTIONS.slice(0, -1),
+    { title: "MEU CONSULTÓRIO", items: [
+      { id: "meu-financeiro", label: "Meu financeiro", icon: "wallet", to: "/meu-financeiro" },
+    ]},
+    SIDEBAR_SECTIONS[SIDEBAR_SECTIONS.length - 1],
+  ] : SIDEBAR_SECTIONS;
 
   // Foto vem do users store (dados frescos por listener) — não do profile prop
   const me = (users || []).find((u) => u.id === profile?.id);
@@ -349,8 +361,8 @@ function SidebarBody({ profile, onLogout, theme, setTheme, initials }) {
   return (
     <>
       <nav aria-label="Secções" style={{ display: "flex", flexDirection: "column", flex: 1, minHeight: 0, overflowY: "auto" }}>
-        {SIDEBAR_SECTIONS.map((section, sIdx) => (
-          <div key={section.title} style={{ marginBottom: sIdx < SIDEBAR_SECTIONS.length - 1 ? 6 : 0 }}>
+        {sections.map((section, sIdx) => (
+          <div key={section.title} style={{ marginBottom: sIdx < sections.length - 1 ? 6 : 0 }}>
             <div style={{ padding: "8px 8px 6px", fontSize: 9.5, letterSpacing: ".14em", fontWeight: 700, color: "rgba(247,244,238,.42)" }}>
               — {section.title}
             </div>
@@ -384,7 +396,7 @@ function SidebarBody({ profile, onLogout, theme, setTheme, initials }) {
                 );
               })}
             </div>
-            {sIdx < SIDEBAR_SECTIONS.length - 1 && (
+            {sIdx < sections.length - 1 && (
               <div aria-hidden="true" style={{ height: 1, background: "rgba(247,244,238,.08)", margin: "10px 8px 4px" }} />
             )}
           </div>
