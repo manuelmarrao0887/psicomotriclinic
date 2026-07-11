@@ -8,6 +8,7 @@ import ModalsHost from "./components/ModalsHost.jsx";
 import ErrorBoundary from "./components/ErrorBoundary.jsx";
 import PushPermissionBanner from "./components/PushPermissionBanner.jsx";
 import RoleSwitcher from "./components/RoleSwitcher.jsx";
+import OnboardingTour from "./components/OnboardingTour.jsx";
 import { applyRoleOverride, getRoleOverride } from "./lib/roleOverride.js";
 
 // Páginas críticas (shell + login + dashboard) carregadas eagerly
@@ -308,6 +309,7 @@ export default function App() {
       <ModalsHost />
       <ToastHost />
       <RoleSwitcher profile={profile} />
+      <OnboardingTour profile={effectiveProfile} />
       <PushPermissionBanner />
     </StoreProvider>
   );

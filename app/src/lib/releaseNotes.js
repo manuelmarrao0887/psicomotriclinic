@@ -6,6 +6,21 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.21",
+    date: "2026-06-22",
+    title: "Sprint 4 finale — Onboarding tour + FAQ glossário psicomotor",
+    added: [
+      "OnboardingTour (C1) — overlay first-run com 3 slides per role (parent / professional / director). Aparece 800ms após entrada, persistido em localStorage.psm.onboarding.done.<userId>. Botão 'Saltar' termina.",
+      "Glossário psicomotor (C2) — 20 termos técnicos (coordenação motora, esquema corporal, praxias, M-ABC-2, percentil, etc.) em app/src/lib/glossary.js.",
+      "GlossaryText component — auto-highlight de termos do glossário em textos. Underline dotted âmbar; hover/tap mostra popover navy com definição.",
+      "Aplicado em ParentPortal SessionsTab — campo 'Evolução observada' das notas de sessão detecta e destaca termos técnicos para pais entenderem.",
+    ],
+    changed: [
+      "Fim do plano de 15 tasks × 4 sprints. Todos os itens A, B, C entregues (com MVP scope).",
+    ],
+    removed: [],
+  },
+  {
     version: "v2.0.0-alpha.20",
     date: "2026-06-22",
     title: "Sprint 4 quase — Diário comportamento + Chat + Notificação prefs",

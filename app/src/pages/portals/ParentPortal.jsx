@@ -4,6 +4,7 @@ import { Av, Btn, Card, Eyebrow, Tag, Progress, Field, Inp, Sel } from "../../li
 import { APP_VERSION, formatBuildDate, DAYS, HOURS } from "../../lib/constants.js";
 import { useStore } from "../../lib/store.jsx";
 import { sb } from "../../lib/firebase.js";
+import GlossaryText from "../../components/GlossaryText.jsx";
 
 // 1. Verifica parent_user_ids (vínculo explícito feito pelo director — preferido).
 // 2. Fallback: match case-insensitive entre profile.full_name e
@@ -542,7 +543,7 @@ function SessionsTab({ myChildren, profs, notes }) {
                         </Tag>
                       </div>
                       {pr && <div style={{ fontSize: 12, color: "#8A8A86" }}>{pr.name}</div>}
-                      {n.progress && <div style={{ fontSize: 13, color: "#3C3C3B", marginTop: 6, lineHeight: 1.5 }}>{n.progress}</div>}
+                      {n.progress && <div style={{ fontSize: 13, color: "#3C3C3B", marginTop: 6, lineHeight: 1.5 }}><GlossaryText text={n.progress} /></div>}
                     </div>
                   );
                 })}
