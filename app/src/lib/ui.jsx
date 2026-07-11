@@ -137,7 +137,7 @@ export const Btn = ({ children, onClick, disabled, variant = "primary", size = "
         display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
         whiteSpace: "nowrap", ...style,
       }}
-    >{icon}{children}</button>
+    >{typeof icon === "string" ? <Icon name={icon} size={fs[size] + 2} /> : icon}{children}</button>
   );
 };
 

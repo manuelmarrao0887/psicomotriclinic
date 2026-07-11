@@ -34,7 +34,7 @@ export default function Finance() {
         <div style={{ minWidth: 200 }}>
           <Sel value={filterMonth} onChange={setFilterMonth} options={[{ v: "todos", l: "Todos os meses" }, ...months.map((m) => ({ v: m, l: m }))]} />
         </div>
-        <Btn icon={<Icon name="plus" size={16} />} onClick={() => { setForm({}); setModal("addPayment"); }}>Registar</Btn>
+        <Btn icon={<Icon name="plus" size={16} />} onClick={() => { setForm({}); setModal("addPayment"); }}>Novo registo</Btn>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, marginBottom: 14 }}>

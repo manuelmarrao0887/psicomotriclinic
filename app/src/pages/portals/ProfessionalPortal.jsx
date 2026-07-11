@@ -753,7 +753,7 @@ export function ProFinance({ myPatients, myPayments, createPayment, togglePaymen
           <Sel value={month} onChange={setMonth} options={[{ v: "", l: "Todos os meses" }, ...months.map((m) => ({ v: m, l: m }))]} placeholder="Todos os meses" />
         </div>
         <Btn variant="secondary" onClick={exportCsv} disabled={filtered.length === 0}>Exportar CSV</Btn>
-        <Btn onClick={() => setAddOpen(true)} icon="plus">Registar</Btn>
+        <Btn onClick={() => setAddOpen(true)} icon="plus">Novo registo</Btn>
       </div>
       </>}
 

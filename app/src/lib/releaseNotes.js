@@ -6,6 +6,17 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.30",
+    date: "2026-07-12",
+    title: "Fix — Btn agora aceita icon como string + label \"Novo registo\"",
+    added: [],
+    changed: [
+      "Btn (lib/ui.jsx) agora aceita a prop icon como string (nome do ícone) ou como ReactNode. Se for string, encapsula em <Icon name={icon}/>. Antes renderizava a string literalmente, resultando em botões com \"plusRegistar\", \"plusAdicionar\", etc.",
+      "Label do botão em ProFinance (Portal Profissional) e Finance (admin) passa de \"Registar\" para \"Novo registo\" — mais explícito.",
+    ],
+    removed: [],
+  },
+  {
     version: "v2.0.0-alpha.29",
     date: "2026-07-12",
     title: "Fix — MyFinance design + dark mode não trocava",
