@@ -4,9 +4,10 @@ import { Card, Eyebrow, Btn } from "../../lib/ui.jsx";
 import { ProFinance } from "../portals/ProfessionalPortal.jsx";
 import { useNavigate } from "react-router-dom";
 
-// Rota /meu-financeiro — Só aparece quando director tem profile.id ligado
-// a um registo em `profs` (professionals.profile_id === user.id). Reusa
-// o componente ProFinance do Portal Profissional, filtrado ao próprio.
+// Rota /meu-financeiro — só aparece quando o Diretor está ligado a um
+// registo em `profs` (professionals.profile_id === user.id). AdminLayout
+// já pinta o header do topo (— MEU CONSULTÓRIO / Meu financeiro), por isso
+// aqui só o conteúdo com o padding admin habitual.
 
 export default function MyFinance() {
   const { profile, pts, profs, pays = [], createPayment, togglePayment, deletePayment, updatePayment } = useStore();
@@ -31,29 +32,27 @@ export default function MyFinance() {
 
   if (!myProfId) {
     return (
-      <Card pad={24}>
-        <Eyebrow>— MEU CONSULTÓRIO</Eyebrow>
-        <div className="serif" style={{ fontSize: 22, fontWeight: 300, color: "#152741", marginTop: 6, marginBottom: 10 }}>Sem registo profissional associado</div>
-        <p style={{ fontSize: 14, color: "#5A5A58", lineHeight: 1.55 }}>
-          Para gerir os seus próprios pagamentos precisa de estar ligado a um registo em Equipa. Peça a alguém com acesso para associar o seu utilizador ao registo correspondente.
-        </p>
-        <div style={{ marginTop: 14 }}>
-          <Btn variant="secondary" onClick={() => nav("/equipa")}>Ir para Equipa</Btn>
-        </div>
-      </Card>
+      <div style={{ padding: "28px 40px 60px" }}>
+        <Card pad={24}>
+          <Eyebrow>— MEU CONSULTÓRIO</Eyebrow>
+          <div className="serif" style={{ fontSize: 22, fontWeight: 300, color: "var(--ink, #152741)", marginTop: 6, marginBottom: 10 }}>
+            Sem registo profissional associado
+          </div>
+          <p style={{ fontSize: 14, color: "var(--sub, #5A5A58)", lineHeight: 1.55 }}>
+            Para gerir os seus próprios pagamentos precisa de estar ligado a um registo em Equipa. Peça a alguém com acesso para associar o seu utilizador ao registo correspondente.
+          </p>
+          <div style={{ marginTop: 14 }}>
+            <Btn variant="secondary" onClick={() => nav("/equipa")}>Ir para Equipa</Btn>
+          </div>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <div>
-      <div style={{ marginBottom: 16 }}>
-        <Eyebrow>— MEU CONSULTÓRIO</Eyebrow>
-        <h1 className="serif" style={{ fontSize: 30, fontWeight: 300, color: "#152741", letterSpacing: "-0.025em", marginTop: 6 }}>
-          Meu financeiro<span className="serif-it">.</span>
-        </h1>
-        <p style={{ fontSize: 14, color: "#8A8A86", marginTop: 4 }}>
-          Pagamentos dos seus {myPatients.length} paciente{myPatients.length === 1 ? "" : "s"}. Vista pessoal, separada do agregado da Casa em Financeiro.
-        </p>
+    <div style={{ padding: "28px 40px 60px" }}>
+      <div style={{ marginBottom: 20, fontSize: 14, color: "var(--sub, #8A8A86)", lineHeight: 1.55 }}>
+        Vista pessoal dos seus {myPatients.length} paciente{myPatients.length === 1 ? "" : "s"}. Separada do agregado da Casa em <b>Financeiro</b>. Aqui pode registar pagamentos, alternar entre mês e vista Ano/IRS, exportar CSV e emitir recibos.
       </div>
       <ProFinance
         myPatients={myPatients}

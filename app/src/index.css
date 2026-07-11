@@ -129,6 +129,28 @@ html.dark [style*="border:1px solid #D9D3C5"] { border-color: #3A4D6C !important
 html.dark input, html.dark select, html.dark textarea { color: #E8E3D7; }
 html.dark [style*="background:#152741"] { background: #08111F !important; }
 
+/* React inline styles são normalizados pelo browser para rgb(). Duplicamos
+   os selectors nesses formatos para garantir que apanhamos ambas as
+   representações. */
+html.dark [style*="rgb(247, 249, 251)"] { background: #0E1A2C !important; }
+html.dark [style*="rgb(255, 255, 255)"] { background: #1A2A44 !important; }
+html.dark [style*="rgb(245, 242, 236)"] { background: #152741 !important; }
+html.dark [style*="rgb(247, 244, 238)"] { color: #E8E3D7 !important; }
+html.dark [style*="rgb(21, 39, 65)"] { background: #08111F !important; }
+html.dark [style*="rgb(234, 230, 221)"] { border-color: #2A3D5C !important; }
+html.dark [style*="rgb(245, 229, 205)"] { background: #3B2E14 !important; color: #F5D9A8 !important; }
+html.dark [style*="rgb(220, 231, 240)"] { background: #1A2E4A !important; color: #B9CDE0 !important; }
+html.dark [style*="rgb(199, 221, 203)"] { background: #1E3324 !important; color: #8DBF94 !important; }
+html.dark [style*="color: rgb(21, 39, 65)"], html.dark [style*="color:rgb(21, 39, 65)"] { color: #E8E3D7 !important; }
+html.dark [style*="color: rgb(60, 60, 59)"] { color: #D8D3C7 !important; }
+html.dark [style*="color: rgb(90, 90, 88)"] { color: #A9A39A !important; }
+html.dark [style*="color: rgb(138, 138, 134)"] { color: #8A9AAE !important; }
+
+/* Estrutura geral: forçar body/root escuro (backup se selectors específicos falharem) */
+html.dark, html.dark body, html.dark #root { background: #0E1A2C !important; color: #E8E3D7 !important; }
+html.dark .serif, html.dark h1, html.dark h2, html.dark h3, html.dark h4 { color: #E8E3D7 !important; }
+html.dark input, html.dark select, html.dark textarea { background: #1A2A44 !important; border-color: #2A3D5C !important; }
+
 /* ─────────────────────────── RESPONSIVE / iOS-FEEL ───────────────────────────
    Breakpoint principal: < 900px = mobile/tablet (bottom-tab UI)
                        >= 900px  = desktop sidebar

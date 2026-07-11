@@ -6,6 +6,18 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.29",
+    date: "2026-07-12",
+    title: "Fix — MyFinance design + dark mode não trocava",
+    added: [],
+    changed: [
+      "MyFinance: remove header duplicado (AdminLayout já pinta o título), passa a usar o padding admin padrão (28px 40px 60px) e um sub-título curto explicativo.",
+      "Dark mode: adicionados selectors CSS na forma rgb() além dos hex — o browser normaliza os inline-styles React de #F7F9FB para rgb(247, 249, 251), o que fazia falhar os selectors [style*=\"#F7F9FB\"] etc.",
+      "Fallback dark mode: html.dark força background e color em body/#root, todas as headings serif e inputs, para casos onde os selectors por substring falham.",
+    ],
+    removed: [],
+  },
+  {
     version: "v2.0.0-alpha.28",
     date: "2026-07-11",
     title: "Sprint 4 — Dashboard InsightsPanel + Waitlist auto-match",
