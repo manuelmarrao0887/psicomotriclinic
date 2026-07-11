@@ -6,6 +6,20 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.23",
+    date: "2026-07-11",
+    title: "ViewToggle — alternar mobile/desktop manualmente",
+    added: [
+      "ViewToggle chip navy floating bottom-right (br) em Portais Responsável e Profissional. Permite forçar vista Mobile, Desktop, ou Automático (segue viewport).",
+      "Escolha persistida em localStorage.psm.view.override e sincronizada entre tabs via storage event.",
+      "Hook useViewMode() partilhado em app/src/lib/useViewMode.js.",
+    ],
+    changed: [
+      "Removida a função useIsMobile local dos dois portais — substituída pelo hook central.",
+    ],
+    removed: [],
+  },
+  {
     version: "v2.0.0-alpha.22",
     date: "2026-07-11",
     title: "Desktop full — sidebar navy nos Portais Responsável e Profissional",

@@ -5,17 +5,8 @@ import { APP_VERSION, formatBuildDate, DAYS, HOURS } from "../../lib/constants.j
 import { useStore } from "../../lib/store.jsx";
 import { sb } from "../../lib/firebase.js";
 import GlossaryText from "../../components/GlossaryText.jsx";
-
-function useIsMobile() {
-  const [is, setIs] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 899.98px)").matches);
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 899.98px)");
-    const h = (e) => setIs(e.matches);
-    mq.addEventListener?.("change", h) ?? mq.addListener(h);
-    return () => mq.removeEventListener?.("change", h) ?? mq.removeListener(h);
-  }, []);
-  return is;
-}
+import ViewToggle from "../../components/ViewToggle.jsx";
+import { useViewMode } from "../../lib/useViewMode.js";
 
 // 1. Verifica parent_user_ids (vínculo explícito feito pelo director — preferido).
 // 2. Fallback: match case-insensitive entre profile.full_name e
@@ -129,7 +120,7 @@ export default function ParentPortal({ profile, onLogout, theme, setTheme }) {
   };
 
   const initials = profile?.full_name?.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "R";
-  const isMobile = useIsMobile();
+  const { isMobile } = useViewMode();
 
   // ─────────── DESKTOP: sidebar navy + main ───────────
   if (!isMobile) {
@@ -236,6 +227,7 @@ export default function ParentPortal({ profile, onLogout, theme, setTheme }) {
             </div>
           </div>
         )}
+        <ViewToggle position="br" />
       </>
     );
   }
@@ -366,6 +358,7 @@ export default function ParentPortal({ profile, onLogout, theme, setTheme }) {
           </div>
         </div>
       )}
+      <ViewToggle position="br" />
     </>
   );
 }

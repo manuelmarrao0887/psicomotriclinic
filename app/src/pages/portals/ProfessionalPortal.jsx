@@ -3,17 +3,8 @@ import { Mark, Icon } from "../../lib/icons.jsx";
 import { Av, Btn, Card, Eyebrow, Tag } from "../../lib/ui.jsx";
 import { APP_VERSION, formatBuildDate, DAYS, HOURS } from "../../lib/constants.js";
 import { useStore } from "../../lib/store.jsx";
-
-function useIsMobile() {
-  const [is, setIs] = useState(() => typeof window !== "undefined" && window.matchMedia("(max-width: 899.98px)").matches);
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 899.98px)");
-    const h = (e) => setIs(e.matches);
-    mq.addEventListener?.("change", h) ?? mq.addListener(h);
-    return () => mq.removeEventListener?.("change", h) ?? mq.removeListener(h);
-  }, []);
-  return is;
-}
+import ViewToggle from "../../components/ViewToggle.jsx";
+import { useViewMode } from "../../lib/useViewMode.js";
 
 // 1. Vínculo explícito do director: professionals.profile_id === user.id (preferido).
 // 2. Fallback: match case-insensitive de profile.full_name → professionals.name.
@@ -56,7 +47,7 @@ export default function ProfessionalPortal({ profile, onLogout, theme, setTheme 
   }, [myPatients, todayLabel]);
 
   const initials = profile?.full_name?.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "P";
-  const isMobile = useIsMobile();
+  const { isMobile } = useViewMode();
 
   const openSessionNote = (patient) => {
     setForm({
@@ -164,6 +155,7 @@ export default function ProfessionalPortal({ profile, onLogout, theme, setTheme 
             {tab === "account"  && <ProAccount profile={profile} onLogout={onLogout} theme={theme} setTheme={setTheme} />}
           </main>
         </div>
+        <ViewToggle position="br" />
       </>
     );
   }
@@ -249,6 +241,7 @@ export default function ProfessionalPortal({ profile, onLogout, theme, setTheme 
           ))}
         </div>
       </nav>
+      <ViewToggle position="br" />
     </>
   );
 }
