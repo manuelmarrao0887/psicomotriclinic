@@ -26,7 +26,7 @@ export function normalizeInsurance(s) {
   return null;
 }
 export const CLINIC_CUT = 0.2;
-export const APP_VERSION = "v2.0.0-alpha.27";
+export const APP_VERSION = "v2.0.0-alpha.28";
 
 // Data/hora da última build — injectada pelo Vite em build (vite.config.js)
 // Em dev é o instante em que o servidor arrancou.

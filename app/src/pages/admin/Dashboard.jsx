@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useStore } from "../../lib/store.jsx";
 import { Av } from "../../lib/ui.jsx";
 import { Icon } from "../../lib/icons.jsx";
-import { DAYS, MES_PT } from "../../lib/constants.js";
+import { DAYS, HOURS, MES_PT, CLINIC_CUT } from "../../lib/constants.js";
 
 /* ── Briefing de gestão ──────────────────────────────────────────────
    Responde a uma pergunta: "como está a clínica hoje, e o que precisa de
@@ -38,7 +38,7 @@ function ageOnNext(dateStr) {
 }
 
 export default function Dashboard() {
-  const { profile, profs, pts, notes = [], pays = [], reqs = [], visits = [], users = [] } = useStore();
+  const { profile, profs, pts, notes = [], pays = [], reqs = [], visits = [], users = [], waitlist = [] } = useStore();
   const meDoc = users.find((u) => u.id === profile?.id);
   const myPhoto = meDoc?.photo_url || null;
   const myInitials = (profile?.full_name || "").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
@@ -284,6 +284,8 @@ export default function Dashboard() {
         </div>
 
         {/* Coluna lateral — pessoas */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <InsightsPanel pts={pts} profs={profs} pays={pays} notes={notes} waitlist={waitlist} navigate={navigate} />
         <Panel>
           <div className="mono" style={{ fontSize: 10.5, color: SUB }}>— PRÓXIMOS 30 DIAS</div>
           <div className="serif" style={{ fontSize: 20, color: INK, marginTop: 6, marginBottom: 16, letterSpacing: "-0.02em" }}>Aniversários</div>
@@ -318,8 +320,132 @@ export default function Dashboard() {
             </div>
           )}
         </Panel>
+        </div>
       </div>
     </div>
+  );
+}
+
+function InsightsPanel({ pts, profs, pays, notes, waitlist, navigate }) {
+  const now = new Date();
+  const months = [0, 1, 2].map((back) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - back, 1);
+    return `${MES_PT[d.getMonth()]} ${d.getFullYear()}`;
+  }).reverse();
+  const mrrByMonth = months.map((m) => (pays || []).filter((p) => p.month === m && p.status === "pago").reduce((s, p) => s + (+p.amount || 0), 0));
+  const mrr3 = mrrByMonth.reduce((s, v) => s + v, 0) / 3;
+  const curMrr = mrrByMonth[mrrByMonth.length - 1];
+  const prevMrr = mrrByMonth[mrrByMonth.length - 2] || 0;
+  const growth = prevMrr > 0 ? ((curMrr - prevMrr) / prevMrr) * 100 : null;
+
+  // Vagas: slots (day × hour) da grelha semanal que não estão ocupados por
+  // nenhum patient.day_of_week+hour. Só conta horas em uso pela clínica (as
+  // horas que já têm algum paciente em algum dia).
+  const usedHours = Array.from(new Set(pts.map((p) => p.hour).filter(Boolean))).sort();
+  const busyByDay = DAYS.map((d) => new Set(pts.filter((p) => p.day_of_week === d).map((p) => p.hour)));
+  const gapsByDay = DAYS.map((d, i) => usedHours.filter((h) => !busyByDay[i].has(h)).length);
+  const totalGaps = gapsByDay.reduce((s, v) => s + v, 0);
+
+  // Top-3 profs por receita do último mês
+  const curMonth = months[months.length - 1];
+  const revByProf = new Map();
+  (pays || []).filter((p) => p.month === curMonth && p.status === "pago").forEach((p) => {
+    let profId = p.professional_id;
+    if (!profId) {
+      const pt = pts.find((x) => x.id === p.patient_id);
+      profId = pt?.professional_id || pt?.professional_ids?.[0] || null;
+    }
+    if (!profId) return;
+    revByProf.set(profId, (revByProf.get(profId) || 0) + (+p.amount || 0));
+  });
+  const topProfs = Array.from(revByProf.entries())
+    .map(([profId, v]) => ({ prof: profs.find((x) => x.id === profId), v }))
+    .filter((x) => x.prof)
+    .sort((a, b) => b.v - a.v)
+    .slice(0, 3);
+
+  // Auto-match waitlist: sugestões simples
+  // Para cada waitlist entry activa, mostra "N vagas potenciais em X profissionais"
+  const activeWait = (waitlist || []).filter((w) => (w.status || "new") === "new" || w.status === "contacted").slice(0, 3);
+  const suggestions = activeWait.map((w) => ({
+    entry: w,
+    gaps: totalGaps,
+  }));
+
+  return (
+    <>
+    <div style={{ background: "#FFFFFF", border: "1px solid #EAE6DD", borderRadius: 14, padding: 20 }}>
+      <div className="mono" style={{ fontSize: 10.5, color: "#8A8A86" }}>— INSIGHTS</div>
+      <div className="serif" style={{ fontSize: 20, color: "#152741", marginTop: 6, marginBottom: 14, letterSpacing: "-0.02em" }}>Pulso do trimestre</div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+        <div style={{ padding: 12, background: "#F5F2EC", borderRadius: 10 }}>
+          <div className="mono" style={{ fontSize: 9.5, letterSpacing: ".14em", fontWeight: 700, color: "#8A8A86" }}>MRR MÉDIO 3M</div>
+          <div className="serif tnum" style={{ fontSize: 22, fontWeight: 300, color: "#152741", marginTop: 4 }}>{mrr3.toFixed(0)}€</div>
+        </div>
+        <div style={{ padding: 12, background: "#F5F2EC", borderRadius: 10 }}>
+          <div className="mono" style={{ fontSize: 9.5, letterSpacing: ".14em", fontWeight: 700, color: "#8A8A86" }}>CRESCIMENTO M/M</div>
+          <div className="serif tnum" style={{ fontSize: 22, fontWeight: 300, color: growth != null && growth < 0 ? "#B83A3A" : "#3D7A4A", marginTop: 4 }}>
+            {growth == null ? "—" : `${growth > 0 ? "+" : ""}${growth.toFixed(0)}%`}
+          </div>
+        </div>
+      </div>
+
+      {topProfs.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <div className="mono" style={{ fontSize: 9.5, letterSpacing: ".14em", fontWeight: 700, color: "#8A8A86", marginBottom: 8 }}>TOP · {curMonth.toUpperCase()}</div>
+          {topProfs.map((t, i) => {
+            const netCut = t.v * (1 - CLINIC_CUT);
+            return (
+              <div key={t.prof.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "6px 0", borderTop: i === 0 ? "none" : "1px dashed #EAE6DD" }}>
+                <span className="serif" style={{ fontSize: 16, color: "#8A8A86", width: 20 }}>{i + 1}</span>
+                <span style={{ flex: 1, fontSize: 13, fontWeight: 600, color: "#152741", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{t.prof.name}</span>
+                <span className="tnum" style={{ fontSize: 13, color: "#152741", fontWeight: 600 }}>{t.v.toFixed(0)}€</span>
+                <span className="tnum" style={{ fontSize: 11, color: "#8A8A86" }}>({netCut.toFixed(0)}€)</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Vagas por dia */}
+      <div style={{ marginTop: 16 }}>
+        <div className="mono" style={{ fontSize: 9.5, letterSpacing: ".14em", fontWeight: 700, color: "#8A8A86", marginBottom: 8 }}>VAGAS POTENCIAIS</div>
+        <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 60 }}>
+          {DAYS.map((d, i) => (
+            <div key={d} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+              <span className="tnum" style={{ fontSize: 11, color: "#152741", fontWeight: 600 }}>{gapsByDay[i]}</span>
+              <div style={{ width: "100%", background: gapsByDay[i] > 0 ? "#8DBF94" : "#EAE6DD", borderRadius: 4, height: Math.max(4, gapsByDay[i] * 6) }} />
+              <span className="mono" style={{ fontSize: 9, color: "#8A8A86" }}>{d.slice(0, 3).toUpperCase()}</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ fontSize: 11.5, color: "#8A8A86", marginTop: 8 }}>
+          {totalGaps === 0 ? "Sem vagas — grelha cheia." : `${totalGaps} slots livres na grelha semanal (com base nas horas em uso).`}
+        </div>
+      </div>
+
+      {suggestions.length > 0 && (
+        <div style={{ marginTop: 16, padding: 12, background: "#F5E5CD", borderRadius: 10, border: "1px solid #ECC58A" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+            <Icon name="clock" size={14} color="#C97A1F" />
+            <span className="mono" style={{ fontSize: 10, letterSpacing: ".12em", fontWeight: 700, color: "#C97A1F" }}>LISTA DE ESPERA · {suggestions.length}</span>
+          </div>
+          <div style={{ fontSize: 13, color: "#7A4A0E", lineHeight: 1.5, marginBottom: 8 }}>
+            {suggestions[0].gaps > 0
+              ? `Existem ${suggestions[0].gaps} vagas potenciais para os primeiros ${suggestions.length} contactos.`
+              : "Sem vagas atuais para os contactos em espera."}
+          </div>
+          <button onClick={() => navigate("/lista-espera")} className="ch" style={{
+            display: "inline-flex", alignItems: "center", gap: 5,
+            padding: "6px 10px", borderRadius: 8,
+            background: "#FFFFFF", border: "1px solid #ECC58A",
+            fontSize: 12, fontWeight: 600, color: "#7A4A0E", cursor: "pointer",
+          }}>Ver lista <Icon name="arr" size={12} /></button>
+        </div>
+      )}
+    </div>
+    </>
   );
 }
 

@@ -6,6 +6,20 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.28",
+    date: "2026-07-11",
+    title: "Sprint 4 — Dashboard InsightsPanel + Waitlist auto-match",
+    added: [
+      "Novo InsightsPanel na coluna lateral do Dashboard (director view): MRR médio 3 meses, crescimento M/M, Top-3 profissionais por receita do mês corrente (bruto + líquido).",
+      "Vagas potenciais: barras por dia útil mostrando slots livres (day × hour) na grelha semanal com base nas horas em uso pela clínica.",
+      "Auto-match card lista de espera: quando há waitlist entries ativas, mostra sugestão contextual com vagas potenciais e link para /lista-espera.",
+    ],
+    changed: [
+      "Coluna lateral do Dashboard passa a agrupar InsightsPanel + Aniversários com gap 14px.",
+    ],
+    removed: [],
+  },
+  {
     version: "v2.0.0-alpha.27",
     date: "2026-07-11",
     title: "Sprint 3 — Portal Responsável: Timeline de evolução + resumo semestral",
