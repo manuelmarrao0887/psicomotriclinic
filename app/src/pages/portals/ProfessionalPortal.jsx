@@ -895,7 +895,15 @@ export function ProFinance({ myPatients, myPayments, createPayment, togglePaymen
               </div>
               <div className="no-print" style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 22 }}>
                 <Btn variant="secondary" onClick={() => setReceiptFor(null)}>Fechar</Btn>
-                <Btn onClick={() => window.print()}>Imprimir</Btn>
+                <Btn onClick={() => {
+                  document.documentElement.classList.add("printing-receipt");
+                  const cleanup = () => {
+                    document.documentElement.classList.remove("printing-receipt");
+                    window.removeEventListener("afterprint", cleanup);
+                  };
+                  window.addEventListener("afterprint", cleanup);
+                  setTimeout(() => window.print(), 30);
+                }}>Imprimir</Btn>
               </div>
             </div>
           </div>

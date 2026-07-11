@@ -280,7 +280,7 @@ export default function Testes() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#F7F9FB" }}>
-      <div style={{
+      <div className="no-print" style={{
         position: "sticky", top: 0, zIndex: 40,
         paddingTop: "var(--safe-top)",
         background: "rgba(255,255,255,.88)",
@@ -340,7 +340,7 @@ export default function Testes() {
       </div>
 
       {/* Filtro + reset */}
-      <div style={{ maxWidth: 1100, margin: "0 auto", padding: "0 20px", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 16 }}>
+      <div className="no-print" style={{ maxWidth: 1100, margin: "0 auto", padding: "0 20px", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 16 }}>
         <div style={{ display: "flex", gap: 6, padding: 4, background: "#F5F2EC", borderRadius: 999 }}>
           {[
             { v: "all", l: "Todos" },
@@ -403,7 +403,7 @@ export default function Testes() {
                             <span className="mono" style={{ marginLeft: 8, fontSize: 10, color: "#8A8A86", fontWeight: 400 }}>{open ? "− ocultar" : "+ ver passos"}</span>
                           </button>
                         </div>
-                        <div style={{ display: "flex", gap: 4 }}>
+                        <div className="no-print" style={{ display: "flex", gap: 4 }}>
                           {[
                             { v: "pass", bg: "#8DBF94", c: "#FFFFFF", label: "Passa" },
                             { v: "fail", bg: "#B83A3A", c: "#FFFFFF", label: "Falha" },

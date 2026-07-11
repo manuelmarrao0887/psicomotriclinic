@@ -6,6 +6,19 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.33",
+    date: "2026-07-12",
+    title: "Fix — impressão deixava página em branco depois",
+    added: [],
+    changed: [
+      "@media print do recibo passa a estar escopado a html.printing-receipt (classe adicionada antes de window.print e removida via afterprint). Antes escondia todo o body em qualquer print, incluindo Manual e Testes — resultado: página em branco pós-print.",
+      "Regras gerais de print agora só: esconder .no-print, resetar sticky/fixed para static, e collapse do grid do Manual para 1 coluna.",
+      "Manual header + nav lateral marcados com no-print; Testes header + filtros + botões estado marcados com no-print. Imprimem apenas conteúdo útil.",
+      "Recibo: window.print encapsulado em try+listener afterprint para remover classe printing-receipt mesmo se o utilizador cancelar.",
+    ],
+    removed: [],
+  },
+  {
     version: "v2.0.0-alpha.32",
     date: "2026-07-12",
     title: "Testes: Falha auto-abre nota + relatório .md para o Claude",

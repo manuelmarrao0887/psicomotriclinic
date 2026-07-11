@@ -253,7 +253,7 @@ export default function Manual() {
 
   return (
     <div style={{ minHeight: "100vh", background: "#F7F9FB" }}>
-      <div style={{
+      <div className="no-print" style={{
         position: "sticky", top: 0, zIndex: 40,
         paddingTop: "var(--safe-top)",
         background: "rgba(255,255,255,.88)",
@@ -290,7 +290,7 @@ export default function Manual() {
 
       <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 20px 60px", display: "grid", gridTemplateColumns: "240px 1fr", gap: 32 }} className="manual-body">
         {/* Nav lateral */}
-        <aside className="manual-nav" style={{ position: "sticky", top: 80, alignSelf: "flex-start" }}>
+        <aside className="manual-nav no-print" style={{ position: "sticky", top: 80, alignSelf: "flex-start" }}>
           <div className="mono" style={{ fontSize: 9.5, letterSpacing: ".14em", fontWeight: 700, color: "#8A8A86", padding: "0 8px 8px" }}>— SECÇÕES</div>
           {SECTIONS.map((s) => {
             const isActive = active === s.id;
