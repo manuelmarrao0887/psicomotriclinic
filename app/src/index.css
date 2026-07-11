@@ -246,3 +246,20 @@ html.dark [style*="background:#152741"] { background: #08111F !important; }
     margin: 8px auto 4px;
   }
 }
+
+/* Impressão: apenas o recibo é impresso, tudo o resto some. */
+@media print {
+  body * { visibility: hidden !important; }
+  .receipt-print, .receipt-print * { visibility: visible !important; }
+  .receipt-print {
+    position: absolute !important;
+    inset: 0 !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    max-width: 100% !important;
+    padding: 40px !important;
+    background: #FFFFFF !important;
+  }
+  .no-print { display: none !important; }
+  .modal-overlay { background: transparent !important; backdrop-filter: none !important; padding: 0 !important; }
+}

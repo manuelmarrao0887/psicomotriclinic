@@ -1,7 +1,8 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Mark, Icon } from "../../lib/icons.jsx";
 import { Av, Btn, Card, Eyebrow, Tag, Field, Inp, Sel } from "../../lib/ui.jsx";
-import { APP_VERSION, formatBuildDate, DAYS, HOURS, MONTHS_2026, CLINIC_CUT } from "../../lib/constants.js";
+import { APP_VERSION, formatBuildDate, DAYS, HOURS, MONTHS_2026, MES_PT, CLINIC_CUT } from "../../lib/constants.js";
+import { downloadCsv } from "../../lib/csv.js";
 import { useStore } from "../../lib/store.jsx";
 import ViewToggle from "../../components/ViewToggle.jsx";
 import { useViewMode } from "../../lib/useViewMode.js";
@@ -610,9 +611,11 @@ function ProPatients({ myPatients, notes, onSessionNote, homeExercises, homeAssi
 }
 
 export function ProFinance({ myPatients, myPayments, createPayment, togglePayment, deletePayment, updatePayment }) {
+  const [view, setView] = useState("mes"); // "mes" | "ano" | "recibos"
   const [month, setMonth] = useState("");
   const [addOpen, setAddOpen] = useState(false);
   const [addForm, setAddForm] = useState({ patient_id: "", month: "", amount: "", status: "pendente", method: "", notes: "" });
+  const [receiptFor, setReceiptFor] = useState(null); // payment obj
   const [busy, setBusy] = useState(false);
 
   const months = useMemo(() => {
@@ -650,8 +653,72 @@ export function ProFinance({ myPatients, myPayments, createPayment, togglePaymen
     }
   };
 
+  // Agregado por mês (para vista Ano)
+  const byMonth = useMemo(() => {
+    const map = new Map();
+    for (const p of myPayments) {
+      const k = p.month || "—";
+      const cur = map.get(k) || { month: k, total: 0, paid: 0, pending: 0, count: 0 };
+      const amt = parseFloat(p.amount) || 0;
+      cur.total += amt;
+      cur.count += 1;
+      if (p.status === "pago") cur.paid += amt; else cur.pending += amt;
+      map.set(k, cur);
+    }
+    const arr = Array.from(map.values());
+    arr.sort((a, b) => MONTHS_2026.indexOf(a.month) - MONTHS_2026.indexOf(b.month));
+    return arr;
+  }, [myPayments]);
+
+  const yearTotal = byMonth.reduce((s, m) => s + m.paid, 0);
+  const yearClinic = yearTotal * CLINIC_CUT;
+  const yearNet = yearTotal - yearClinic;
+
+  const exportCsv = () => {
+    const rows = filtered.map((p) => {
+      const pt = myPatients.find((x) => x.id === p.patient_id);
+      return { ...p, patient_name: pt?.name || "" };
+    });
+    downloadCsv(`financeiro-${month || "todos"}.csv`, rows, [
+      { key: "patient_name", label: "Paciente" },
+      { key: "month", label: "Mês" },
+      { key: "amount", label: "Valor" },
+      { key: "status", label: "Estado" },
+      { key: "method", label: "Método" },
+      { key: "paid_date", label: "Data pag." },
+      { key: "notes", label: "Notas" },
+    ]);
+  };
+
+  const exportYearCsv = () => {
+    downloadCsv("financeiro-anual.csv", byMonth, [
+      { key: "month", label: "Mês" },
+      { key: "count", label: "Nº pag." },
+      { key: "total", label: "Total (€)" },
+      { key: "paid", label: "Recebido (€)" },
+      { key: "pending", label: "Pendente (€)" },
+    ]);
+  };
+
   return (
     <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* Sub-view switcher */}
+      <div style={{ display: "flex", gap: 6, padding: 4, background: "#F5F2EC", borderRadius: 999, alignSelf: "flex-start" }}>
+        {[
+          { v: "mes", l: "Mensal" },
+          { v: "ano", l: "Ano / IRS" },
+        ].map((x) => (
+          <button key={x.v} onClick={() => setView(x.v)} className="ch" style={{
+            padding: "7px 14px", borderRadius: 999,
+            background: view === x.v ? "#152741" : "transparent",
+            color: view === x.v ? "#F7F4EE" : "#5A5A58",
+            fontSize: 12.5, fontWeight: 600,
+            border: "none", cursor: "pointer",
+          }}>{x.l}</button>
+        ))}
+      </div>
+
+      {view === "mes" && <>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10 }}>
         <Card pad={16}>
           <div style={{ fontSize: 10.5, letterSpacing: ".14em", fontWeight: 700, color: "#8A8A86" }} className="mono">— TOTAL</div>
@@ -685,9 +752,12 @@ export function ProFinance({ myPatients, myPayments, createPayment, togglePaymen
         <div style={{ flex: 1, minWidth: 180 }}>
           <Sel value={month} onChange={setMonth} options={[{ v: "", l: "Todos os meses" }, ...months.map((m) => ({ v: m, l: m }))]} placeholder="Todos os meses" />
         </div>
+        <Btn variant="secondary" onClick={exportCsv} disabled={filtered.length === 0}>Exportar CSV</Btn>
         <Btn onClick={() => setAddOpen(true)} icon="plus">Registar</Btn>
       </div>
+      </>}
 
+      {view === "mes" && (
       <Card pad={0}>
         {filtered.length === 0 ? (
           <div style={{ padding: 24, fontSize: 14, color: "#8A8A86", textAlign: "center" }}>Sem pagamentos {month ? `em ${month}` : "registados"}.</div>
@@ -707,6 +777,11 @@ export function ProFinance({ myPatients, myPayments, createPayment, togglePaymen
                   <button onClick={() => togglePayment(p)} className="ch" style={{ padding: "5px 10px", borderRadius: 999, background: p.status === "pago" ? "#8DBF94" : "#F5D9A8", color: p.status === "pago" ? "#FFFFFF" : "#5A3B10", fontSize: 11.5, fontWeight: 600, border: "none", cursor: "pointer" }}>
                     {p.status === "pago" ? "Pago" : "Pendente"}
                   </button>
+                  {p.status === "pago" && (
+                    <button onClick={() => setReceiptFor(p)} className="ch" aria-label="Recibo" title="Ver recibo" style={{ padding: 6, borderRadius: 8, color: "#152741", background: "transparent", border: "none", cursor: "pointer", display: "flex" }}>
+                      <Icon name="clipboard" size={16} />
+                    </button>
+                  )}
                   <button onClick={() => { if (confirm("Eliminar pagamento?")) deletePayment(p); }} className="ch" aria-label="Eliminar" style={{ padding: 6, borderRadius: 8, color: "#B83A3A", background: "transparent", border: "none", cursor: "pointer", display: "flex" }}>
                     <Icon name="trash" size={16} />
                   </button>
@@ -716,6 +791,116 @@ export function ProFinance({ myPatients, myPayments, createPayment, togglePaymen
           </div>
         )}
       </Card>
+      )}
+
+      {view === "ano" && <>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 10 }}>
+        <Card pad={16}>
+          <div className="mono" style={{ fontSize: 10.5, letterSpacing: ".14em", fontWeight: 700, color: "#8DBF94" }}>— ANO · RECEBIDO</div>
+          <div className="serif" style={{ fontSize: 26, fontWeight: 300, color: "#152741", marginTop: 4 }}>{yearTotal.toFixed(0)}€</div>
+        </Card>
+        <Card pad={16}>
+          <div className="mono" style={{ fontSize: 10.5, letterSpacing: ".14em", fontWeight: 700, color: "#8A8A86" }}>— CASA ({(CLINIC_CUT * 100).toFixed(0)}%)</div>
+          <div className="serif" style={{ fontSize: 26, fontWeight: 300, color: "#152741", marginTop: 4 }}>{yearClinic.toFixed(0)}€</div>
+        </Card>
+        <Card pad={16}>
+          <div className="mono" style={{ fontSize: 10.5, letterSpacing: ".14em", fontWeight: 700, color: "#E8A13C" }}>— VOCÊ (LÍQUIDO)</div>
+          <div className="serif" style={{ fontSize: 26, fontWeight: 300, color: "#152741", marginTop: 4 }}>{yearNet.toFixed(0)}€</div>
+        </Card>
+      </div>
+      <Card pad={0}>
+        <div style={{ padding: "14px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #F5F2EC" }}>
+          <Eyebrow>— MENSAL</Eyebrow>
+          <Btn variant="secondary" size="sm" onClick={exportYearCsv} disabled={byMonth.length === 0}>Exportar CSV</Btn>
+        </div>
+        {byMonth.length === 0 ? (
+          <div style={{ padding: 24, fontSize: 14, color: "#8A8A86", textAlign: "center" }}>Sem dados anuais.</div>
+        ) : (
+          <div>
+            <div style={{ display: "grid", gridTemplateColumns: "1.4fr 0.6fr 1fr 1fr 1fr", padding: "10px 16px", background: "#F5F2EC", fontSize: 10.5, letterSpacing: ".1em", fontWeight: 700, color: "#8A8A86" }} className="mono">
+              <span>MÊS</span><span style={{ textAlign: "right" }}>Nº</span><span style={{ textAlign: "right" }}>TOTAL</span><span style={{ textAlign: "right" }}>RECEBIDO</span><span style={{ textAlign: "right" }}>PENDENTE</span>
+            </div>
+            {byMonth.map((m) => (
+              <div key={m.month} style={{ display: "grid", gridTemplateColumns: "1.4fr 0.6fr 1fr 1fr 1fr", padding: "12px 16px", borderTop: "1px solid #F5F2EC", fontSize: 13, alignItems: "center" }}>
+                <span style={{ fontWeight: 600, color: "#152741" }}>{m.month}</span>
+                <span style={{ textAlign: "right", color: "#8A8A86" }}>{m.count}</span>
+                <span style={{ textAlign: "right", color: "#152741" }}>{m.total.toFixed(0)}€</span>
+                <span style={{ textAlign: "right", color: "#8DBF94", fontWeight: 600 }}>{m.paid.toFixed(0)}€</span>
+                <span style={{ textAlign: "right", color: m.pending > 0 ? "#C97A1F" : "#8A8A86" }}>{m.pending.toFixed(0)}€</span>
+              </div>
+            ))}
+            <div style={{ display: "grid", gridTemplateColumns: "1.4fr 0.6fr 1fr 1fr 1fr", padding: "14px 16px", borderTop: "2px solid #152741", background: "#F7F9FB", fontSize: 13, fontWeight: 700 }}>
+              <span>TOTAL</span>
+              <span style={{ textAlign: "right" }}>{byMonth.reduce((s, m) => s + m.count, 0)}</span>
+              <span style={{ textAlign: "right", color: "#152741" }}>{byMonth.reduce((s, m) => s + m.total, 0).toFixed(0)}€</span>
+              <span style={{ textAlign: "right", color: "#8DBF94" }}>{yearTotal.toFixed(0)}€</span>
+              <span style={{ textAlign: "right", color: "#C97A1F" }}>{byMonth.reduce((s, m) => s + m.pending, 0).toFixed(0)}€</span>
+            </div>
+          </div>
+        )}
+      </Card>
+      <Card pad={16}>
+        <Eyebrow>— IRS</Eyebrow>
+        <div style={{ marginTop: 8, fontSize: 13, color: "#3C3C3B", lineHeight: 1.55 }}>
+          Rendimentos brutos recebidos: <b>{yearTotal.toFixed(2)}€</b>. Comissão paga à Casa ({(CLINIC_CUT * 100).toFixed(0)}%): {yearClinic.toFixed(2)}€. Valor líquido: <b>{yearNet.toFixed(2)}€</b>.
+        </div>
+        <div style={{ marginTop: 8, fontSize: 12.5, color: "#8A8A86" }}>
+          Nota: os valores refletem apenas pagamentos com estado <b>pago</b>. Exportar CSV para submissão fiscal.
+        </div>
+      </Card>
+      </>}
+
+      {receiptFor && (() => {
+        const pt = myPatients.find((x) => x.id === receiptFor.patient_id);
+        return (
+          <div onClick={() => setReceiptFor(null)} className="modal-overlay" role="dialog" aria-modal="true" style={{ position: "fixed", inset: 0, background: "rgba(21,39,65,.4)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
+            <div onClick={(e) => e.stopPropagation()} className="modal-panel receipt-print" style={{ background: "#FFFFFF", borderRadius: 18, width: "100%", maxWidth: 520, padding: 28 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 22 }}>
+                <div>
+                  <Eyebrow>— RECIBO</Eyebrow>
+                  <div className="serif" style={{ fontSize: 22, fontWeight: 300, color: "#152741", marginTop: 4 }}>Casa da Psicomotricidade</div>
+                  <div style={{ fontSize: 12, color: "#8A8A86", marginTop: 2 }}>Sessões de psicomotricidade</div>
+                </div>
+                <Mark size={44} />
+              </div>
+              <div style={{ borderTop: "1px solid #EAE6DD", borderBottom: "1px solid #EAE6DD", padding: "16px 0", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, fontSize: 13.5 }}>
+                <div>
+                  <div className="mono" style={{ fontSize: 10, letterSpacing: ".12em", color: "#8A8A86", fontWeight: 700 }}>PACIENTE</div>
+                  <div style={{ marginTop: 3, color: "#152741", fontWeight: 600 }}>{pt?.name || "—"}</div>
+                </div>
+                <div>
+                  <div className="mono" style={{ fontSize: 10, letterSpacing: ".12em", color: "#8A8A86", fontWeight: 700 }}>MÊS DE REFERÊNCIA</div>
+                  <div style={{ marginTop: 3, color: "#152741", fontWeight: 600 }}>{receiptFor.month || "—"}</div>
+                </div>
+                <div>
+                  <div className="mono" style={{ fontSize: 10, letterSpacing: ".12em", color: "#8A8A86", fontWeight: 700 }}>DATA PAGAMENTO</div>
+                  <div style={{ marginTop: 3, color: "#152741" }}>{receiptFor.paid_date || "—"}</div>
+                </div>
+                <div>
+                  <div className="mono" style={{ fontSize: 10, letterSpacing: ".12em", color: "#8A8A86", fontWeight: 700 }}>MÉTODO</div>
+                  <div style={{ marginTop: 3, color: "#152741" }}>{receiptFor.method || "—"}</div>
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 0", borderBottom: "2px solid #152741" }}>
+                <span style={{ fontSize: 13, color: "#5A5A58" }}>Valor total</span>
+                <span className="serif" style={{ fontSize: 32, fontWeight: 300, color: "#152741" }}>{parseFloat(receiptFor.amount || 0).toFixed(2)}€</span>
+              </div>
+              {receiptFor.notes && (
+                <div style={{ marginTop: 12, padding: 10, background: "#F5F2EC", borderRadius: 10, fontSize: 12.5, color: "#3C3C3B" }}>
+                  <b>Nota:</b> {receiptFor.notes}
+                </div>
+              )}
+              <div style={{ marginTop: 20, fontSize: 11, color: "#8A8A86", lineHeight: 1.55 }}>
+                Documento sem valor fiscal. Para efeitos de comparticipação (ADSE / SAMS / ADM) solicite fatura-recibo à Casa.
+              </div>
+              <div className="no-print" style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginTop: 22 }}>
+                <Btn variant="secondary" onClick={() => setReceiptFor(null)}>Fechar</Btn>
+                <Btn onClick={() => window.print()}>Imprimir</Btn>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {addOpen && (
         <div onClick={() => setAddOpen(false)} className="modal-overlay" role="dialog" aria-modal="true" style={{ position: "fixed", inset: 0, background: "rgba(21,39,65,.4)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>

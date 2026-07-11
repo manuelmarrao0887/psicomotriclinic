@@ -6,6 +6,21 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.26",
+    date: "2026-07-11",
+    title: "Sprint 2 — Vista Ano/IRS + CSV + Recibo imprimível no Portal Profissional",
+    added: [
+      "Nova sub-vista no tab Financeiro: Ano / IRS. Mostra 3 KPIs (Ano recebido / Casa 20% / Você líquido), tabela por mês (nº pag., total, recebido, pendente) com linha TOTAL e card IRS resumo.",
+      "Exportar CSV: mensal (todas as colunas do pagamento) e anual (agregado por mês).",
+      "Recibo imprimível — modal por pagamento pago com número/nome/mês/data/método/valor e botão Imprimir. CSS @media print oculta tudo exceto o recibo.",
+      "Switcher tabs Mensal / Ano dentro do tab Financeiro do Portal Profissional.",
+    ],
+    changed: [
+      "Row de pagamento no Portal Profissional ganha botão Recibo quando o estado é pago.",
+    ],
+    removed: [],
+  },
+  {
     version: "v2.0.0-alpha.25",
     date: "2026-07-11",
     title: "Sprint 1 — Pagamentos passam a ser geridos pelo Profissional",
