@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Mark, Icon } from "../../lib/icons.jsx";
 import { Av, Btn, Card, Eyebrow, Tag, Progress, Field, Inp, Sel } from "../../lib/ui.jsx";
 import { APP_VERSION, formatBuildDate, DAYS, HOURS } from "../../lib/constants.js";
@@ -406,7 +406,12 @@ function HomeTab({ myChildren, profs, plans, notes, pays, announcements, recentl
       {myChildren.length === 0 ? (
         <NoChildrenHelp />
       ) : (
-        myChildren.map((child) => <ChildCard key={child.id} child={child} profs={profs} plans={plans} notes={notes} pays={pays} onRequest={onRequest} onOpenDiary={() => setDiaryFor(child)} onOpenChat={() => setChatFor(child)} />)
+        myChildren.map((child) => (
+          <Fragment key={child.id}>
+            <ChildCard child={child} profs={profs} plans={plans} notes={notes} pays={pays} onRequest={onRequest} onOpenDiary={() => setDiaryFor(child)} onOpenChat={() => setChatFor(child)} />
+            <EvolutionTimeline child={child} notes={notes} />
+          </Fragment>
+        ))
       )}
 
       {diaryFor && <DiaryModal child={diaryFor} onClose={() => setDiaryFor(null)} onSave={async (d) => { await addBehaviorEntry(diaryFor.id, d); setDiaryFor(null); }} recent={behaviorDiary.filter((x) => x.patient_id === diaryFor.id).slice(0, 5)} />}
@@ -525,6 +530,91 @@ function ChatModal({ child, profs, onClose, onSend, messages }) {
         </div>
       </div>
     </div>
+  );
+}
+
+function EvolutionTimeline({ child, notes }) {
+  const childNotes = useMemo(() => (notes || [])
+    .filter((n) => n.patient_id === child.id && (n.progress || n.work_done || n.next_focus))
+    .sort((a, b) => (b.date || "").localeCompare(a.date || ""))
+    .slice(0, 6), [notes, child.id]);
+
+  const semester = useMemo(() => {
+    const cutoff = new Date(); cutoff.setMonth(cutoff.getMonth() - 6);
+    const cutoffStr = cutoff.toISOString().slice(0, 10);
+    const semNotes = (notes || []).filter((n) => n.patient_id === child.id && (n.date || "") >= cutoffStr);
+    const total = semNotes.length;
+    const realizadas = semNotes.filter((n) => n.status === "realizada").length;
+    const faltas = semNotes.filter((n) => n.status === "falta").length;
+    const domains = new Set();
+    semNotes.forEach((n) => (n.domains || []).forEach((d) => domains.add(d)));
+    return { total, realizadas, faltas, domains: Array.from(domains) };
+  }, [notes, child.id]);
+
+  if (childNotes.length === 0) return null;
+
+  return (
+    <Card pad={18} style={{ background: "linear-gradient(180deg, #FFFFFF 0%, #F7F9FB 100%)" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+        <Eyebrow>— EVOLUÇÃO · {child.name.split(" ")[0].toUpperCase()}</Eyebrow>
+        <span className="mono" style={{ fontSize: 10.5, color: "#8A8A86" }}>ÚLTIMOS 6 MESES</span>
+      </div>
+
+      {/* Sumário semestral */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginBottom: 18 }}>
+        <div style={{ padding: 10, background: "#F5F2EC", borderRadius: 10, textAlign: "center" }}>
+          <div className="serif" style={{ fontSize: 20, fontWeight: 300, color: "#152741" }}>{semester.realizadas}</div>
+          <div style={{ fontSize: 10.5, color: "#8A8A86", marginTop: 2 }}>Sessões</div>
+        </div>
+        <div style={{ padding: 10, background: "#F5F2EC", borderRadius: 10, textAlign: "center" }}>
+          <div className="serif" style={{ fontSize: 20, fontWeight: 300, color: "#C97A1F" }}>{semester.faltas}</div>
+          <div style={{ fontSize: 10.5, color: "#8A8A86", marginTop: 2 }}>Faltas</div>
+        </div>
+        <div style={{ padding: 10, background: "#F5F2EC", borderRadius: 10, textAlign: "center" }}>
+          <div className="serif" style={{ fontSize: 20, fontWeight: 300, color: "#8DBF94" }}>{semester.domains.length}</div>
+          <div style={{ fontSize: 10.5, color: "#8A8A86", marginTop: 2 }}>Áreas</div>
+        </div>
+      </div>
+
+      {semester.domains.length > 0 && (
+        <div style={{ marginBottom: 16, display: "flex", flexWrap: "wrap", gap: 6 }}>
+          {semester.domains.slice(0, 8).map((d) => (
+            <span key={d} className="mono" style={{ fontSize: 10, padding: "3px 8px", borderRadius: 999, background: "#DCE7F0", color: "#1E3556", fontWeight: 600 }}>{d}</span>
+          ))}
+        </div>
+      )}
+
+      {/* Timeline vertical */}
+      <div style={{ position: "relative", paddingLeft: 24 }}>
+        <div aria-hidden="true" style={{ position: "absolute", left: 7, top: 6, bottom: 6, width: 2, background: "#EAE6DD" }} />
+        {childNotes.map((n, i) => {
+          const d = n.date ? new Date(n.date) : null;
+          const label = d ? `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}` : "—";
+          return (
+            <div key={n.id || i} style={{ position: "relative", marginBottom: i === childNotes.length - 1 ? 0 : 16 }}>
+              <div aria-hidden="true" style={{ position: "absolute", left: -22, top: 4, width: 12, height: 12, borderRadius: 999, background: "#E8A13C", border: "3px solid #F7F9FB" }} />
+              <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 4 }}>
+                <span className="mono" style={{ fontSize: 10.5, letterSpacing: ".08em", fontWeight: 700, color: "#8A8A86" }}>{label}</span>
+                {n.status && n.status !== "realizada" && (
+                  <span className="mono" style={{ fontSize: 9.5, padding: "1px 6px", borderRadius: 999, background: "#F5E5CD", color: "#7A4A0E", fontWeight: 700 }}>{n.status.toUpperCase()}</span>
+                )}
+              </div>
+              {n.progress && (
+                <div style={{ fontSize: 13.5, color: "#152741", lineHeight: 1.5, marginBottom: 4 }}>
+                  <GlossaryText text={n.progress} />
+                </div>
+              )}
+              {(n.work_done || n.next_focus) && (
+                <div style={{ fontSize: 12.5, color: "#5A5A58", lineHeight: 1.5 }}>
+                  {n.work_done && <div>Trabalhado: <GlossaryText text={n.work_done} /></div>}
+                  {n.next_focus && <div style={{ marginTop: 2 }}>Próximo: <GlossaryText text={n.next_focus} /></div>}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </Card>
   );
 }
 

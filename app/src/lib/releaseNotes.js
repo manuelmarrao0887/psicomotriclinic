@@ -6,6 +6,19 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.27",
+    date: "2026-07-11",
+    title: "Sprint 3 — Portal Responsável: Timeline de evolução + resumo semestral",
+    added: [
+      "Novo card EvolutionTimeline por filho no Portal Responsável (HomeTab). Mostra últimas 6 notas de sessão com data, progresso, trabalho realizado e próximo foco.",
+      "Sumário semestral 3 KPIs: nº de sessões realizadas, faltas, áreas trabalhadas. Chips das áreas (domains) da sessão.",
+      "GlossaryText aplicado nos campos progress/work_done/next_focus da timeline — termos técnicos ficam com underline dotted âmbar e definição no hover/tap.",
+      "Visualmente: timeline vertical com dots âmbar sobre linha bege, agrupado por Card com gradient sutil.",
+    ],
+    changed: [],
+    removed: [],
+  },
+  {
     version: "v2.0.0-alpha.26",
     date: "2026-07-11",
     title: "Sprint 2 — Vista Ano/IRS + CSV + Recibo imprimível no Portal Profissional",
