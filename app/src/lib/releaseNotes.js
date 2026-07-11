@@ -6,6 +6,20 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.19",
+    date: "2026-06-22",
+    title: "Sprint 3 partial — Pro atribui exercícios + Speech-to-text",
+    added: [
+      "Portal Profissional: em cada paciente, novo botão 'Atribuir exercício' abre modal com dropdown da biblioteca + notas custom para o responsável. Cria home_practice_assignments com professional_id=pro. Vista das atribuições ativas mostra-se logo abaixo do paciente com botão remover.",
+      "Speech-to-text no modal de nota de sessão — 4 textareas (Trabalho realizado, Observações clínicas, Evolução, Próximo plano) ganham botão 'Ditar' que usa Web Speech API (SpeechRecognition, pt-PT). Só aparece se browser suporta. Continuous mode: toca uma vez para começar, outra para parar. Texto vai sendo appended ao campo.",
+      "components/DictateButton.jsx — componente auto-contido. Pulse na barra de gravação. Suporte: Chrome/Edge OK, Safari parcial, Firefox não (botão não aparece).",
+    ],
+    changed: [
+      "ModalsHost sessionNote: labels dos 4 campos textareas passam a ser JSX com botão Ditar inline à direita.",
+    ],
+    removed: [],
+  },
+  {
     version: "v2.0.0-alpha.18",
     date: "2026-06-22",
     title: "Sprint 1+2 — Portal desktop tweaks, Dashboard Hoje, Lista de espera, Biblioteca exercícios, Plano de casa",

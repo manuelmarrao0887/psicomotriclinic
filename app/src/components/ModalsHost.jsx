@@ -2,6 +2,7 @@ import { useStore } from "../lib/store.jsx";
 import { Btn, Field, Inp, Sel, Modal, Eyebrow } from "../lib/ui.jsx";
 import { Icon } from "../lib/icons.jsx";
 import { DAYS, HOURS, MONTHS_2026, INSURANCES, INSURANCE_LABEL } from "../lib/constants.js";
+import DictateButton from "./DictateButton.jsx";
 
 // Domínios de psicomotricidade — usados nas notas de sessão e plano.
 const PSM_DOMAINS = [
@@ -296,10 +297,10 @@ export default function ModalsHost() {
           </div>
         </Field>
 
-        <Field label="Trabalho realizado"><Ta value={form.snWork || ""} onChange={(e) => set("snWork", e.target.value)} placeholder="Atividades, materiais, sequência da sessão..." /></Field>
-        <Field label="Observações clínicas"><Ta value={form.snObs || ""} onChange={(e) => set("snObs", e.target.value)} placeholder="Comportamento, respostas, dificuldades, momentos significativos por domínio..." /></Field>
-        <Field label="Evolução observada"><Ta value={form.snProgress || ""} onChange={(e) => set("snProgress", e.target.value)} placeholder="Progresso face à sessão anterior, objetivos atingidos..." /></Field>
-        <Field label="Plano para a próxima sessão"><Ta value={form.snNext || ""} onChange={(e) => set("snNext", e.target.value)} placeholder="O que trabalhar a seguir, materiais a preparar..." /></Field>
+        <Field label={<span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>Trabalho realizado <DictateButton onAppend={(t) => set("snWork", (form.snWork || "") + t)} /></span>}><Ta value={form.snWork || ""} onChange={(e) => set("snWork", e.target.value)} placeholder="Atividades, materiais, sequência da sessão..." /></Field>
+        <Field label={<span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>Observações clínicas <DictateButton onAppend={(t) => set("snObs", (form.snObs || "") + t)} /></span>}><Ta value={form.snObs || ""} onChange={(e) => set("snObs", e.target.value)} placeholder="Comportamento, respostas, dificuldades, momentos significativos por domínio..." /></Field>
+        <Field label={<span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>Evolução observada <DictateButton onAppend={(t) => set("snProgress", (form.snProgress || "") + t)} /></span>}><Ta value={form.snProgress || ""} onChange={(e) => set("snProgress", e.target.value)} placeholder="Progresso face à sessão anterior, objetivos atingidos..." /></Field>
+        <Field label={<span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}>Plano para a próxima sessão <DictateButton onAppend={(t) => set("snNext", (form.snNext || "") + t)} /></span>}><Ta value={form.snNext || ""} onChange={(e) => set("snNext", e.target.value)} placeholder="O que trabalhar a seguir, materiais a preparar..." /></Field>
 
         <div style={{ display: "flex", gap: 10, justifyContent: "flex-end", marginTop: 14 }}>
           <Btn variant="secondary" onClick={() => setModal(null)}>Cancelar</Btn>

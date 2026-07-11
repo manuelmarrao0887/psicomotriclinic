@@ -19,7 +19,7 @@ function findMyProfRecord(profs, userId, fullName) {
 }
 
 export default function ProfessionalPortal({ profile, onLogout, theme, setTheme }) {
-  const { pts, profs, notes, announcements, users = [], setForm, setModal, quickMarkFalta } = useStore();
+  const { pts, profs, notes, announcements, users = [], homeExercises = [], homeAssignments = [], assignHomeExercise, unassignHomeExercise, parentMessages = [], replyToParent, markMessageRead, setNotificationPrefs, setForm, setModal, quickMarkFalta } = useStore();
   const meDoc = users.find((u) => u.id === profile?.id);
   const myPhoto = meDoc?.photo_url || null;
   const [tab, setTab] = useState("home"); // home | agenda | patients | account
@@ -101,7 +101,7 @@ export default function ProfessionalPortal({ profile, onLogout, theme, setTheme 
 
         {tab === "home"     && <ProHome myProfId={myProfId} myPatients={myPatients} todaysSessions={todaysSessions} todayLabel={todayLabel} notes={notes} announcements={announcements} onSessionNote={openSessionNote} onMarkFalta={(p) => quickMarkFalta(p.id, myProfId)} />}
         {tab === "agenda"   && <ProAgenda myPatients={myPatients} profs={profs} />}
-        {tab === "patients" && <ProPatients myPatients={myPatients} notes={notes} onSessionNote={openSessionNote} />}
+        {tab === "patients" && <ProPatients myPatients={myPatients} notes={notes} onSessionNote={openSessionNote} homeExercises={homeExercises} homeAssignments={homeAssignments} assignHomeExercise={assignHomeExercise} unassignHomeExercise={unassignHomeExercise} />}
         {tab === "account"  && <ProAccount profile={profile} onLogout={onLogout} theme={theme} setTheme={setTheme} />}
       </main>
 
@@ -349,10 +349,19 @@ function ProAgenda({ myPatients, profs }) {
   );
 }
 
-function ProPatients({ myPatients, notes, onSessionNote }) {
+function ProPatients({ myPatients, notes, onSessionNote, homeExercises, homeAssignments, assignHomeExercise, unassignHomeExercise }) {
   const [search, setSearch] = useState("");
+  const [assignFor, setAssignFor] = useState(null);
+  const [assignForm, setAssignForm] = useState({ exercise_id: "", custom_notes: "" });
   const filtered = myPatients.filter((p) => !search || p.name.toLowerCase().includes(search.toLowerCase()));
   if (myPatients.length === 0) return <NoProfRecord />;
+
+  const doAssign = async () => {
+    if (!assignFor || !assignForm.exercise_id) return;
+    await assignHomeExercise(assignFor.id, assignForm.exercise_id, assignForm.custom_notes);
+    setAssignFor(null);
+    setAssignForm({ exercise_id: "", custom_notes: "" });
+  };
 
   return (
     <div style={{ marginTop: 14, display: "flex", flexDirection: "column", gap: 14 }}>
@@ -378,14 +387,61 @@ function ProPatients({ myPatients, notes, onSessionNote }) {
                 </div>
                 <Tag type="default">{myNotesCount} {myNotesCount === 1 ? "nota" : "notas"}</Tag>
               </div>
-              <div style={{ marginTop: 12 }}>
-                <Btn size="sm" variant="secondary" icon={<Icon name="plus" size={13} />} onClick={() => onSessionNote(p)} style={{ width: "100%" }}>Registar nota de sessão</Btn>
+              <div style={{ marginTop: 12, display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <Btn size="sm" variant="secondary" icon={<Icon name="plus" size={13} />} onClick={() => onSessionNote(p)}>Nota de sessão</Btn>
+                <Btn size="sm" variant="accent" icon={<Icon name="trend" size={13} />} onClick={() => setAssignFor(p)}>Atribuir exercício</Btn>
               </div>
+              {(() => {
+                const active = homeAssignments.filter((a) => a.patient_id === p.id && a.active !== false);
+                if (active.length === 0) return null;
+                return (
+                  <div style={{ marginTop: 10, padding: 10, background: "#F5F2EC", borderRadius: 10 }}>
+                    <div className="mono" style={{ fontSize: 10, color: "#8A8A86", marginBottom: 6 }}>PLANO DE CASA ATIVO · {active.length}</div>
+                    {active.map((a) => {
+                      const ex = homeExercises.find((x) => x.id === a.exercise_id);
+                      return (
+                        <div key={a.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "4px 0", fontSize: 12 }}>
+                          <span style={{ color: "#152741" }}>{ex?.title || "—"}</span>
+                          <button onClick={() => unassignHomeExercise(a.id)} aria-label="Remover atribuição" style={{ padding: 4, background: "transparent", border: "none", color: "#B83A3A", cursor: "pointer", display: "flex" }}><Icon name="x" size={12} /></button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </Card>
           );
         })}
         {filtered.length === 0 && <div style={{ fontSize: 13.5, color: "#8A8A86", textAlign: "center", padding: 24 }}>Sem resultados.</div>}
       </div>
+
+      {assignFor && (
+        <div onClick={() => setAssignFor(null)} className="modal-overlay" role="dialog" aria-modal="true" style={{ position: "fixed", inset: 0, background: "rgba(21,39,65,.4)", backdropFilter: "blur(4px)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24, animation: "fu .2s ease both" }}>
+          <div onClick={(e) => e.stopPropagation()} className="modal-panel" style={{ background: "#FFFFFF", borderRadius: 18, width: "100%", maxWidth: 460, padding: 22, border: "1px solid #EAE6DD", boxShadow: "0 24px 64px rgba(21,39,65,.18)" }}>
+            <Eyebrow>— ATRIBUIR EXERCÍCIO</Eyebrow>
+            <div className="serif" style={{ fontSize: 20, fontWeight: 400, color: "#152741", marginTop: 4, marginBottom: 14 }}>Plano de casa · {assignFor.name}</div>
+            {homeExercises.length === 0 ? (
+              <div style={{ padding: 16, background: "#F5E5CD", color: "#C97A1F", borderRadius: 10, fontSize: 13 }}>
+                Biblioteca vazia. Pede à direção para adicionar exercícios em /exercicios.
+              </div>
+            ) : (
+              <>
+                <div style={{ fontSize: 12, color: "#5A5A58", marginBottom: 6, fontWeight: 500 }}>Exercício</div>
+                <select value={assignForm.exercise_id} onChange={(e) => setAssignForm((f) => ({ ...f, exercise_id: e.target.value }))} style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FFFFFF", marginBottom: 12, fontFamily: "inherit" }}>
+                  <option value="">Selecionar…</option>
+                  {homeExercises.map((ex) => <option key={ex.id} value={ex.id}>{ex.title}</option>)}
+                </select>
+                <div style={{ fontSize: 12, color: "#5A5A58", marginBottom: 6, fontWeight: 500 }}>Notas para o responsável (opcional)</div>
+                <textarea value={assignForm.custom_notes} onChange={(e) => setAssignForm((f) => ({ ...f, custom_notes: e.target.value }))} placeholder="Ex: fazer 3× por semana, focar na coordenação…" style={{ width: "100%", padding: "11px 14px", borderRadius: 10, border: "1px solid #D9D3C5", fontSize: 14, background: "#FFFFFF", minHeight: 80, resize: "vertical", fontFamily: "inherit", marginBottom: 12 }} />
+              </>
+            )}
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+              <Btn variant="secondary" onClick={() => setAssignFor(null)}>Cancelar</Btn>
+              <Btn onClick={doAssign} disabled={!assignForm.exercise_id}>Atribuir</Btn>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
