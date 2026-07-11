@@ -6,6 +6,20 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.22",
+    date: "2026-07-11",
+    title: "Desktop full — sidebar navy nos Portais Responsável e Profissional",
+    added: [
+      "Portal Responsável (desktop ≥900px): layout grid 260px + 1fr. Sidebar navy com brand, secção MEUS FILHOS (cada filho como item com foto e dia), NAVEGAÇÃO (4 links com badge de pedidos), perfil no fundo com foto + toggle tema + logout.",
+      "Portal Profissional (desktop ≥900px): mesmo layout. Secção HOJE lista sessões do dia com hora inline. NAVEGAÇÃO com badge de mensagens não respondidas. Perfil no fundo.",
+      "Hook useIsMobile em ambos portais reage a matchMedia (max-width: 899.98px) para trocar entre render mobile e desktop sem reload.",
+    ],
+    changed: [
+      "Mobile continua com top-bar + bottom tab bar (iOS-like). Desktop deixa de mostrar a bottom tab bar em portais e passa a mostrar sidebar.",
+    ],
+    removed: [],
+  },
+  {
     version: "v2.0.0-alpha.21",
     date: "2026-06-22",
     title: "Sprint 4 finale — Onboarding tour + FAQ glossário psicomotor",
