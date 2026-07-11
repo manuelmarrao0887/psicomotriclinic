@@ -181,8 +181,78 @@ export default function Testes() {
   useEffect(() => { localStorage.setItem(STORAGE_KEY_STATE, JSON.stringify(state)); }, [state]);
   useEffect(() => { localStorage.setItem(STORAGE_KEY_NOTES, JSON.stringify(notes)); }, [notes]);
 
-  const setResult = (id, v) => setState((s) => ({ ...s, [id]: s[id] === v ? undefined : v }));
+  const setResult = (id, v) => {
+    setState((s) => ({ ...s, [id]: s[id] === v ? undefined : v }));
+    // Ao marcar Falha, abre automaticamente o painel de detalhe para que
+    // se possa escrever a nota do defeito imediatamente.
+    if (v === "fail") setOpenId(id);
+  };
   const setNote = (id, v) => setNotes((n) => ({ ...n, [id]: v }));
+
+  const buildReport = () => {
+    const failed = GROUPS.flatMap((g) => g.tests.map((t) => ({ ...t, group: g.title, groupId: g.id })))
+      .filter((t) => state[t.id] === "fail");
+    if (failed.length === 0) return null;
+    const lines = [];
+    lines.push(`# Relatório de falhas — ${APP_VERSION}`);
+    lines.push("");
+    lines.push(`Data: ${new Date().toLocaleDateString("pt-PT")} · Total falhas: **${failed.length}**`);
+    lines.push("");
+    lines.push("Contexto para o Claude corrigir. Cada falha inclui: ID, título, passos, resultado esperado e nota do QA (o que aconteceu ou o que se pretende alterar).");
+    lines.push("");
+    const byGroup = {};
+    failed.forEach((t) => { (byGroup[t.group] ||= []).push(t); });
+    Object.entries(byGroup).forEach(([gTitle, tests]) => {
+      lines.push(`## ${gTitle}`);
+      lines.push("");
+      tests.forEach((t) => {
+        lines.push(`### ${t.id} — ${t.title}`);
+        lines.push("");
+        lines.push("**Passos:**");
+        t.steps.forEach((s, i) => lines.push(`${i + 1}. ${s}`));
+        lines.push("");
+        lines.push(`**Esperado:** ${t.expect}`);
+        lines.push("");
+        const note = (notes[t.id] || "").trim();
+        lines.push(`**Nota do QA:** ${note || "_(sem nota)_"}`);
+        lines.push("");
+        lines.push("**Ação pretendida:** _(descrever fix esperado)_");
+        lines.push("");
+        lines.push("---");
+        lines.push("");
+      });
+    });
+    return lines.join("\n");
+  };
+
+  const [copied, setCopied] = useState(false);
+  const copyReport = async () => {
+    const md = buildReport();
+    if (!md) { alert("Sem falhas registadas."); return; }
+    try {
+      await navigator.clipboard.writeText(md);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2200);
+    } catch {
+      // Fallback — cria download
+      const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = `falhas-${APP_VERSION}.md`;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+  };
+  const downloadReport = () => {
+    const md = buildReport();
+    if (!md) { alert("Sem falhas registadas."); return; }
+    const blob = new Blob([md], { type: "text/markdown;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = `falhas-${APP_VERSION}.md`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   const counts = useMemo(() => {
     const flat = GROUPS.flatMap((g) => g.tests);
@@ -288,7 +358,17 @@ export default function Testes() {
           ))}
         </div>
         <div style={{ flex: 1 }} />
-        <Btn variant="secondary" size="sm" onClick={resetAll}>Repor estado</Btn>
+        {counts.fail > 0 && (
+          <>
+            <Btn variant="secondary" size="sm" onClick={copyReport} icon="copy">
+              {copied ? "Copiado ✓" : `Copiar relatório (${counts.fail})`}
+            </Btn>
+            <Btn variant="secondary" size="sm" onClick={downloadReport} icon="clipboard">
+              .md
+            </Btn>
+          </>
+        )}
+        <Btn variant="secondary" size="sm" onClick={resetAll}>Repor</Btn>
       </div>
 
       {/* Grupos */}
@@ -347,8 +427,14 @@ export default function Testes() {
                           </ol>
                           <div className="mono" style={{ fontSize: 10, letterSpacing: ".12em", fontWeight: 700, color: "#8A8A86", marginTop: 10, marginBottom: 4 }}>RESULTADO ESPERADO</div>
                           <div style={{ padding: 10, background: "#F5F2EC", borderRadius: 8 }}>{t.expect}</div>
-                          <div className="mono" style={{ fontSize: 10, letterSpacing: ".12em", fontWeight: 700, color: "#8A8A86", marginTop: 10, marginBottom: 4 }}>NOTA</div>
-                          <textarea value={notes[t.id] || ""} onChange={(e) => setNote(t.id, e.target.value)} placeholder="Observações desta iteração (opcional)…" style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: "1px solid #EAE6DD", fontSize: 13, fontFamily: "inherit", background: "#FFFFFF", minHeight: 60, resize: "vertical" }} />
+                          <div className="mono" style={{ fontSize: 10, letterSpacing: ".12em", fontWeight: 700, color: st === "fail" ? "#B83A3A" : "#8A8A86", marginTop: 10, marginBottom: 4 }}>NOTA {st === "fail" && "· descrever defeito"}</div>
+                          <textarea value={notes[t.id] || ""} onChange={(e) => setNote(t.id, e.target.value)} placeholder={st === "fail" ? "O que aconteceu? O que se pretende alterar? (será incluído no relatório para o Claude)" : "Observações desta iteração (opcional)…"} style={{ width: "100%", padding: "8px 10px", borderRadius: 8, border: `1px solid ${st === "fail" ? "#B83A3A" : "#EAE6DD"}`, fontSize: 13, fontFamily: "inherit", background: "#FFFFFF", minHeight: 60, resize: "vertical" }} />
+                          {st === "fail" && (
+                            <div style={{ marginTop: 8, padding: 10, background: "#F5E5CD", borderRadius: 8, fontSize: 12.5, color: "#7A4A0E", display: "flex", alignItems: "flex-start", gap: 8 }}>
+                              <Icon name="warn" size={14} />
+                              <span>Esta nota entra no relatório de falhas. Clica <b>Copiar relatório</b> no topo para colar no chat do Claude.</span>
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>

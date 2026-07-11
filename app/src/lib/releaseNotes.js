@@ -6,6 +6,20 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.32",
+    date: "2026-07-12",
+    title: "Testes: Falha auto-abre nota + relatório .md para o Claude",
+    added: [
+      "Ao marcar Falha num teste, o painel de detalhe abre automaticamente com o textarea de nota em foco visual (borda vermelha + placeholder específico).",
+      "Callout amarelo dentro do painel de falha lembra que a nota entra no relatório para o Claude.",
+      "Botão Copiar relatório na barra do topo (só visível se counts.fail > 0) — gera markdown estruturado com todas as falhas (grupo, ID, título, passos, esperado, nota, campo Ação pretendida) e escreve no clipboard. Fallback download .md.",
+      "Botão .md separado para download direto do relatório.",
+      "Novo docs/qa-testing-skill.md — skill portátil para replicar a página /testes noutro projeto React + Router. Descreve estrutura GROUPS, estado localStorage, formato do relatório, tokens visuais, checklist de portabilidade e anti-padrões.",
+    ],
+    changed: [],
+    removed: [],
+  },
+  {
     version: "v2.0.0-alpha.31",
     date: "2026-07-12",
     title: "Manual + Testes + idade auto + fix Sel duplicado \"—\"",
