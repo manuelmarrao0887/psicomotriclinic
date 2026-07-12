@@ -6,6 +6,17 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.35",
+    date: "2026-07-12",
+    title: "Fix — 1ª página em branco na impressão de páginas admin",
+    added: [],
+    changed: [
+      "AdminLayout tinha min-height:100vh no grid + sidebar 260px sticky com height:100vh: em print isso reservava 1 folha inteira para nada antes de o conteúdo começar.",
+      "@media print agora: aside admin display:none, min-height 0, grid colapsado para block, sticky/fixed → static com height:auto, e reduz paddings dos title-header e do wrapper de MyFinance/Finance para 12px.",
+    ],
+    removed: [],
+  },
+  {
     version: "v2.0.0-alpha.34",
     date: "2026-07-12",
     title: "Fix — impressão branca causada por dark mode + text-color !important",
