@@ -6,6 +6,20 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.34",
+    date: "2026-07-12",
+    title: "Fix — impressão branca causada por dark mode + text-color !important",
+    added: [],
+    changed: [
+      "Root cause: os selectors html.dark aplicavam color/background com !important globalmente. Em @media print, o browser esconde backgrounds por defeito → texto creme #E8E3D7 em fundo branco = invisível.",
+      "@media print agora força light theme: color #152741, background #FFFFFF em html/body/#root/todos os elementos. -webkit-print-color-adjust: exact e print-color-adjust: exact preservam accents esperados.",
+      "Neutralizados fundos navy escuros para branco no print (rgb 21,39,65 / 8,17,31 / 14,26,44 / 26,42,68).",
+      "Amber #E8A13C convertido para sand claro no print para manter accents legíveis a p/b.",
+      "Recibo mantém isolamento por visibility:hidden global + visibility:visible do .receipt-print.",
+    ],
+    removed: [],
+  },
+  {
     version: "v2.0.0-alpha.33",
     date: "2026-07-12",
     title: "Fix — impressão deixava página em branco depois",

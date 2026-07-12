@@ -269,12 +269,57 @@ html.dark input, html.dark select, html.dark textarea { background: #1A2A44 !imp
   }
 }
 
-/* Impressão do recibo: só entra em vigor quando html tem .printing-receipt
-   (adicionada por JS antes de window.print e removida depois). Assim as
-   páginas Manual/Testes/etc. imprimem normalmente sem ficar em branco. */
+/* ─────────────────────────── IMPRESSÃO ─────────────────────────── */
 @media print {
+  /* Force light theme: browser esconde background colors por defeito.
+     Se estivermos em dark mode, texto claro em fundo branco = invisível.
+     Aqui reset agressivo para tudo aparecer legível em papel. */
+  html, html.dark, html.dark body, body, #root {
+    background: #FFFFFF !important;
+    color: #152741 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  html.dark *, * {
+    color: #152741 !important;
+    border-color: #EAE6DD !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    filter: none !important;
+    backdrop-filter: none !important;
+  }
+  html.dark [style*="rgb(232, 227, 215)"], html.dark [style*="rgb(216, 211, 199)"], html.dark [style*="rgb(169, 163, 154)"], html.dark [style*="rgb(138, 154, 174)"] { color: #5A5A58 !important; }
+
+  /* Fundos: neutralizar navys escuros e forçar branco/creme para papel */
+  [style*="rgb(21, 39, 65)"], [style*="rgb(8, 17, 31)"], [style*="rgb(14, 26, 44)"], [style*="rgb(26, 42, 68)"] {
+    background: #FFFFFF !important;
+  }
+  /* Manter accents visíveis apenas no texto de destaque, não como fundos */
+  [style*="background: rgb(232, 161, 60)"], [style*="background:#E8A13C"] { background: #F5D9A8 !important; color: #7A4A0E !important; }
+
+  /* Elementos ocultos no papel */
+  .no-print { display: none !important; }
+
+  /* Reset sticky/fixed para não sobrepor conteúdo no print */
+  [style*="position: sticky"], [style*="position:sticky"], [style*="position: fixed"], [style*="position:fixed"] {
+    position: static !important;
+  }
+
+  /* Manual: colapsar grid para uma coluna */
+  .manual-body { display: block !important; padding: 20px !important; }
+
+  /* Cards não devem partir a meio */
+  [style*="border-radius: 18px"], [style*="border-radius:18px"], [style*="border-radius: 14px"], [style*="border-radius:14px"] {
+    break-inside: avoid; page-break-inside: avoid;
+  }
+
+  /* Recibo: quando html.printing-receipt esconde tudo excepto o recibo */
   html.printing-receipt body * { visibility: hidden !important; }
   html.printing-receipt .receipt-print, html.printing-receipt .receipt-print * { visibility: visible !important; }
+  html.printing-receipt .modal-overlay {
+    background: transparent !important;
+    padding: 0 !important;
+  }
   html.printing-receipt .receipt-print {
     position: absolute !important;
     inset: 0 !important;
@@ -284,13 +329,4 @@ html.dark input, html.dark select, html.dark textarea { background: #1A2A44 !imp
     padding: 40px !important;
     background: #FFFFFF !important;
   }
-  html.printing-receipt .modal-overlay { background: transparent !important; backdrop-filter: none !important; padding: 0 !important; }
-  /* Regras gerais para qualquer print: esconder botões marcados no-print. */
-  .no-print { display: none !important; }
-  /* Reset sticky/fixed para não sobrepor conteúdo no print. */
-  [style*="position: sticky"], [style*="position:sticky"] { position: static !important; }
-  /* Manual: colapsar grid para uma coluna (sidebar hidden por no-print) */
-  .manual-body { display: block !important; padding: 20px !important; }
-  /* Evitar quebras dentro dos cartões de procedimento */
-  [style*="border-radius: 18px"], [style*="border-radius:18px"] { break-inside: avoid; page-break-inside: avoid; }
 }
