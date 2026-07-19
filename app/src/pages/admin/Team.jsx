@@ -1,13 +1,13 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useStore } from "../../lib/store.jsx";
-import { Btn, Card, Eyebrow, Section, Av, Stat, Tag, Modal, Field } from "../../lib/ui.jsx";
+import { Btn, Card, Eyebrow, Section, Av, Stat, Tag, Modal, Field, SkeletonCard, EmptyState } from "../../lib/ui.jsx";
 import { Icon } from "../../lib/icons.jsx";
 
 const hasProf = (pt, id) => pt.professional_id === id || (pt.professional_ids || []).includes(id);
 
 export default function Team() {
-  const { profs, pts, setForm, setModal } = useStore();
+  const { profs, pts, hydrated, setForm, setModal } = useStore();
   const navigate = useNavigate();
 
   return (
@@ -37,7 +37,13 @@ export default function Team() {
             </Card>
           );
         })}
-        {profs.length === 0 && <Card pad={28} style={{ gridColumn: "1 / -1", textAlign: "center", color: "#8A8A86" }}>Sem profissionais. Use "Adicionar profissional".</Card>}
+        {profs.length === 0 && (!hydrated
+          ? [0, 1, 2, 3].map((i) => <SkeletonCard key={i} lines={2} />)
+          : <div style={{ gridColumn: "1 / -1" }}>
+              <EmptyState icon="users" title="Ainda sem profissionais" message="Comece por adicionar a sua equipa."
+                action={<Btn icon={<Icon name="plus" size={15} />} onClick={() => { setForm({}); setModal("addProf"); }}>Adicionar profissional</Btn>} />
+            </div>
+        )}
       </div>
     </div>
   );

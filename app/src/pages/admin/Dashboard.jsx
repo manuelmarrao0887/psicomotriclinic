@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useStore } from "../../lib/store.jsx";
-import { Av } from "../../lib/ui.jsx";
+import { Av, SkeletonCard } from "../../lib/ui.jsx";
 import { Icon } from "../../lib/icons.jsx";
 import { DAYS, HOURS, MES_PT, CLINIC_CUT } from "../../lib/constants.js";
+import { loadByDay as calcLoadByDay, gapsByDay as calcGapsByDay, totalGaps as calcTotalGaps } from "../../lib/schedule.js";
+import { daysUntilBirthday, ageOnNext } from "../../lib/format.js";
 
 /* ── Briefing de gestão ──────────────────────────────────────────────
    Responde a uma pergunta: "como está a clínica hoje, e o que precisa de
@@ -21,24 +23,9 @@ const pad = (n) => String(n).padStart(2, "0");
 const localISO = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 const WEEKDAY = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
 
-function daysUntilBirthday(dateStr) {
-  if (!dateStr) return null;
-  const d = new Date(dateStr);
-  if (isNaN(d)) return null;
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const next = new Date(today.getFullYear(), d.getMonth(), d.getDate());
-  if (next < today) next.setFullYear(next.getFullYear() + 1);
-  return Math.round((next - today) / 86400000);
-}
-function ageOnNext(dateStr) {
-  if (!dateStr) return null;
-  const d = new Date(dateStr);
-  if (isNaN(d)) return null;
-  return new Date().getFullYear() - d.getFullYear() + 1;
-}
 
 export default function Dashboard() {
-  const { profile, profs, pts, notes = [], pays = [], reqs = [], visits = [], users = [], waitlist = [] } = useStore();
+  const { profile, profs, pts, notes = [], pays = [], reqs = [], visits = [], users = [], waitlist = [], hydrated } = useStore();
   const meDoc = users.find((u) => u.id === profile?.id);
   const myPhoto = meDoc?.photo_url || null;
   const myInitials = (profile?.full_name || "").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase() || "?";
@@ -48,6 +35,19 @@ export default function Dashboard() {
   const [grown, setGrown] = useState(false);
   useEffect(() => { const t = setTimeout(() => setGrown(true), 60); return () => clearTimeout(t); }, []);
 
+  if (!hydrated) {
+    return (
+      <div style={{ padding: "28px 40px 60px", display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14 }}>
+          {[0, 1, 2, 3].map((i) => <SkeletonCard key={i} lines={1} />)}
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: "1.7fr 1fr", gap: 14 }}>
+          <SkeletonCard lines={5} /><SkeletonCard lines={5} />
+        </div>
+      </div>
+    );
+  }
+
   const now = new Date();
   const jsDay = now.getDay();                       // 0 Dom … 6 Sáb
   const todayIdx = jsDay === 0 ? -1 : jsDay - 1;    // índice em DAYS (Seg=0…Sex=4); -1 = fim-de-semana
@@ -56,7 +56,7 @@ export default function Dashboard() {
   const greet = now.getHours() < 13 ? "Bom dia" : now.getHours() < 20 ? "Boa tarde" : "Boa noite";
 
   // ── Pulso da semana: carga recorrente por dia útil ──
-  const loadByDay = DAYS.map((d) => pts.filter((p) => p.day_of_week === d).length);
+  const loadByDay = calcLoadByDay(pts, DAYS);
   const maxLoad = Math.max(1, ...loadByDay);
   const weekTotal = loadByDay.reduce((a, b) => a + b, 0);
   const todaySessions = todayIdx >= 0 ? loadByDay[todayIdx] : 0;
@@ -341,10 +341,8 @@ function InsightsPanel({ pts, profs, pays, notes, waitlist, navigate }) {
   // Vagas: slots (day × hour) da grelha semanal que não estão ocupados por
   // nenhum patient.day_of_week+hour. Só conta horas em uso pela clínica (as
   // horas que já têm algum paciente em algum dia).
-  const usedHours = Array.from(new Set(pts.map((p) => p.hour).filter(Boolean))).sort();
-  const busyByDay = DAYS.map((d) => new Set(pts.filter((p) => p.day_of_week === d).map((p) => p.hour)));
-  const gapsByDay = DAYS.map((d, i) => usedHours.filter((h) => !busyByDay[i].has(h)).length);
-  const totalGaps = gapsByDay.reduce((s, v) => s + v, 0);
+  const gapsByDay = calcGapsByDay(pts, DAYS);
+  const totalGaps = calcTotalGaps(pts, DAYS);
 
   // Top-3 profs por receita do último mês
   const curMonth = months[months.length - 1];

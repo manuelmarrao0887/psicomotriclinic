@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useStore } from "../../lib/store.jsx";
-import { Av, Btn, Card, Eyebrow, Section, Tag, Modal, Field, Inp, Sel, ConfirmModal } from "../../lib/ui.jsx";
+import { Av, Btn, Card, Eyebrow, Section, Tag, Modal, Field, Inp, Sel, ConfirmModal, Skeleton, EmptyState } from "../../lib/ui.jsx";
 import { Icon } from "../../lib/icons.jsx";
 
 const STATUS = [
@@ -20,7 +20,7 @@ const genColor = (name) => {
 };
 
 export default function Waitlist() {
-  const { waitlist = [], addWaitlist, updateWaitlist, deleteWaitlist } = useStore();
+  const { waitlist = [], hydrated, addWaitlist, updateWaitlist, deleteWaitlist } = useStore();
   const [addOpen, setAddOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [toDelete, setToDelete] = useState(null);
@@ -86,7 +86,10 @@ export default function Waitlist() {
 
       <Card pad={0} style={{ overflow: "hidden" }}>
         {rows.length === 0 ? (
-          <div style={{ padding: 40, textAlign: "center", color: "#8A8A86", fontSize: 14 }}>Sem contactos.</div>
+          !hydrated
+            ? <div style={{ padding: "12px 20px 20px", display: "flex", flexDirection: "column", gap: 14 }}>{[0, 1, 2].map((i) => <Skeleton key={i} w={`${75 - i * 8}%`} h={18} />)}</div>
+            : <EmptyState icon="users" title="Sem contactos" message="Adicione o primeiro lead à lista de espera."
+                action={<Btn icon={<Icon name="plus" size={15} />} onClick={() => setAddOpen(true)}>Novo contacto</Btn>} />
         ) : (
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 14 }}>

@@ -21,7 +21,6 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [name, setName] = useState("");
-  const [selRole, setSelRole] = useState("");
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
@@ -40,11 +39,13 @@ export default function Login() {
   };
 
   const doRegister = async () => {
-    if (!name || !email || !pw || !selRole) return;
+    if (!name || !email || !pw) return;
     if (!acceptedTerms) { setErr("É necessário aceitar a Política de Privacidade."); return; }
     if (pw.length < 6) { setErr("Password: mínimo 6 caracteres."); return; }
     setBusy(true); setErr("");
-    const { data, error } = await sb.auth.signUp({ email, password: pw, options: { data: { full_name: name, role: selRole } } });
+    // O papel é sempre 'parent' no auto-registo (imposto no servidor). Staff é
+    // adicionado pela direção. Ver firebase.js signUp / createStaffAccount.
+    const { data, error } = await sb.auth.signUp({ email, password: pw, options: { data: { full_name: name, role: "parent" } } });
     if (error) { setErr(ptErr(error.message)); setBusy(false); return; }
     setBusy(false);
     if (data?.session) navigate("/dashboard", { replace: true });
@@ -166,7 +167,7 @@ export default function Login() {
             <div className="fu">
               <Eyebrow>— NOVA CONTA</Eyebrow>
               <h2 className="serif" style={{ fontSize: 36, fontWeight: 300, color: "#152741", margin: "10px 0 8px", letterSpacing: "-0.025em" }}>Criar<span className="serif-it"> conta.</span></h2>
-              <p style={{ fontSize: 14.5, color: "#8A8A86", marginBottom: 24 }}>Profissionais e famílias acompanhadas pela Casa.</p>
+              <p style={{ fontSize: 14.5, color: "#8A8A86", marginBottom: 24 }}>Para famílias acompanhadas pela Casa. Os profissionais são adicionados pela direção.</p>
 
               <Field label="Nome completo"><input placeholder="Ana Ribeiro" value={name} onChange={(e) => setName(e.target.value)} style={fieldSt} /></Field>
               <Field label="Email ou utilizador" hint="Pode ser só um nome de utilizador, sem email">
@@ -174,20 +175,7 @@ export default function Login() {
               </Field>
               <Field label="Password" hint="Mínimo 6 caracteres"><input type="password" placeholder="••••••••" value={pw} onChange={(e) => setPw(e.target.value)} style={fieldSt} /></Field>
 
-              <div style={{ fontSize: 12, color: "#5A5A58", marginBottom: 8, fontWeight: 500 }}>Sou…</div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 14 }}>
-                {[{ id: "parent", l: "Responsável" }, { id: "professional", l: "Profissional" }, { id: "director", l: "Diretor" }].map((r) => (
-                  <div key={r.id} onClick={() => setSelRole(r.id)} className="ch" style={{
-                    padding: "14px 8px", borderRadius: 10,
-                    background: selRole === r.id ? "#152741" : "#FFFFFF",
-                    color: selRole === r.id ? "#F7F4EE" : "#3C3C3B",
-                    border: `1px solid ${selRole === r.id ? "#152741" : "#D9D3C5"}`,
-                    cursor: "pointer", textAlign: "center", fontSize: 13, fontWeight: 500,
-                  }}>{r.l}</div>
-                ))}
-              </div>
-
-              <label style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 12, fontSize: 12.5, color: "#5A5A58", lineHeight: 1.5, cursor: "pointer" }}>
+              <label style={{ display: "flex", alignItems: "flex-start", gap: 8, marginBottom: 12, marginTop: 4, fontSize: 12.5, color: "#5A5A58", lineHeight: 1.5, cursor: "pointer" }}>
                 <input type="checkbox" checked={acceptedTerms} onChange={(e) => setAcceptedTerms(e.target.checked)} style={{ marginTop: 3 }} />
                 <span>
                   Li e aceito a <Link to="/privacidade" target="_blank" style={{ color: "#152741", textDecoration: "underline" }}>Política de Privacidade</Link> e o tratamento dos dados de acordo com o RGPD.
@@ -196,7 +184,7 @@ export default function Login() {
 
               {err && <div role="alert" aria-live="assertive" style={{ padding: "10px 12px", borderRadius: 10, background: "#F4E0E0", color: "#B83A3A", fontSize: 13, marginBottom: 12 }}>{err}</div>}
 
-              <Btn onClick={doRegister} disabled={busy || !name || !email || !pw || !selRole || !acceptedTerms} style={{ width: "100%", padding: "13px 0" }}>{busy ? "A criar..." : "Criar conta"}</Btn>
+              <Btn onClick={doRegister} disabled={busy || !name || !email || !pw || !acceptedTerms} style={{ width: "100%", padding: "13px 0" }}>{busy ? "A criar..." : "Criar conta"}</Btn>
 
               <div style={{ textAlign: "center", marginTop: 24, fontSize: 13.5, color: "#8A8A86" }}>
                 Já tem conta?{" "}

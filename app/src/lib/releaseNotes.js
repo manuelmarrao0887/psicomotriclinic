@@ -6,6 +6,29 @@
 
 export const RELEASE_NOTES = [
   {
+    version: "v2.0.0-alpha.36",
+    date: "2026-07-18",
+    title: "Auditoria — segurança RGPD, acessibilidade, estados e testes",
+    added: [
+      "Segurança: regras Firestore reescritas (papel imutável, leitura clínica/financeira por dono via parent_user_ids/professional_ids denormalizados, regras para todas as coleções). Provadas por 22 testes contra o emulador (firestore-tests/).",
+      "Auto-registo passa a criar sempre 'parent'; staff é provisionado pela direção. inviteUser deixa de fazer logout do admin (app Firebase secundária).",
+      "Cloud Functions: envio real por defeito, respeitam notification_prefs (RGPD), try/catch por envio, sem leituras duplicadas.",
+      "Estados de loading (skeletons) + empty states desenhados em todas as páginas admin e nos dois portais.",
+      "Testes: 46 unitários (finance, schedule, format, csv) + 22 de regras + smoke headless. CI corre tudo (GitHub Actions).",
+      "docs/SECURITY-DEPLOY.md, ROADMAP-BETA.md, I18N-DECISION.md; script de backfill de owner ids; seed do emulador.",
+    ],
+    changed: [
+      "Performance: subscrições Firestore scoped por papel (responsável usa array-contains, sem índices compostos); Dashboard e firebase/messaging passam a lazy (index chunk 189→125KB); fontes não-bloqueantes; service worker com prune de cache.",
+      "Dark mode: primitivos ui.jsx tokenizados (var(--token)); corrigida a caixa escura por trás de headings navy (regra string-match apanhava color: além de background:).",
+      "Acessibilidade: contraste AA (texto secundário, amber, tags, tab-bar mobile), labels de formulário associados, focus trap nos modais, headings semânticos, seletor de humor descritivo.",
+      "Portais: deep-linking por ?tab= (back-button, bookmarking). Mobile: corrigido scroll horizontal (minWidth:0 no main + tabelas com scroll interno).",
+      "Correção: validação de formulários com toast, mês de pagamento calculado, versão sincronizada. Lógica financeira centralizada e testada.",
+    ],
+    removed: [
+      "Código morto: SessionsTab e admin/Placeholder.jsx (migração concluída). Picker de papel no signup público. StyleLab fora de produção.",
+    ],
+  },
+  {
     version: "v2.0.0-alpha.35",
     date: "2026-07-12",
     title: "Fix — 1ª página em branco na impressão de páginas admin",

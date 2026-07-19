@@ -27,20 +27,39 @@ const FROM = "Psicomotriclinic <lembretes@acasadapsicomotricidade.pt>";
 
 // ───────────────────────────── helpers ─────────────────────────────
 
-const isDryRun = () => (process.env.REMINDERS_DRY_RUN ?? "true").toLowerCase() === "true";
+// Envio real por defeito. REMINDERS_DRY_RUN=true (env) suprime envios — usar só
+// em testes/emulador. Antes o default era "true" e a feature ficava inerte em
+// produção quando a env não estava definida.
+const isDryRun = () => (process.env.REMINDERS_DRY_RUN ?? "false").toLowerCase() === "true";
+if (isDryRun()) console.warn("[reminders] DRY-RUN ATIVO — nenhum envio real. Defina REMINDERS_DRY_RUN=false para enviar.");
 
-// Obtém todos os fcm_tokens de um conjunto de user ids. Apaga tokens inválidos.
-async function getTokensForUsers(userIds) {
+// Um utilizador aceita o tipo de notificação a não ser que o tenha desligado
+// explicitamente. prefKey ∈ { reminders, announcements, requests }. Sem prefKey,
+// não filtra (retrocompatível).
+const acceptsNotif = (data, prefKey) => {
+  if (!prefKey) return true;
+  const p = data && data.notification_prefs;
+  return !p || p[prefKey] !== false;
+};
+
+// Obtém fcm_tokens + email dos utilizadores que NÃO desligaram este tipo de
+// notificação. Uma única leitura por perfil (token + email + prefs). Apaga
+// tokens inválidos posteriormente via pruneInvalidTokens.
+async function getRecipients(userIds, prefKey) {
   const tokens = [];
-  const tokenOwners = new Map(); // token -> userId (para limpar inválidos)
+  const tokenOwners = new Map(); // token -> userId
+  const emails = [];
   for (const uid of userIds) {
     if (!uid) continue;
     const snap = await db.collection("profiles").doc(uid).get();
     if (!snap.exists) continue;
-    const arr = snap.data().fcm_tokens || [];
+    const data = snap.data();
+    if (!acceptsNotif(data, prefKey)) continue; // respeita opt-out (RGPD)
+    const arr = data.fcm_tokens || [];
     for (const t of arr) { tokens.push(t); tokenOwners.set(t, uid); }
+    if (data.email && !emails.includes(data.email)) emails.push(data.email);
   }
-  return { tokens, tokenOwners };
+  return { tokens, tokenOwners, emails };
 }
 
 async function pruneInvalidTokens(responses, tokens, tokenOwners) {
@@ -122,8 +141,10 @@ async function runReminders() {
       ? p.parent_user_ids
       : (p.parent_profile_id ? [p.parent_profile_id] : []);
 
+    // Uma leitura por perfil devolve tokens + emails + respeita opt-out.
+    const { tokens, tokenOwners, emails } = await getRecipients(userIds, "reminders");
+
     // ── Push (FCM) ─────────────────────────────────────────────
-    const { tokens, tokenOwners } = await getTokensForUsers(userIds);
     let pushSent = 0;
     if (tokens.length) {
       const data = {
@@ -134,22 +155,21 @@ async function runReminders() {
         tag: `session-${doc.id}-${sessionDate}`,
       };
       if (!dry) {
-        const res = await messaging.sendEachForMulticast({
-          tokens, data: Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])),
-        });
-        pushSent = res.successCount;
-        await pruneInvalidTokens(res.responses, tokens, tokenOwners);
+        try {
+          const res = await messaging.sendEachForMulticast({
+            tokens, data: Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])),
+          });
+          pushSent = res.successCount;
+          await pruneInvalidTokens(res.responses, tokens, tokenOwners);
+        } catch (e) {
+          console.error("[reminders] push falhou p/", doc.id, e?.message || e);
+          summary.failed++;
+        }
       }
       summary.push_sent += pushSent;
     }
 
     // ── Email (fallback / complementar) ────────────────────────
-    let emails = [];
-    for (const uid of userIds) {
-      const par = await db.collection("profiles").doc(uid).get();
-      const e = par.exists ? par.data().email : null;
-      if (e && !emails.includes(e)) emails.push(e);
-    }
     let emailSent = 0;
     for (const email of emails) {
       const res = await sendEmail(email, `Lembrete: sessão de ${p.name} amanhã às ${p.hour}`,
@@ -196,7 +216,8 @@ export const onAnnouncementCreated = onDocumentCreated("announcements/{id}", asy
   const snap = await query.get();
   const userIds = snap.docs.map((d) => d.id);
 
-  const { tokens, tokenOwners } = await getTokensForUsers(userIds);
+  // Respeita quem desligou "Anúncios" nas preferências.
+  const { tokens, tokenOwners } = await getRecipients(userIds, "announcements");
   if (!tokens.length) return;
 
   const data = {
@@ -208,11 +229,15 @@ export const onAnnouncementCreated = onDocumentCreated("announcements/{id}", asy
   };
 
   if (isDryRun()) { console.log("[dry-run] announcement push to", tokens.length, "tokens"); return; }
-  const res = await messaging.sendEachForMulticast({
-    tokens, data: Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])),
-  });
-  await pruneInvalidTokens(res.responses, tokens, tokenOwners);
-  console.log("onAnnouncementCreated:", JSON.stringify({ audience, sent: res.successCount, failed: res.failureCount }));
+  try {
+    const res = await messaging.sendEachForMulticast({
+      tokens, data: Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])),
+    });
+    await pruneInvalidTokens(res.responses, tokens, tokenOwners);
+    console.log("onAnnouncementCreated:", JSON.stringify({ audience, sent: res.successCount, failed: res.failureCount }));
+  } catch (e) {
+    console.error("[announcement] push falhou:", e?.message || e);
+  }
 });
 
 // ───────────────────── 3. push em estado de pedido ─────────────────
@@ -227,7 +252,8 @@ export const onScheduleRequestUpdated = onDocumentUpdated("schedule_requests/{id
   const requesterId = after.requested_by_id;
   if (!requesterId) return;
 
-  const { tokens, tokenOwners } = await getTokensForUsers([requesterId]);
+  // Respeita quem desligou "Estado de pedidos".
+  const { tokens, tokenOwners } = await getRecipients([requesterId], "requests");
   if (!tokens.length) return;
 
   const title = after.status === "aprovado" ? "Pedido aprovado" : "Pedido recusado";
@@ -235,9 +261,13 @@ export const onScheduleRequestUpdated = onDocumentUpdated("schedule_requests/{id
   const data = { type: "request_update", title, body, url: "/", tag: `req-${event.params.id}` };
 
   if (isDryRun()) { console.log("[dry-run] request push to", tokens.length, "tokens"); return; }
-  const res = await messaging.sendEachForMulticast({
-    tokens, data: Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])),
-  });
-  await pruneInvalidTokens(res.responses, tokens, tokenOwners);
-  console.log("onScheduleRequestUpdated:", JSON.stringify({ status: after.status, sent: res.successCount, failed: res.failureCount }));
+  try {
+    const res = await messaging.sendEachForMulticast({
+      tokens, data: Object.fromEntries(Object.entries(data).map(([k, v]) => [k, String(v)])),
+    });
+    await pruneInvalidTokens(res.responses, tokens, tokenOwners);
+    console.log("onScheduleRequestUpdated:", JSON.stringify({ status: after.status, sent: res.successCount, failed: res.failureCount }));
+  } catch (e) {
+    console.error("[request] push falhou:", e?.message || e);
+  }
 });

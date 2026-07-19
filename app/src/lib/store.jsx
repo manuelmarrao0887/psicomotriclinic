@@ -1,11 +1,17 @@
 // Store partilhada: dados carregados do Firestore + acções CRUD + toast + modais.
 // Vive ao nível do AdminLayout — todas as páginas filhas usam `useStore()`.
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { sb, db, collection, query, where, orderBy, limit, onSnapshot, fcmRequestPermissionAndToken, fcmDeleteToken, fcmSaveTokenToProfile, fcmRemoveTokenFromProfile, fcmCurrentPermission } from "./firebase.js";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { sb, db, collection, query, where, orderBy, limit, onSnapshot, createStaffAccount, fcmRequestPermissionAndToken, fcmDeleteToken, fcmSaveTokenToProfile, fcmRemoveTokenFromProfile, fcmCurrentPermission } from "./firebase.js";
 import { AVATAR_BG, normalizeInsurance, INSURANCES } from "./constants.js";
+import { initials, professionalIds, currentMonthLabel } from "./format.js";
 
 const Ctx = createContext(null);
 export const useStore = () => useContext(Ctx);
+// Contexto separado para o estado de modal/form. Isolar aqui evita que cada
+// tecla escrita num modal re-renderize todos os consumidores de useStore()
+// (só o ModalsHost, que lê useUi(), re-renderiza). Ver StoreProvider.
+const UiCtx = createContext(null);
+export const useUi = () => useContext(UiCtx);
 
 export function StoreProvider({ profile, children }) {
   const [users, setUsers]   = useState([]);
@@ -31,11 +37,26 @@ export function StoreProvider({ profile, children }) {
   const [toast, setToast]   = useState(null);
   const [modal, setModal]   = useState(null);
   const [form, setForm]     = useState({});
+  // Fica true após a 1ª snapshot de pacientes chegar — distingue "a carregar"
+  // de "vazio", para as páginas poderem mostrar skeletons em vez de "sem dados".
+  const [hydrated, setHydrated] = useState(false);
 
   const show = useCallback((m, t = "success") => {
     setToast({ m, t });
     setTimeout(() => setToast(null), 3000);
   }, []);
+
+  // Owner ids denormalizados a gravar em cada doc clínico — as regras Firestore
+  // usam parent_user_ids/professional_ids do próprio doc para autorizar leitura
+  // sem um get() por documento. Sem isto, o portal do responsável fica sem
+  // acesso (ou, pior, ficaria com acesso a tudo). Ver firestore.rules.
+  const ownerIdsFor = useCallback((patientId) => {
+    const pt = pts.find((x) => x.id === patientId);
+    return {
+      parent_user_ids: pt?.parent_user_ids || [],
+      professional_ids: professionalIds(pt),
+    };
+  }, [pts]);
 
   // ───── Listeners (onSnapshot) ─────
   // Cada colecção tem uma subscrição em vez de polling. Resultado:
@@ -53,6 +74,9 @@ export function StoreProvider({ profile, children }) {
 
   useEffect(() => {
     if (!profile?.id) return;
+    setHydrated(false);
+    const uid = profile.id;
+    const staff = profile.role === "director" || profile.role === "professional";
     const unsubs = [];
     const sub = (q, setter, transform) => {
       const u = onSnapshot(
@@ -61,45 +85,74 @@ export function StoreProvider({ profile, children }) {
           const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
           setter(transform ? transform(rows) : rows);
         },
-        (err) => console.warn("[subscription]", err?.code || err?.message || err),
+        // Falha de subscrição (permissão/rede) → limpar o slice e avisar em dev.
+        (err) => { console.warn("[subscription]", err?.code || err?.message || err); setter(transform ? transform([]) : []); },
       );
       unsubs.push(u);
     };
     const sortByName = (rows) => rows.slice().sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    const byDateDesc = (rows) => rows.slice().sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    const byCreatedDesc = (rows) => rows.slice().sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
+    // Query scoped: staff vê tudo (com orderBy+limit para não puxar anos de
+    // histórico); responsável só docs cujo parent_user_ids contém o seu uid
+    // (array-contains → índice de campo único, sem índices compostos; sem
+    // orderBy para evitar índice composto, ordenação feita em JS via transform).
+    // opts: { orderField, lim } aplicados apenas ao staff.
+    const owned = (name, opts = {}) => {
+      if (staff) {
+        const cons = [];
+        if (opts.orderField) cons.push(orderBy(opts.orderField, "desc"));
+        if (opts.lim) cons.push(limit(opts.lim));
+        return cons.length ? query(collection(db, name), ...cons) : collection(db, name);
+      }
+      const cons = [where("parent_user_ids", "array-contains", uid)];
+      if (opts.lim) cons.push(limit(opts.lim));
+      return query(collection(db, name), ...cons);
+    };
 
-    // profiles & equipa
+    // profiles & equipa (leitura a autenticados)
     sub(query(collection(db, "profiles"), orderBy("created_at", "desc")), setUsers);
-    // where + orderBy em campos diferentes requer índice composto — sort em JS é mais simples
     sub(query(collection(db, "professionals"), where("active", "==", true)), setProfs, sortByName);
-    sub(query(collection(db, "patients"), where("active", "==", true)), setPts, sortByName);
+    sub(owned("patients"), (rows) => { setPts(rows); setHydrated(true); }, sortByName);
 
-    // financeiro
-    sub(query(collection(db, "payments"), orderBy("created_at", "desc")), setPays);
-    sub(collection(db, "overheads"), setOver, (rows) => rows[0] || {});
-    sub(collection(db, "variable_costs"), setVcosts);
+    // clínico — limites repostos p/ staff (evita puxar histórico inteiro)
+    sub(owned("sessions", { orderField: "date", lim: 200 }), setSess, byDateDesc);
+    sub(owned("anamnesis"), setAnamneses);
+    sub(owned("session_notes", { orderField: "date", lim: 500 }), setNotes, byDateDesc);
+    sub(owned("intervention_plans"), setPlans);
+    sub(owned("behavior_diary", { orderField: "date", lim: 300 }), setBehaviorDiary, byDateDesc);
+    sub(owned("home_practice_assignments"), setHomeAssignments);
+    sub(owned("home_practice_completions", { orderField: "date", lim: 500 }), setHomeCompletions, byDateDesc);
 
-    // clínico
-    sub(query(collection(db, "sessions"), orderBy("date", "desc"), limit(200)), setSess);
-    sub(collection(db, "anamnesis"), setAnamneses);
-    sub(query(collection(db, "session_notes"), orderBy("date", "desc"), limit(500)), setNotes);
-    sub(collection(db, "intervention_plans"), setPlans);
-
-    // pedidos & comunicações
-    sub(collection(db, "schedule_requests"), setReqs);
+    // biblioteca de exercícios (pública a autenticados) & comunicações
+    sub(query(collection(db, "home_exercises_library"), orderBy("created_at", "desc"), limit(200)), setHomeExercises);
     sub(query(collection(db, "announcements"), orderBy("created_at", "desc"), limit(50)), setAnnouncements);
 
-    // Novas colecções Sprint 2-4
-    sub(query(collection(db, "waitlist"), orderBy("created_at", "desc"), limit(100)), setWaitlist);
-    sub(query(collection(db, "home_exercises_library"), orderBy("created_at", "desc"), limit(200)), setHomeExercises);
-    sub(collection(db, "home_practice_assignments"), setHomeAssignments);
-    sub(query(collection(db, "home_practice_completions"), orderBy("date", "desc"), limit(500)), setHomeCompletions);
-    sub(query(collection(db, "parent_messages"), orderBy("created_at", "desc"), limit(200)), setParentMessages);
-    sub(query(collection(db, "behavior_diary"), orderBy("date", "desc"), limit(300)), setBehaviorDiary);
+    // pedidos & mensagens — staff vê todos; responsável só os seus
+    if (staff) {
+      sub(collection(db, "schedule_requests"), setReqs);
+      sub(query(collection(db, "parent_messages"), orderBy("created_at", "desc"), limit(200)), setParentMessages);
+    } else {
+      sub(query(collection(db, "schedule_requests"), where("requested_by_id", "==", uid)), setReqs);
+      sub(query(collection(db, "parent_messages"), where("from_user_id", "==", uid)), setParentMessages, byCreatedDesc);
+    }
 
-    // colecções restritas (só director lê — rules) — só subscrever se for director
+    // Pagamentos: staff vê tudo (ordenado; sem limit — o financeiro precisa do
+    // histórico anual/IRS); responsável vê só os dos seus filhos.
+    sub(owned("payments", { orderField: "created_at" }), setPays, byCreatedDesc);
+
+    // Livro de custos & lista de espera — só-staff (regras negam a responsáveis).
+    if (staff) {
+      sub(collection(db, "overheads"), setOver, (rows) => rows[0] || {});
+      sub(collection(db, "variable_costs"), setVcosts);
+      sub(query(collection(db, "waitlist"), orderBy("created_at", "desc"), limit(100)), setWaitlist);
+    } else {
+      setOver({}); setVcosts([]); setWaitlist([]);
+    }
+
+    // Colecções só-director
     if (profile.role === "director") {
       sub(query(collection(db, "audit_log"), orderBy("ts", "desc"), limit(500)), setAuditLog);
-      // visits limitadas a 30 dias — corta drasticamente reads (cresce com cada login)
       const thirtyDaysAgo = new Date(Date.now() - 30 * 86400000).toISOString();
       sub(query(collection(db, "visits"), where("ts", ">=", thirtyDaysAgo), orderBy("ts", "desc")), setVisits);
     } else {
@@ -152,8 +205,8 @@ export function StoreProvider({ profile, children }) {
   };
 
   const addProf = async () => {
-    if (!form.name) return;
-    const ini = form.name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+    if (!form.name) { show("Nome é obrigatório", "error"); return; }
+    const ini = initials(form.name);
     await sb.from("professionals").insert({
       name: form.name,
       role_title: form.role || "Psicomotricista",
@@ -179,7 +232,7 @@ export function StoreProvider({ profile, children }) {
     for (const line of lines) {
       const [name, role] = line.split(/[,;\t]/).map((s) => (s || "").trim());
       if (!name) { skip++; continue; }
-      const ini = name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+      const ini = initials(name);
       await sb.from("professionals").insert({
         name,
         role_title: role || "Psicomotricista",
@@ -197,7 +250,11 @@ export function StoreProvider({ profile, children }) {
   const addPatient = async () => {
     const isGroup = form.sessionType === "grupo";
     const profIds = isGroup ? (form.profs || []) : (form.prof ? [form.prof] : []);
-    if (!form.name || !form.age || !form.day || !form.hour || !form.sessionType || profIds.length === 0) return;
+    if (!form.name || !form.age || !form.day || !form.hour || !form.sessionType) {
+      show("Preencha nome, idade, tipo, dia e hora", "error"); return;
+    }
+    if (profIds.length === 0) { show("Selecione pelo menos um profissional", "error"); return; }
+    if (form.nif && !/^\d{9}$/.test(String(form.nif).trim())) { show("NIF inválido — devem ser 9 dígitos", "error"); return; }
     const payload = {
       name: form.name,
       age: parseInt(form.age),
@@ -286,14 +343,17 @@ export function StoreProvider({ profile, children }) {
   };
 
   const addPayment = async () => {
-    if (!form.pt || !form.amount) return;
+    if (!form.pt) { show("Selecione o paciente", "error"); return; }
+    const amt = parseFloat(form.amount);
+    if (!form.amount || isNaN(amt) || amt <= 0) { show("Montante inválido — deve ser maior que 0", "error"); return; }
     const pt = pts.find((x) => x.id === form.pt);
     const profId = pt?.professional_id || (pt?.professional_ids?.[0]) || null;
     await sb.from("payments").insert({
       patient_id: form.pt,
+      ...ownerIdsFor(form.pt),
       professional_id: profId,
-      month: form.payMonth || "Maio 2026",
-      amount: parseFloat(form.amount),
+      month: form.payMonth || currentMonthLabel(),
+      amount: amt,
       status: form.paySt || "pendente",
       paid_date: form.paySt === "pago" ? new Date().toISOString().slice(0, 10) : null,
       method: form.payMethod || null,
@@ -336,6 +396,7 @@ export function StoreProvider({ profile, children }) {
     const profId = pt?.professional_id || (pt?.professional_ids?.[0]) || null;
     await sb.from("payments").insert({
       patient_id,
+      ...ownerIdsFor(patient_id),
       professional_id: profId,
       month,
       amount: parseFloat(amount),
@@ -350,29 +411,23 @@ export function StoreProvider({ profile, children }) {
   };
 
   const inviteUser = async () => {
-    if (!form.invName || !form.invEmail || !form.invRole) return;
+    if (!form.invName || !form.invEmail || !form.invRole) { show("Preencha nome, email e papel", "error"); return; }
     const tempPw = "Psico" + Math.random().toString(36).slice(2, 8) + "!";
-    const { data, error } = await sb.auth.signUp({
-      email: form.invEmail, password: tempPw,
-      options: { data: { full_name: form.invName, role: form.invRole } },
-    });
-    if (error) { show("Erro: " + error.message, "error"); return; }
-    if (data?.user) {
-      await sb.from("profiles").upsert({
-        id: data.user.id, email: form.invEmail,
-        full_name: form.invName, role: form.invRole, active: true,
+    // Cria a conta numa instância secundária — não substitui a sessão do admin.
+    const res = await createStaffAccount({ email: form.invEmail, password: tempPw, fullName: form.invName });
+    if (res.error) { show("Erro: " + res.error.message, "error"); return; }
+    // A direção (sessão atual) eleva o papel do perfil recém-criado.
+    await sb.from("profiles").update({ role: form.invRole, active: true }).eq("id", res.uid);
+    if (form.invRole === "professional") {
+      const ini = initials(form.invName);
+      await sb.from("professionals").insert({
+        name: form.invName, role_title: "Psicomotricista",
+        avatar_initials: ini, avatar_color: AVATAR_BG[profs.length % AVATAR_BG.length],
+        profile_id: res.uid, active: true,
       });
-      if (form.invRole === "professional") {
-        const ini = form.invName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
-        await sb.from("professionals").insert({
-          name: form.invName, role_title: "Psicomotricista",
-          avatar_initials: ini, avatar_color: AVATAR_BG[profs.length % AVATAR_BG.length],
-          profile_id: data.user.id, active: true,
-        });
-      }
     }
     await audit("invite_user", "profiles", `${form.invName} · ${form.invRole}`);
-    setForm({ ...form, inviteResult: { email: form.invEmail, pw: tempPw, role: form.invRole, name: form.invName } });
+    setForm({ ...form, inviteResult: { email: res.email, pw: tempPw, role: form.invRole, name: form.invName } });
     show("Conta criada");
     await load();
   };
@@ -413,6 +468,7 @@ export function StoreProvider({ profile, children }) {
     const id = form.anamnesisPatientId;
     await sb.from("anamnesis").upsert({
       id, patient_id: id,
+      ...ownerIdsFor(id),
       birth_history: form.birth_history || "",
       developmental_milestones: form.developmental_milestones || "",
       school_context: form.school_context || "",
@@ -430,9 +486,10 @@ export function StoreProvider({ profile, children }) {
   };
 
   const addSessionNote = async () => {
-    if (!form.snDate || !form.snPatientId) return;
+    if (!form.snDate || !form.snPatientId) { show("Escolha o paciente e a data", "error"); return; }
     await sb.from("session_notes").insert({
       patient_id: form.snPatientId,
+      ...ownerIdsFor(form.snPatientId),
       date: form.snDate,
       status: form.snStatus || "realizada",
       domains: form.snDomains || [],
@@ -459,6 +516,7 @@ export function StoreProvider({ profile, children }) {
     const id = form.planPatientId;
     await sb.from("intervention_plans").upsert({
       id, patient_id: id,
+      ...ownerIdsFor(id),
       area: form.planArea || "",
       objectives: form.planObjectives || [],
       start_date: form.planStart || null,
@@ -512,6 +570,7 @@ export function StoreProvider({ profile, children }) {
   const assignHomeExercise = async (patientId, exerciseId, notes) => {
     await sb.from("home_practice_assignments").insert({
       patient_id: patientId, exercise_id: exerciseId,
+      ...ownerIdsFor(patientId),
       professional_id: profile?.id || null,
       custom_notes: notes || "",
       active: true,
@@ -525,6 +584,7 @@ export function StoreProvider({ profile, children }) {
   const markCompletion = async (patientId, exerciseId, note) => {
     await sb.from("home_practice_completions").insert({
       patient_id: patientId, exercise_id: exerciseId,
+      ...ownerIdsFor(patientId),
       date: new Date().toISOString().slice(0, 10),
       by_user_id: profile?.id || null,
       note: note || "",
@@ -535,6 +595,7 @@ export function StoreProvider({ profile, children }) {
   const sendParentMessage = async (patientId, toProId, body) => {
     await sb.from("parent_messages").insert({
       patient_id: patientId,
+      ...ownerIdsFor(patientId),
       from_user_id: profile?.id || null,
       to_professional_id: toProId,
       body: body || "",
@@ -554,6 +615,7 @@ export function StoreProvider({ profile, children }) {
   const addBehaviorEntry = async (patientId, data) => {
     await sb.from("behavior_diary").insert({
       patient_id: patientId,
+      ...ownerIdsFor(patientId),
       by_user_id: profile?.id || null,
       date: data.date || new Date().toISOString().slice(0, 10),
       mood: data.mood ?? null,
@@ -805,6 +867,7 @@ export function StoreProvider({ profile, children }) {
     const d = date || new Date().toISOString().slice(0, 10);
     await sb.from("session_notes").insert({
       patient_id: patientId,
+      ...ownerIdsFor(patientId),
       professional_id: professionalId || null,
       date: d,
       status: "falta",
@@ -874,6 +937,7 @@ export function StoreProvider({ profile, children }) {
     if (!pt) { show("Paciente não encontrado", "error"); return { ok: false }; }
     await sb.from("session_notes").insert({
       patient_id: patientId,
+      ...ownerIdsFor(patientId),
       professional_id: pt.professional_id || null,
       date: dateISO,
       status: "cancelado",
@@ -900,33 +964,52 @@ export function StoreProvider({ profile, children }) {
     show(userId ? "Conta vinculada" : "Vínculo removido"); await load();
   };
 
-  const value = {
-    profile,
-    users, profs, pts, sess, pays, reqs, over, vcosts, visits,
-    anamneses, notes, plans, auditLog, announcements,
-    toast, show,
-    modal, setModal, form, setForm,
-    load,
+  // Proxies estáveis das ações: cada wrapper tem identidade fixa (útil p/ memo)
+  // mas chama SEMPRE a versão fresca via ref → nunca fica com closure obsoleta.
+  // O corpo das ações não é tocado (zero risco de transcrição).
+  const actionsRef = useRef({});
+  actionsRef.current = {
+    show, load,
     changeRole, removeUser, toggleUserActive,
     addProf, deleteProfessional, addProfsBulk,
     addPatient, deletePatient, addPatientsBulk,
     addPayment, togglePayment, createPayment, deletePayment, updatePayment,
-    saveOverheads, saveVarCost,
-    inviteUser,
+    saveOverheads, saveVarCost, inviteUser,
     approveRequest, rejectRequest,
     saveAnamnesis, addSessionNote, deleteSessionNote, savePlan,
-    genPassword, changeMyPassword, updateMyPhoto, removeMyPhoto,
-    resetAndSeedDemo,
-    // Sprint 2-4
-    waitlist, homeExercises, homeAssignments, homeCompletions, parentMessages, behaviorDiary,
+    genPassword, changeMyPassword, updateMyPhoto, removeMyPhoto, resetAndSeedDemo,
     addWaitlist, updateWaitlist, deleteWaitlist,
     addHomeExercise, deleteHomeExercise, assignHomeExercise, unassignHomeExercise, markCompletion,
     sendParentMessage, replyToParent, markMessageRead,
     addBehaviorEntry, setNotificationPrefs,
     addAnnouncement, toggleAnnouncementActive, deleteAnnouncement,
     quickMarkFalta, setPatientParents, setProfessionalUser,
-    pushState, enablePush, disablePush, cancelSession,
+    enablePush, disablePush, cancelSession,
   };
+  const stableActions = useMemo(() => {
+    const out = {};
+    for (const k of Object.keys(actionsRef.current)) out[k] = (...args) => actionsRef.current[k](...args);
+    return out;
+  }, []);
 
-  return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
+  // Valor principal memoizado — só muda quando os dados mudam (NÃO com cada tecla
+  // de form/modal, que vivem no UiCtx). setForm/setModal ficam aqui também (setters
+  // estáveis) para as páginas abrirem modais via useStore() sem alterações.
+  const value = useMemo(() => ({
+    profile,
+    users, profs, pts, sess, pays, reqs, over, vcosts, visits,
+    anamneses, notes, plans, auditLog, announcements,
+    waitlist, homeExercises, homeAssignments, homeCompletions, parentMessages, behaviorDiary,
+    toast, hydrated, pushState,
+    setModal, setForm,
+    ...stableActions,
+  }), [profile, users, profs, pts, sess, pays, reqs, over, vcosts, visits, anamneses, notes, plans, auditLog, announcements, waitlist, homeExercises, homeAssignments, homeCompletions, parentMessages, behaviorDiary, toast, hydrated, pushState, stableActions]);
+
+  const uiValue = useMemo(() => ({ form, setForm, modal, setModal }), [form, modal]);
+
+  return (
+    <Ctx.Provider value={value}>
+      <UiCtx.Provider value={uiValue}>{children}</UiCtx.Provider>
+    </Ctx.Provider>
+  );
 }

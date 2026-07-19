@@ -51,7 +51,7 @@ self.addEventListener("notificationclick", (event) => {
 });
 
 // ───── Cache da shell PWA ──────────────────────────────────────────────
-const CACHE_VERSION = "v2";
+const CACHE_VERSION = "v3";
 const CACHE_NAME = `psm-shell-${CACHE_VERSION}`;
 const SHELL_URL = "/";
 
@@ -86,13 +86,25 @@ self.addEventListener("fetch", (event) => {
   }
 });
 
+// Assets são content-hashed (imutáveis) → cache-first. Limitamos o número de
+// entradas para o cache não crescer sem limite através de vários deploys
+// (hashes antigos acumulam-se). Prune simples FIFO acima de MAX_ASSET_ENTRIES.
+const MAX_ASSET_ENTRIES = 80;
+async function trimCache(cache) {
+  const keys = await cache.keys();
+  const assetKeys = keys.filter((r) => new URL(r.url).pathname.startsWith("/assets/"));
+  if (assetKeys.length <= MAX_ASSET_ENTRIES) return;
+  const excess = assetKeys.length - MAX_ASSET_ENTRIES;
+  for (let i = 0; i < excess; i++) await cache.delete(assetKeys[i]);
+}
+
 async function cacheFirst(req) {
   const cache = await caches.open(CACHE_NAME);
   const hit = await cache.match(req);
   if (hit) return hit;
   try {
     const res = await fetch(req);
-    if (res && res.ok) cache.put(req, res.clone());
+    if (res && res.ok) { await cache.put(req, res.clone()); trimCache(cache); }
     return res;
   } catch (_) {
     return new Response("", { status: 504, statusText: "Offline" });

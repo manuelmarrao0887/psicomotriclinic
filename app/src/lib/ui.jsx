@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useId, useRef, useEffect, cloneElement, isValidElement } from "react";
 import { Icon } from "./icons.jsx";
 
-export const Eyebrow = ({ children, color = "#8A8A86" }) => (
+export const Eyebrow = ({ children, color = "var(--text-muted-2)" }) => (
   <span className="mono" style={{ color, fontSize: 11, fontWeight: 500 }}>{children}</span>
 );
 
@@ -18,12 +18,12 @@ export const Av = ({ t, bg, sz = 40, color = "#152741", photoUrl }) => (
 
 export const Tag = ({ children, type = "default" }) => {
   const m = {
-    realizada: ["#DDEADE", "#3D7A4A"], falta: ["#F4E0E0", "#B83A3A"],
-    agendada: ["#DCE7F0", "#1E3556"], pago: ["#DDEADE", "#3D7A4A"],
-    pendente: ["#F5E5CD", "#C97A1F"], director: ["#F5F2EC", "#152741"],
-    professional: ["#DDEADE", "#3D7A4A"], parent: ["#DCE7F0", "#1E3556"],
+    realizada: ["#DDEADE", "#2F6139"], falta: ["#F4E0E0", "#A82E2E"],
+    agendada: ["#DCE7F0", "#1E3556"], pago: ["#DDEADE", "#2F6139"],
+    pendente: ["#F5E5CD", "#8A5011"], director: ["#F5F2EC", "#152741"],
+    professional: ["#DDEADE", "#2F6139"], parent: ["#DCE7F0", "#1E3556"],
     admin: ["#152741", "#F7F4EE"], default: ["#F5F2EC", "#3C3C3B"],
-    amber: ["#F5D9A8", "#C97A1F"], sage: ["#C7DDCB", "#3D7A4A"],
+    amber: ["#F5D9A8", "#8A5011"], sage: ["#C7DDCB", "#2F6139"],
   };
   const [bg, c] = m[type] || m.default;
   return (
@@ -38,30 +38,30 @@ export const Tag = ({ children, type = "default" }) => {
 
 export const Card = ({ children, style, onClick, delay = 0, pad = 22 }) => (
   <div className="ch fu" onClick={onClick} style={{
-    background: "#FFFFFF", borderRadius: 14, padding: pad,
-    border: "1px solid #EAE6DD",
+    background: "var(--surface)", borderRadius: 14, padding: pad,
+    border: "1px solid var(--border)",
     cursor: onClick ? "pointer" : "default",
     animationDelay: `${delay}ms`,
     transition: "border-color .15s ease, box-shadow .15s ease, transform .12s ease",
     ...style,
   }}
-    onMouseEnter={onClick ? (e) => { e.currentTarget.style.borderColor = "#152741"; e.currentTarget.style.boxShadow = "0 4px 14px rgba(21,39,65,.06)"; } : undefined}
-    onMouseLeave={onClick ? (e) => { e.currentTarget.style.borderColor = "#EAE6DD"; e.currentTarget.style.boxShadow = "none"; } : undefined}
+    onMouseEnter={onClick ? (e) => { e.currentTarget.style.borderColor = "var(--text-strong)"; e.currentTarget.style.boxShadow = "0 4px 14px rgba(21,39,65,.06)"; } : undefined}
+    onMouseLeave={onClick ? (e) => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.boxShadow = "none"; } : undefined}
   >{children}</div>
 );
 
-export const Stat = ({ label, value, suffix, color = "#152741", bg = "#FFFFFF", trend, accent }) => (
+export const Stat = ({ label, value, suffix, color = "var(--text-strong)", bg = "var(--surface)", trend, accent }) => (
   <div style={{
     background: bg, borderRadius: 14, padding: "22px 22px 20px",
-    border: "1px solid #EAE6DD", flex: 1, position: "relative", overflow: "hidden",
+    border: "1px solid var(--border)", flex: 1, position: "relative", overflow: "hidden",
   }}>
     {accent && <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 3, background: accent }} />}
     <Eyebrow>{label}</Eyebrow>
     <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 10 }}>
       <span className="serif" style={{ fontSize: 36, fontWeight: 300, color, lineHeight: 1, letterSpacing: "-0.03em" }}>{value}</span>
-      {suffix && <span style={{ fontFamily: "DM Sans", fontSize: 14, color: "#8A8A86", fontWeight: 500 }}>{suffix}</span>}
+      {suffix && <span style={{ fontFamily: "DM Sans", fontSize: 14, color: "#6E6E68", fontWeight: 500 }}>{suffix}</span>}
     </div>
-    {trend && <div style={{ fontSize: 12, color: "#8A8A86", marginTop: 6 }}>{trend}</div>}
+    {trend && <div style={{ fontSize: 12, color: "#6E6E68", marginTop: 6 }}>{trend}</div>}
   </div>
 );
 
@@ -79,8 +79,8 @@ export const Section = ({ eyebrow, title, sub, right }) => (
   <div className="section-stack" style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", margin: "28px 0 16px", gap: 16 }}>
     <div style={{ flex: 1, minWidth: 0 }}>
       {eyebrow && <div style={{ marginBottom: 6 }}><Eyebrow>{eyebrow}</Eyebrow></div>}
-      <div className="serif" style={{ fontSize: 24, fontWeight: 300, color: "#152741", lineHeight: 1.1, letterSpacing: "-0.02em" }}>{title}</div>
-      {sub && <div style={{ fontSize: 14, color: "#8A8A86", marginTop: 4 }}>{sub}</div>}
+      <h2 className="serif" style={{ margin: 0, fontSize: 24, fontWeight: 300, color: "var(--text-strong)", lineHeight: 1.1, letterSpacing: "-0.02em" }}>{title}</h2>
+      {sub && <div style={{ fontSize: 14, color: "var(--text-muted-2)", marginTop: 4 }}>{sub}</div>}
     </div>
     {right && <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>{right}</div>}
   </div>
@@ -110,50 +110,74 @@ export const Toast = ({ msg, type = "success" }) => {
   );
 };
 
-export const Btn = ({ children, onClick, disabled, variant = "primary", size = "md", icon, style }) => {
+export const Btn = ({ children, onClick, disabled, loading, variant = "primary", size = "md", icon, style, ...rest }) => {
   const variants = {
-    primary: { bg: "#152741", c: "#F7F4EE", bd: "#152741", hbg: "#1E3556" },
-    secondary: { bg: "#FFFFFF", c: "#152741", bd: "#D9D3C5", hbg: "#F5F2EC" },
-    ghost: { bg: "transparent", c: "#152741", bd: "transparent", hbg: "#F5F2EC" },
+    primary: { bg: "var(--brand-bg)", c: "var(--brand-contrast)", bd: "var(--brand-bg)", hbg: "var(--brand-bg-hover)" },
+    secondary: { bg: "var(--surface)", c: "var(--text-strong)", bd: "var(--border-strong)", hbg: "var(--surface-2)" },
+    ghost: { bg: "transparent", c: "var(--text-strong)", bd: "transparent", hbg: "var(--surface-2)" },
     accent: { bg: "#E8A13C", c: "#152741", bd: "#E8A13C", hbg: "#D89030" },
-    danger: { bg: "#FFFFFF", c: "#B83A3A", bd: "#F4E0E0", hbg: "#F4E0E0" },
+    danger: { bg: "var(--surface)", c: "#B83A3A", bd: "#F4E0E0", hbg: "#F4E0E0" },
   };
   const v = variants[variant] || variants.primary;
   const sizes = { sm: "8px 14px", md: "11px 20px", lg: "14px 26px" };
   const fs = { sm: 13, md: 14, lg: 15 };
   const [hover, setHover] = useState(false);
+  const isDisabled = disabled || loading;
   return (
     <button
-      onClick={disabled ? undefined : onClick}
-      disabled={disabled}
+      onClick={isDisabled ? undefined : onClick}
+      disabled={isDisabled}
+      aria-busy={loading || undefined}
       className="ch"
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
       style={{
         padding: sizes[size], borderRadius: 10,
         border: `1px solid ${v.bd}`,
-        background: hover && !disabled ? v.hbg : v.bg,
+        background: hover && !isDisabled ? v.hbg : v.bg,
         color: v.c, fontSize: fs[size], fontWeight: 500,
+        opacity: isDisabled ? 0.6 : 1,
         display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8,
         whiteSpace: "nowrap", ...style,
       }}
-    >{typeof icon === "string" ? <Icon name={icon} size={fs[size] + 2} /> : icon}{children}</button>
+      {...rest}
+    >
+      {loading && <span aria-hidden="true" className="btn-spinner" style={{ width: fs[size], height: fs[size], border: "2px solid currentColor", borderTopColor: "transparent", borderRadius: "50%", display: "inline-block" }} />}
+      {!loading && (typeof icon === "string" ? <Icon name={icon} size={fs[size] + 2} /> : icon)}
+      {children}
+    </button>
   );
 };
 
-export const Field = ({ label, hint, children }) => (
-  <div style={{ marginBottom: 16 }}>
-    <div style={{ fontSize: 12, color: "#5A5A58", marginBottom: 6, fontWeight: 500 }}>{label}</div>
-    {children}
-    {hint && <div style={{ fontSize: 12, color: "#8A8A86", marginTop: 5 }}>{hint}</div>}
-  </div>
-);
+export const Field = ({ label, hint, error, children }) => {
+  const id = useId();
+  const hintId = hint ? id + "-hint" : undefined;
+  const errId = error ? id + "-err" : undefined;
+  const describedBy = [errId, hintId].filter(Boolean).join(" ") || undefined;
+  // Liga <label> ao controlo (leitores de ecrã anunciam o campo) e injeta
+  // aria-describedby (hint/erro) + aria-invalid quando há erro.
+  const control = isValidElement(children)
+    ? cloneElement(children, {
+        id: children.props.id || id,
+        "aria-describedby": [children.props["aria-describedby"], describedBy].filter(Boolean).join(" ") || undefined,
+        "aria-invalid": error ? true : children.props["aria-invalid"],
+      })
+    : children;
+  return (
+    <div style={{ marginBottom: 16 }}>
+      {label && <label htmlFor={id} style={{ display: "block", fontSize: 12, color: "var(--text-2)", marginBottom: 6, fontWeight: 500 }}>{label}</label>}
+      {control}
+      {error && <div id={errId} role="alert" style={{ fontSize: 12, color: "#B02A1E", marginTop: 5 }}>{error}</div>}
+      {hint && <div id={hintId} style={{ fontSize: 12, color: "#6E6E68", marginTop: 5 }}>{hint}</div>}
+    </div>
+  );
+};
 
 export const Inp = (props) => (
   <input {...props} style={{
     width: "100%", padding: "11px 14px", borderRadius: 10,
-    border: "1px solid #D9D3C5", fontSize: 14,
-    background: "#FFFFFF", color: "#3C3C3B",
+    border: "1px solid var(--border-strong)", fontSize: 14,
+    background: "var(--surface)", color: "var(--text)",
     transition: "border-color .15s ease, box-shadow .15s ease",
     ...(props.style || {}),
   }} />
@@ -162,8 +186,8 @@ export const Inp = (props) => (
 export const Sel = ({ value, onChange, options, placeholder }) => (
   <select value={value} onChange={(e) => onChange(e.target.value)} style={{
     width: "100%", padding: "11px 14px", borderRadius: 10,
-    border: "1px solid #D9D3C5", fontSize: 14,
-    background: "#FFFFFF", color: "#3C3C3B", appearance: "none",
+    border: "1px solid var(--border-strong)", fontSize: 14,
+    background: "var(--surface)", color: "var(--text)", appearance: "none",
     backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238A8A86' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E\")",
     backgroundRepeat: "no-repeat", backgroundPosition: "right 14px center", paddingRight: 36,
   }}>
@@ -173,35 +197,64 @@ export const Sel = ({ value, onChange, options, placeholder }) => (
 );
 
 export const Modal = ({ open, onClose, title, eyebrow, children, width = 520 }) => {
+  const panelRef = useRef(null);
+  const titleId = useId();
+  // Gestão de foco: guarda o elemento ativo, foca o painel ao abrir, faz trap
+  // do Tab e restaura o foco ao fechar. Escape fecha (listener de documento, por
+  // isso funciona sem clicar primeiro dentro do modal).
+  useEffect(() => {
+    if (!open) return;
+    const prevActive = document.activeElement;
+    const panel = panelRef.current;
+    const focusables = () => panel
+      ? [...panel.querySelectorAll('a[href],button:not([disabled]),textarea,input,select,[tabindex]:not([tabindex="-1"])')].filter((el) => el.offsetParent !== null)
+      : [];
+    // Foca o primeiro campo interativo, ou o painel.
+    const first = focusables()[0];
+    (first || panel)?.focus?.();
+    const onKey = (e) => {
+      if (e.key === "Escape") { e.stopPropagation(); onClose?.(); return; }
+      if (e.key !== "Tab") return;
+      const els = focusables();
+      if (!els.length) return;
+      const idx = els.indexOf(document.activeElement);
+      if (e.shiftKey && (idx <= 0)) { e.preventDefault(); els[els.length - 1].focus(); }
+      else if (!e.shiftKey && (idx === els.length - 1)) { e.preventDefault(); els[0].focus(); }
+    };
+    document.addEventListener("keydown", onKey, true);
+    return () => {
+      document.removeEventListener("keydown", onKey, true);
+      if (prevActive && prevActive.focus) prevActive.focus();
+    };
+  }, [open, onClose]);
+
   if (!open) return null;
   return (
     <div
       onClick={onClose}
       role="dialog"
       aria-modal="true"
-      aria-label={typeof title === "string" ? title : undefined}
+      aria-labelledby={typeof title === "string" ? titleId : undefined}
       className="modal-overlay"
       style={{
         position: "fixed", inset: 0, background: "rgba(21,39,65,.4)", backdropFilter: "blur(4px)",
         zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 24,
         animation: "fu .2s ease both",
       }}
-      onKeyDown={(e) => { if (e.key === "Escape") onClose?.(); }}
-      tabIndex={-1}
     >
-      <div onClick={(e) => e.stopPropagation()} className="modal-panel" style={{
-        background: "#FFFFFF", borderRadius: 18,
+      <div ref={panelRef} onClick={(e) => e.stopPropagation()} className="modal-panel" tabIndex={-1} style={{
+        background: "var(--surface)", borderRadius: 18,
         width: "100%", maxWidth: width, maxHeight: "86vh",
         overflowY: "auto", animation: "ti .25s ease both",
-        border: "1px solid #EAE6DD",
+        border: "1px solid var(--border)", outline: "none",
         boxShadow: "0 24px 64px rgba(21,39,65,.18)",
       }}>
         <div style={{ padding: "24px 28px 12px", display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
           <div>
             {eyebrow && <div style={{ marginBottom: 8 }}><Eyebrow>{eyebrow}</Eyebrow></div>}
-            <div className="serif" style={{ fontSize: 24, fontWeight: 300, color: "#152741", lineHeight: 1.15, letterSpacing: "-0.02em" }}>{title}</div>
+            <h2 id={titleId} className="serif" style={{ margin: 0, fontSize: 24, fontWeight: 300, color: "var(--text-strong)", lineHeight: 1.15, letterSpacing: "-0.02em" }}>{title}</h2>
           </div>
-          <button onClick={onClose} aria-label="Fechar" style={{ padding: 6, color: "#8A8A86", borderRadius: 8, display: "flex" }} className="ch tap-target"><Icon name="x" size={20} /></button>
+          <button onClick={onClose} aria-label="Fechar" style={{ padding: 6, color: "#6E6E68", borderRadius: 8, display: "flex" }} className="ch tap-target"><Icon name="x" size={20} /></button>
         </div>
         <div style={{ padding: "12px 28px 28px" }}>{children}</div>
       </div>
@@ -209,14 +262,39 @@ export const Modal = ({ open, onClose, title, eyebrow, children, width = 520 }) 
   );
 };
 
+// Placeholder de carregamento (shimmer). Reserva espaço para evitar saltos de
+// layout (CLS) enquanto os dados do Firestore chegam.
+export const Skeleton = ({ w = "100%", h = 16, r = 8, style }) => (
+  <span aria-hidden="true" className="skeleton" style={{ display: "block", width: w, height: h, borderRadius: r, ...style }} />
+);
+
+export const SkeletonCard = ({ lines = 3 }) => (
+  <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: 14, padding: 22, display: "flex", flexDirection: "column", gap: 12 }}>
+    <Skeleton w="40%" h={12} />
+    {Array.from({ length: lines }).map((_, i) => <Skeleton key={i} w={i === lines - 1 ? "70%" : "100%"} h={14} />)}
+  </div>
+);
+
+// Estado vazio consistente: ícone + mensagem + ação opcional.
+export const EmptyState = ({ icon = "inbox", title, message, action }) => (
+  <div style={{ textAlign: "center", padding: "40px 24px", color: "var(--text-muted-2)" }}>
+    <div style={{ display: "inline-flex", width: 48, height: 48, borderRadius: 24, background: "var(--surface-2)", color: "var(--text-muted-2)", alignItems: "center", justifyContent: "center", marginBottom: 14 }}>
+      <Icon name={icon} size={22} />
+    </div>
+    {title && <div className="serif" style={{ fontSize: 18, fontWeight: 400, color: "var(--text-strong)", marginBottom: 4 }}>{title}</div>}
+    {message && <div style={{ fontSize: 13.5, maxWidth: 360, margin: "0 auto 16px" }}>{message}</div>}
+    {action}
+  </div>
+);
+
 export const ConfirmModal = ({ open, onClose, onConfirm, title, eyebrow, message, confirmLabel = "Confirmar", cancelLabel = "Cancelar", variant = "danger", busy = false }) => {
   if (!open) return null;
   return (
     <Modal open={open} onClose={busy ? undefined : onClose} title={title} eyebrow={eyebrow} width={460}>
-      <p style={{ fontSize: 14, color: "#5A5A58", lineHeight: 1.6, marginBottom: 22 }}>{message}</p>
+      <p style={{ fontSize: 14, color: "var(--text-2)", lineHeight: 1.6, marginBottom: 22 }}>{message}</p>
       <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
         <Btn variant="secondary" onClick={onClose} disabled={busy}>{cancelLabel}</Btn>
-        <Btn variant={variant} onClick={onConfirm} disabled={busy}>{busy ? "A processar…" : confirmLabel}</Btn>
+        <Btn variant={variant} onClick={onConfirm} loading={busy}>{confirmLabel}</Btn>
       </div>
     </Modal>
   );

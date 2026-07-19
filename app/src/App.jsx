@@ -11,10 +11,9 @@ import RoleSwitcher from "./components/RoleSwitcher.jsx";
 import OnboardingTour from "./components/OnboardingTour.jsx";
 import { applyRoleOverride, getRoleOverride } from "./lib/roleOverride.js";
 
-// Páginas críticas (shell + login + dashboard) carregadas eagerly
+// Shell + login carregados eagerly (login é a primeira vista para todos).
 import Login from "./pages/Login.jsx";
 import AdminLayout from "./pages/AdminLayout.jsx";
-import Dashboard from "./pages/admin/Dashboard.jsx";
 
 // Wrapper para React.lazy com auto-recovery de chunks órfãos.
 //
@@ -47,6 +46,8 @@ function lazyWithRetry(importFn) {
 
 // Lazy: tudo o resto. Cada route só baixa o bundle quando o utilizador a
 // abre — reduz o initial load drasticamente e responde ao aviso >500KB.
+// Dashboard é lazy: pais/profissionais nunca lá chegam, não deve pesar o index chunk.
+const Dashboard = lazyWithRetry(() => import("./pages/admin/Dashboard.jsx"));
 const Users = lazyWithRetry(() => import("./pages/admin/Users.jsx"));
 const UserDetail = lazyWithRetry(() => import("./pages/admin/Users.jsx").then((m) => ({ default: m.UserDetail })));
 const Team = lazyWithRetry(() => import("./pages/admin/Team.jsx"));
@@ -257,6 +258,9 @@ export default function App() {
   const isAdmin = effectiveProfile.role === "director" || (effectiveProfile.email === ADMIN_EMAIL && !effectiveProfile._overridden);
   const isProfessional = effectiveProfile.role === "professional";
   const isParent = effectiveProfile.role === "parent";
+  // StyleLab é um scratchpad de design — só disponível em desenvolvimento,
+  // nunca no bundle de produção acedido pelos utilizadores.
+  const devTools = import.meta.env.DEV;
 
   return (
     <StoreProvider profile={effectiveProfile}>
@@ -267,7 +271,7 @@ export default function App() {
           {isAdmin ? (
             <Routes>
               <Route path="/confirmar/:patientId/:date" element={<ConfirmSession />} />
-              <Route path="/style-lab" element={<StyleLab />} />
+              {devTools && <Route path="/style-lab" element={<StyleLab />} />}
               <Route path="/" element={<AdminLayout profile={effectiveProfile} onLogout={logout} theme={theme} setTheme={setTheme} />}>
                 <Route index element={<Navigate to="/dashboard" replace />} />
                 <Route path="dashboard" element={<Dashboard />} />
@@ -296,7 +300,7 @@ export default function App() {
           ) : isProfessional ? (
             <Routes>
               <Route path="/confirmar/:patientId/:date" element={<ConfirmSession />} />
-              <Route path="/style-lab" element={<StyleLab />} />
+              {devTools && <Route path="/style-lab" element={<StyleLab />} />}
               <Route path="/faq" element={<FAQ />} />
               <Route path="/privacidade" element={<Privacy />} />
               <Route path="/manual" element={<Manual />} />
@@ -306,7 +310,7 @@ export default function App() {
           ) : isParent ? (
             <Routes>
               <Route path="/confirmar/:patientId/:date" element={<ConfirmSession />} />
-              <Route path="/style-lab" element={<StyleLab />} />
+              {devTools && <Route path="/style-lab" element={<StyleLab />} />}
               <Route path="/faq" element={<FAQ />} />
               <Route path="/privacidade" element={<Privacy />} />
               <Route path="/manual" element={<Manual />} />

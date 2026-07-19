@@ -1,11 +1,11 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useStore } from "../../lib/store.jsx";
-import { Btn, Card, Eyebrow, Section, Av, Tag } from "../../lib/ui.jsx";
+import { Btn, Card, Eyebrow, Section, Av, Tag, Skeleton, EmptyState } from "../../lib/ui.jsx";
 import { Icon } from "../../lib/icons.jsx";
 import { RL } from "../../lib/constants.js";
 
 export default function Users() {
-  const { users, setForm, setModal, profile } = useStore();
+  const { users, hydrated, setForm, setModal, profile } = useStore();
   const navigate = useNavigate();
 
   return (
@@ -31,7 +31,11 @@ export default function Users() {
             <span>{u.active === false ? <Tag type="pendente">Inativo</Tag> : <Tag type="sage">Ativo</Tag>}</span>
           </div>
         ))}
-        {users.length === 0 && <div style={{ padding: 40, textAlign: "center", color: "#8A8A86", fontSize: 14 }}>Sem utilizadores.</div>}
+        {users.length === 0 && (!hydrated
+          ? <div style={{ padding: "8px 20px 16px", display: "flex", flexDirection: "column", gap: 14 }}>{[0, 1, 2].map((i) => <Skeleton key={i} w={`${70 - i * 8}%`} h={18} />)}</div>
+          : <EmptyState icon="users" title="Sem utilizadores" message="Convide o primeiro acesso à plataforma."
+              action={<Btn icon={<Icon name="plus" size={15} />} onClick={() => { setForm({}); setModal("invite"); }}>Convidar</Btn>} />
+        )}
       </Card>
     </div>
   );

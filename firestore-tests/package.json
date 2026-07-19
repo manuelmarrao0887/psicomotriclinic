@@ -1,0 +1,15 @@
+{
+  "name": "psicomotriclinic-firestore-tests",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "firebase emulators:exec --only firestore --project psicomotriclinic-app \"node rules.test.mjs\"",
+    "seed": "node seed-emulator.mjs"
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^3.0.4",
+    "firebase": "^10.12.2",
+    "firebase-admin": "^12.6.0",
+    "firebase-tools": "^13.0.0"
+  }
+}

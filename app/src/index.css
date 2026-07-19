@@ -4,10 +4,27 @@
   --cream: #FFFFFF; --cream-2: #F5F2EC; --paper: #FBFAF7;
   /* Mantemos navy-on-cream para tema dark; texto inverso usa --cream-inverse */
   --cream-inverse: #F7F4EE;
-  --ink: #3C3C3B; --ink-2: #5A5A58; --muted: #8A8A86;
+  --ink: #3C3C3B; --ink-2: #55554F; --muted: #6E6E68;
   --line: #EAE6DD; --line-2: #D9D3C5;
   --accent: #E8A13C; --sage: #8DBF94; --sky: #B9CDE0;
   --err: #B83A3A; --warn: #C97A1F; --warn-soft: #F5E5CD;
+
+  /* ── Tokens semânticos (camada de primitivos ui.jsx) ──────────────
+     Reatribuídos em html.dark → dark mode robusto por token, em vez de
+     match de strings inline. Distinguimos navy-como-TEXTO (--text-strong,
+     inverte para claro no dark) de navy-como-FUNDO (--brand-bg, mantém-se
+     escuro) — a mesma cor tem papéis opostos consoante o uso. */
+  --surface: #FFFFFF;          /* fundo de Card/Modal/Inp */
+  --surface-2: #F5F2EC;        /* fundo subtil */
+  --border: #EAE6DD;           /* linha padrão */
+  --border-strong: #D9D3C5;    /* borda de inputs */
+  --text: #3C3C3B;             /* corpo */
+  --text-2: #55554F;           /* secundário */
+  --text-muted-2: #6E6E68;     /* terciário (AA) */
+  --text-strong: #152741;      /* títulos/navy-como-texto */
+  --brand-bg: #152741;         /* navy-como-fundo (botões/sidebar) */
+  --brand-bg-hover: #1E3556;
+  --brand-contrast: #F7F4EE;   /* texto sobre navy */
 
   /* Safe-area insets (iOS notch / home indicator) */
   --safe-top: env(safe-area-inset-top, 0px);
@@ -92,7 +109,21 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: non
 }
 .skip-link:focus { top: 12px; outline: 2px solid var(--accent); outline-offset: 2px; }
 
+/* Spinner do Btn (loading) */
+@keyframes spin { to { transform: rotate(360deg); } }
+.btn-spinner { animation: spin .6s linear infinite; }
+
+/* Skeleton shimmer — placeholder de carregamento */
+.skeleton {
+  background: linear-gradient(90deg, #EEEAE1 25%, #F5F2EC 37%, #EEEAE1 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease infinite;
+}
+html.dark .skeleton { background: linear-gradient(90deg, #1E2F49 25%, #263B5A 37%, #1E2F49 63%); background-size: 400% 100%; }
+@keyframes shimmer { 0% { background-position: 100% 50%; } 100% { background-position: 0 50%; } }
+
 @media (prefers-reduced-motion: reduce) {
+  .btn-spinner, .skeleton { animation-duration: .01ms !important; }
   *, *::before, *::after {
     animation-duration: .01ms !important;
     animation-iteration-count: 1 !important;
@@ -105,6 +136,13 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: non
 html.dark {
   --cream: #0E1A2C; --paper: #1A2A44; --cream-2: #152741;
   --ink: #E8E3D7; --line: #2A3D5C; --line-2: #3A4D6C;
+  /* Reatribuição dos tokens semânticos para o tema escuro. */
+  --surface: #1A2A44; --surface-2: #152741;
+  --border: #2A3D5C; --border-strong: #3A4D6C;
+  --text: #D8D3C7; --text-2: #A9A39A; --text-muted-2: #8A9AAE;
+  --text-strong: #E8E3D7;          /* navy-como-texto → claro */
+  --brand-bg: #0E1B30; --brand-bg-hover: #16233A;
+  --brand-contrast: #E8E3D7;
 }
 html.dark body { background: #0E1A2C; color: #E8E3D7; }
 /* Novos hex Brand Aligned + retrocompatibilidade */
@@ -136,7 +174,9 @@ html.dark [style*="rgb(247, 249, 251)"] { background: #0E1A2C !important; }
 html.dark [style*="rgb(255, 255, 255)"] { background: #1A2A44 !important; }
 html.dark [style*="rgb(245, 242, 236)"] { background: #152741 !important; }
 html.dark [style*="rgb(247, 244, 238)"] { color: #E8E3D7 !important; }
-html.dark [style*="rgb(21, 39, 65)"] { background: #08111F !important; }
+/* Só quando #152741/rgb(21,39,65) é FUNDO (não quando é color: de texto) — senão
+   apanhava headings navy e punha-lhes uma caixa escura por trás. */
+html.dark [style*="background: rgb(21, 39, 65)"], html.dark [style*="background:rgb(21, 39, 65)"] { background: #08111F !important; }
 html.dark [style*="rgb(234, 230, 221)"] { border-color: #2A3D5C !important; }
 html.dark [style*="rgb(245, 229, 205)"] { background: #3B2E14 !important; color: #F5D9A8 !important; }
 html.dark [style*="rgb(220, 231, 240)"] { background: #1A2E4A !important; color: #B9CDE0 !important; }

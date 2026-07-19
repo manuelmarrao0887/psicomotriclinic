@@ -2,70 +2,223 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // ─────────────────────────────────────────────────────────────
+    // Helpers
+    // ─────────────────────────────────────────────────────────────
     function isSignedIn() { return request.auth != null; }
     function profile()    { return get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data; }
     function role()       { return isSignedIn() ? profile().role : 'none'; }
     function isDirector() { return isSignedIn() && role() == 'director'; }
     function isStaff()    { return isSignedIn() && (role() == 'director' || role() == 'professional'); }
 
-    // Perfis: qualquer autenticado lê (listas de equipa/utilizadores).
-    // Cada um cria/edita o próprio doc (incluindo fcm_tokens para opt-in
-    // de notificações); a direção edita qualquer um.
+    // Bootstrap: o email do admin conhecido pode auto-provisionar-se como
+    // director (a 1ª conta director não pode ser criada por um director que
+    // ainda não existe). Ajustar/rodar este email conforme necessário.
+    function isBootstrapAdmin() {
+      return isSignedIn() && request.auth.token.email == 'manuelsousamarrao@gmail.com';
+    }
+
+    // Dono do documento clínico: staff, ou um utilizador cujo uid está
+    // denormalizado em parent_user_ids / professional_ids do próprio doc.
+    // (A denormalização é feita nas Cloud Actions do cliente ao criar/editar.)
+    function ownsDoc() {
+      return isSignedIn() && (
+        request.auth.uid in resource.data.get('parent_user_ids', []) ||
+        request.auth.uid in resource.data.get('professional_ids', [])
+      );
+    }
+
+    // Dono do paciente referenciado por patient_id (usado em create, onde
+    // ainda não existe `resource`). Faz um get() ao paciente.
+    function ownsPatient(pid) {
+      return isSignedIn() && (
+        isStaff() ||
+        request.auth.uid in get(/databases/$(database)/documents/patients/$(pid)).data.get('parent_user_ids', [])
+      );
+    }
+
+    // Verifica que a atualização NÃO mexe em campos proibidos (ex.: role).
+    function keeps(field) {
+      return request.resource.data[field] == resource.data[field];
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Perfis
+    //  • Leitura: qualquer autenticado (listas de equipa/utilizadores).
+    //  • Criação: só o próprio uid ou a direção.
+    //  • Atualização: o próprio ou a direção — MAS `role` e `active` são
+    //    imutáveis para o próprio (só a direção os pode mudar). Isto fecha
+    //    a escalada de privilégios via updateDoc(profiles/self,{role:'director'}).
+    //  • O papel de auto-registo é sempre imposto no cliente/servidor como
+    //    'parent'; nunca aceitar 'director'/'professional' de auto-registo.
+    // ─────────────────────────────────────────────────────────────
     match /profiles/{uid} {
       allow read: if isSignedIn();
-      allow create, update: if isDirector() || request.auth.uid == uid;
+      allow create: if isDirector()
+        || (request.auth.uid == uid && isBootstrapAdmin())
+        || (request.auth.uid == uid && request.resource.data.role == 'parent');
+      allow update: if isDirector()
+        || (request.auth.uid == uid && isBootstrapAdmin())
+        || (request.auth.uid == uid && keeps('role') && keeps('active'));
       allow delete: if isDirector();
     }
 
-    // Dados clínicos e financeiros: leitura a autenticados; escrita a staff.
-    match /professionals/{id}      { allow read: if isSignedIn(); allow write: if isStaff(); }
-    match /patients/{id}           { allow read: if isSignedIn(); allow write: if isStaff(); }
-    match /sessions/{id}           { allow read: if isSignedIn(); allow write: if isStaff(); }
-    match /payments/{id}           { allow read: if isSignedIn(); allow write: if isDirector(); }
+    // ─────────────────────────────────────────────────────────────
+    // Equipa
+    // ─────────────────────────────────────────────────────────────
+    match /professionals/{id} { allow read: if isSignedIn(); allow write: if isStaff(); }
 
-    // Pedidos de troca: read a todos os autenticados (responsável vê os seus,
-    // director vê todos); create a qualquer autenticado (responsável submete
-    // pedidos); update/delete só a staff (aprovar/recusar).
-    match /schedule_requests/{id}  {
-      allow read:   if isSignedIn();
-      allow create: if isSignedIn();
+    // ─────────────────────────────────────────────────────────────
+    // Pacientes — leitura só para staff ou responsável vinculado.
+    // ─────────────────────────────────────────────────────────────
+    match /patients/{id} {
+      allow read: if isStaff() || (isSignedIn() && request.auth.uid in resource.data.get('parent_user_ids', []));
+      allow write: if isStaff();
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Sessões (agenda) — clínico, staff ou responsável dono.
+    // ─────────────────────────────────────────────────────────────
+    match /sessions/{id} {
+      allow read: if isStaff() || ownsDoc();
+      allow write: if isStaff();
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Financeiro — confidencial. Só staff lê; só direção escreve.
+    // (Responsáveis não acedem ao livro financeiro da clínica.)
+    // ─────────────────────────────────────────────────────────────
+    // Pagamentos: staff vê tudo; o responsável vê apenas os dos seus filhos
+    // (parent_user_ids denormalizado no doc). Livro de custos fica só-staff.
+    match /payments/{id}       { allow read: if isStaff() || ownsDoc(); allow write: if isDirector(); }
+    match /overheads/{id}      { allow read: if isStaff(); allow write: if isDirector(); }
+    match /variable_costs/{id} { allow read: if isStaff(); allow write: if isDirector(); }
+
+    // ─────────────────────────────────────────────────────────────
+    // Pedidos de troca — o requerente tem de ser o próprio utilizador.
+    // ─────────────────────────────────────────────────────────────
+    match /schedule_requests/{id} {
+      allow read:   if isStaff() || ownsDoc()
+        || (isSignedIn() && resource.data.requested_by_id == request.auth.uid);
+      allow create: if isSignedIn()
+        && request.resource.data.requested_by_id == request.auth.uid;
       allow update, delete: if isStaff();
     }
 
-    match /overheads/{id}          { allow read: if isSignedIn(); allow write: if isDirector(); }
-    match /variable_costs/{id}     { allow read: if isSignedIn(); allow write: if isDirector(); }
+    // ─────────────────────────────────────────────────────────────
+    // Visitas (métricas) — cada um regista a sua; só direção lê.
+    // ─────────────────────────────────────────────────────────────
+    match /visits/{id} {
+      allow read: if isDirector();
+      allow create: if isSignedIn();
+      allow update, delete: if false;
+    }
 
-    // Visitas: qualquer autenticado regista a sua; só a direção lê as métricas.
-    match /visits/{id}             { allow read: if isDirector(); allow create: if isSignedIn(); allow update, delete: if false; }
+    // ─────────────────────────────────────────────────────────────
+    // Clínico sensível — staff ou responsável/profissional dono do doc.
+    // A leitura em lista exige que a query do cliente filtre por
+    // array-contains parent_user_ids/professional_ids (ver store.jsx).
+    // ─────────────────────────────────────────────────────────────
+    match /anamnesis/{id} {
+      allow read: if isStaff() || ownsDoc();
+      allow write: if isStaff();
+    }
 
-    // Clínico — dados sensíveis. A leitura é aberta a autenticados para o portal
-    // do responsável ver o plano e notas dos seus filhos (filtragem por
-    // parent_user_ids é feita no cliente). Escrita só a staff.
-    // Nota: para uma versão mais restritiva por documento, considerar mover
-    // notes/plans para sub-colecções aninhadas em patients/{id}/... onde as
-    // regras possam validar parent_user_ids por get().
-    match /anamnesis/{id}          { allow read: if isSignedIn(); allow write: if isStaff(); }
-    // Notas de sessão: write reservado a staff, com excepção — responsáveis
-    // podem criar uma nota de cancelamento (status=cancelado, cancelled_by_user=true)
-    // a partir do fluxo de push "Não posso ir".
-    match /session_notes/{id}      {
-      allow read: if isSignedIn();
+    match /intervention_plans/{id} {
+      allow read: if isStaff() || ownsDoc();
+      allow write: if isStaff();
+    }
+
+    // Notas de sessão: staff escreve tudo. Responsável dono pode criar UMA
+    // nota de cancelamento (status=cancelado, cancelled_by_user=true) ligada
+    // a um paciente que lhe pertence — nada mais.
+    match /session_notes/{id} {
+      allow read: if isStaff() || ownsDoc();
       allow create: if isStaff()
         || (isSignedIn()
             && request.resource.data.cancelled_by_user == true
-            && request.resource.data.status == "cancelado");
+            && request.resource.data.status == "cancelado"
+            && ownsPatient(request.resource.data.patient_id)
+            && request.auth.uid in request.resource.data.get('parent_user_ids', []));
       allow update, delete: if isStaff();
     }
-    match /intervention_plans/{id} { allow read: if isSignedIn(); allow write: if isStaff(); }
 
-    // Auditoria: staff escreve (registo de ações), só direção lê e nada se atualiza/apaga.
-    match /audit_log/{id}          { allow read: if isDirector(); allow create: if isStaff(); allow update, delete: if false; }
+    // ─────────────────────────────────────────────────────────────
+    // Diário de comportamento — responsável dono ou staff.
+    // ─────────────────────────────────────────────────────────────
+    match /behavior_diary/{id} {
+      allow read: if isStaff() || ownsDoc();
+      allow create: if isSignedIn()
+        && ownsPatient(request.resource.data.patient_id)
+        && request.resource.data.by_user_id == request.auth.uid;
+      allow update, delete: if isStaff()
+        || (isSignedIn() && resource.data.by_user_id == request.auth.uid);
+    }
 
-    // Comunicações da direção: read a qualquer autenticado (cada portal filtra
-    // por audience no cliente); write só a direção.
-    match /announcements/{id}      { allow read: if isSignedIn(); allow write: if isDirector(); }
+    // ─────────────────────────────────────────────────────────────
+    // Mensagens responsável ↔ profissional.
+    // ─────────────────────────────────────────────────────────────
+    match /parent_messages/{id} {
+      allow read: if isStaff() || ownsDoc()
+        || (isSignedIn() && resource.data.from_user_id == request.auth.uid);
+      allow create: if isSignedIn()
+        && ownsPatient(request.resource.data.patient_id)
+        && request.resource.data.from_user_id == request.auth.uid;
+      // Só staff pode responder/marcar lido.
+      allow update: if isStaff();
+      allow delete: if isStaff();
+    }
 
-    // Lembretes: escritos só pela Cloud Function (Admin SDK ignora regras). Direção lê.
-    match /reminders/{id}          { allow read: if isDirector(); allow write: if false; }
+    // ─────────────────────────────────────────────────────────────
+    // Biblioteca de exercícios de casa — leitura a autenticados
+    // (não é dado pessoal); escrita a staff.
+    // ─────────────────────────────────────────────────────────────
+    match /home_exercises_library/{id} {
+      allow read: if isSignedIn();
+      allow write: if isStaff();
+    }
+
+    // Atribuições e conclusões de prática em casa — ligadas a um paciente.
+    match /home_practice_assignments/{id} {
+      allow read: if isStaff() || ownsDoc();
+      allow write: if isStaff();
+    }
+    match /home_practice_completions/{id} {
+      allow read: if isStaff() || ownsDoc();
+      allow create: if isSignedIn()
+        && ownsPatient(request.resource.data.patient_id)
+        && request.resource.data.by_user_id == request.auth.uid;
+      allow update, delete: if isStaff();
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Lista de espera (CRM) — dados de leads; só staff.
+    // ─────────────────────────────────────────────────────────────
+    match /waitlist/{id} { allow read, write: if isStaff(); }
+
+    // ─────────────────────────────────────────────────────────────
+    // Auditoria — staff cria; só direção lê; imutável.
+    // ─────────────────────────────────────────────────────────────
+    match /audit_log/{id} {
+      allow read: if isDirector();
+      allow create: if isStaff();
+      allow update, delete: if false;
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Comunicações da direção — leitura a autenticados (portal filtra
+    // por audience no cliente); escrita só direção.
+    // ─────────────────────────────────────────────────────────────
+    match /announcements/{id} { allow read: if isSignedIn(); allow write: if isDirector(); }
+
+    // ─────────────────────────────────────────────────────────────
+    // Lembretes — escritos só pela Cloud Function (Admin SDK ignora regras).
+    // ─────────────────────────────────────────────────────────────
+    match /reminders/{id} { allow read: if isDirector(); allow write: if false; }
+
+    // ─────────────────────────────────────────────────────────────
+    // Default deny — qualquer coleção não listada acima é negada.
+    // (NÃO adicionar match /{document=**} permissivo.)
+    // ─────────────────────────────────────────────────────────────
   }
 }

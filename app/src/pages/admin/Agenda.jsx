@@ -70,8 +70,8 @@ export default function Agenda() {
                               background: pr?.avatar_color || "#DCE7F0",
                               marginBottom: 4, fontSize: 12, cursor: "pointer",
                             }}>
-                            <div style={{ fontWeight: 500, color: "#152741" }}>{p.name}</div>
-                            <div style={{ color: "#5A5A58", fontSize: 11, marginTop: 1 }}>
+                            <div style={{ fontWeight: 600, color: "#152741" }}>{p.name}</div>
+                            <div style={{ color: "#2E3E52", fontSize: 11, marginTop: 1 }}>
                               {firstName}{ids.length > 1 ? ` +${ids.length - 1}` : ""} · {p.session_type === "individual" ? "Indiv." : "Grupo"}
                             </div>
                           </div>

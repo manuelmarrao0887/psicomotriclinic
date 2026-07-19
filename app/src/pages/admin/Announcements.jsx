@@ -1,5 +1,5 @@
-import { useStore } from "../../lib/store.jsx";
-import { Btn, Card, Eyebrow, Section, Tag, Modal, Field, Inp, Sel, ConfirmModal } from "../../lib/ui.jsx";
+import { useStore, useUi } from "../../lib/store.jsx";
+import { Btn, Card, Eyebrow, Section, Tag, Modal, Field, Inp, Sel, ConfirmModal, SkeletonCard } from "../../lib/ui.jsx";
 import { Icon } from "../../lib/icons.jsx";
 import { useState } from "react";
 
@@ -7,7 +7,8 @@ const AUDIENCE_LABEL = { all: "Todos", professional: "Profissionais", parent: "R
 const AUDIENCE_COLOR = { all: "default", professional: "professional", parent: "parent" };
 
 export default function Announcements() {
-  const { announcements, addAnnouncement, toggleAnnouncementActive, deleteAnnouncement, form, setForm, modal, setModal } = useStore();
+  const { announcements, hydrated, addAnnouncement, toggleAnnouncementActive, deleteAnnouncement } = useStore();
+  const { form, setForm, modal, setModal } = useUi();
   const [toDelete, setToDelete] = useState(null);
 
   const open = () => { setForm({ annTitle: "", annBody: "", annAudience: "all" }); setModal("addAnnouncement"); };
@@ -24,7 +25,9 @@ export default function Announcements() {
         right={<Btn icon={<Icon name="plus" size={16} />} onClick={open}>Nova comunicação</Btn>}
       />
 
-      {active.length === 0 && inactive.length === 0 && (
+      {active.length === 0 && inactive.length === 0 && !hydrated && <SkeletonCard lines={2} />}
+
+      {active.length === 0 && inactive.length === 0 && hydrated && (
         <Card pad={40} style={{ textAlign: "center" }}>
           <div style={{ marginBottom: 12, color: "#B9CDE0", display: "flex", justifyContent: "center" }}><Icon name="mail" size={32} /></div>
           <div className="serif-it" style={{ fontSize: 18, color: "#152741", marginBottom: 6 }}>Sem comunicações</div>

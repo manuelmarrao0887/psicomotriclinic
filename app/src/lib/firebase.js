@@ -1,7 +1,8 @@
 // Firebase + adaptador `sb` (mesma API do projeto legacy para facilitar migração).
-import { initializeApp } from "firebase/app";
+import { initializeApp, deleteApp } from "firebase/app";
 import {
   getAuth,
+  connectAuthEmulator,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -14,6 +15,7 @@ import {
 import {
   getFirestore,
   initializeFirestore,
+  connectFirestoreEmulator,
   persistentLocalCache,
   persistentMultipleTabManager,
   collection,
@@ -33,7 +35,9 @@ import {
   onSnapshot,
   getCountFromServer,
 } from "firebase/firestore";
-import { getMessaging, getToken, onMessage, isSupported as messagingIsSupported, deleteToken } from "firebase/messaging";
+// firebase/messaging é carregado dinamicamente (import()) só quando é preciso —
+// sai do caminho crítico do arranque/login (não é usado até o utilizador ativar
+// notificações). Ver _initMessaging.
 
 export const firebaseConfig = {
   apiKey: "AIzaSyBGQGSSGthbIMUxHDefwWlarNR7c_Vjd3E",
@@ -60,6 +64,17 @@ try {
 } catch (_) {
   // Já inicializado (ex: HMR no dev) ou persistência indisponível — fallback
   _db = getFirestore(app);
+}
+
+// Desenvolvimento contra o emulador local (VITE_USE_EMULATOR=1). Nunca ativo em
+// produção. Permite testar auth + regras Firestore sem tocar em dados reais.
+if (import.meta.env.VITE_USE_EMULATOR === "1") {
+  try {
+    connectAuthEmulator(_auth, "http://127.0.0.1:9099", { disableWarnings: true });
+    connectFirestoreEmulator(_db, "127.0.0.1", 8080);
+    // eslint-disable-next-line no-console
+    console.info("[firebase] emulador ativo (auth:9099, firestore:8080)");
+  } catch (e) { console.warn("[firebase] falha a ligar emulador", e?.message); }
 }
 
 // Re-exports para uso directo em store.jsx (listeners em vez do compat sb).
@@ -192,7 +207,11 @@ export const sb = {
         if (meta.full_name) {
           try { await updateProfile(cred.user, { displayName: meta.full_name }); } catch (_) {}
         }
-        const role = meta.role === "pending_director" ? "director" : meta.role || "parent";
+        // SEGURANÇA: o papel NUNCA é decidido pelo cliente no auto-registo.
+        // Todos os registos públicos são 'parent'. Staff (professional/director)
+        // é provisionado pela direção via inviteUser (a direção altera o papel
+        // depois, autorizada pelas regras). Exceção: bootstrap do admin conhecido.
+        const role = email === ADMIN_EMAIL ? "director" : "parent";
         await setDoc(
           doc(_db, "profiles", cred.user.uid),
           {
@@ -241,6 +260,36 @@ export const sb = {
   },
 };
 
+// ───── Criação de contas de staff (sem afetar a sessão do admin) ───────
+// createUserWithEmailAndPassword no app primário SUBSTITUI a sessão atual pela
+// do novo utilizador. Para a direção poder convidar staff sem perder a sua
+// sessão, criamos o utilizador numa instância *secundária* do Firebase App
+// (auth isolado), gravamos o perfil como 'parent' (auto-create permitido pelas
+// regras) e depois a direção eleva o papel via updateDoc autorizado.
+// Devolve { uid } ou { error }.
+export async function createStaffAccount({ email, password, fullName }) {
+  const mail = _toEmail(email);
+  let secondaryApp = null;
+  try {
+    secondaryApp = initializeApp(firebaseConfig, "invite-" + Date.now());
+    const secAuth = getAuth(secondaryApp);
+    const cred = await createUserWithEmailAndPassword(secAuth, mail, password);
+    if (fullName) { try { await updateProfile(cred.user, { displayName: fullName }); } catch (_) {} }
+    const uid = cred.user.uid;
+    // Perfil inicial como 'parent' — a direção altera o papel a seguir.
+    await setDoc(doc(_db, "profiles", uid), {
+      id: uid, email: mail, full_name: fullName || mail.split("@")[0],
+      role: "parent", active: true, created_at: new Date().toISOString(),
+    }, { merge: true });
+    try { await fbSignOut(secAuth); } catch (_) {}
+    return { uid, email: mail };
+  } catch (e) {
+    return { error: { message: e.message, code: e.code } };
+  } finally {
+    if (secondaryApp) { try { await deleteApp(secondaryApp); } catch (_) {} }
+  }
+}
+
 // ───── FCM (Push Notifications) ────────────────────────────────────────
 // VAPID public key — gerada em Firebase Console → Project Settings → Cloud
 // Messaging → Web Push certificates. Configurar como VITE_FCM_VAPID_KEY em
@@ -249,14 +298,16 @@ export const FCM_VAPID_KEY = import.meta.env.VITE_FCM_VAPID_KEY || "";
 
 let _messaging = null;
 let _messagingInitTried = false;
+let _msgMod = null; // módulo firebase/messaging carregado sob demanda
 
 async function _initMessaging() {
   if (_messagingInitTried) return _messaging;
   _messagingInitTried = true;
   try {
-    const supported = await messagingIsSupported();
+    _msgMod = await import("firebase/messaging"); // import dinâmico (lazy chunk)
+    const supported = await _msgMod.isSupported();
     if (!supported) return null;
-    _messaging = getMessaging(app);
+    _messaging = _msgMod.getMessaging(app);
     return _messaging;
   } catch (_) { return null; }
 }
@@ -283,7 +334,7 @@ export async function fcmRequestPermissionAndToken() {
   }
 
   try {
-    const token = await getToken(messaging, { vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: swReg });
+    const token = await _msgMod.getToken(messaging, { vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: swReg });
     if (!token) return { error: { code: "token-fail", message: "Não foi possível obter token." } };
     return { token };
   } catch (e) {
@@ -295,7 +346,7 @@ export async function fcmRequestPermissionAndToken() {
 export async function fcmDeleteToken() {
   const messaging = await _initMessaging();
   if (!messaging) return { ok: false };
-  try { await deleteToken(messaging); return { ok: true }; }
+  try { await _msgMod.deleteToken(messaging); return { ok: true }; }
   catch (_) { return { ok: false }; }
 }
 
@@ -303,7 +354,7 @@ export async function fcmDeleteToken() {
 export async function fcmOnForegroundMessage(cb) {
   const messaging = await _initMessaging();
   if (!messaging) return () => {};
-  return onMessage(messaging, cb);
+  return _msgMod.onMessage(messaging, cb);
 }
 
 // Guarda/remove o token no profile do utilizador (array — multi-device).

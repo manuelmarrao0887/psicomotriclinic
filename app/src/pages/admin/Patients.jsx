@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useStore } from "../../lib/store.jsx";
-import { Btn, Card, Eyebrow, Section, Av, Tag, Progress, ConfirmModal, Modal, Field } from "../../lib/ui.jsx";
+import { Btn, Card, Eyebrow, Section, Av, Tag, Progress, ConfirmModal, Modal, Field, Skeleton, EmptyState } from "../../lib/ui.jsx";
 import { Icon } from "../../lib/icons.jsx";
 import { INSURANCE_LABEL } from "../../lib/constants.js";
 
@@ -13,7 +13,7 @@ const Row = ({ label, value }) => (
 );
 
 export default function Patients() {
-  const { pts, profs, setForm, setModal } = useStore();
+  const { pts, profs, hydrated, setForm, setModal } = useStore();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const filtered = pts.filter((p) => !search || p.name.toLowerCase().includes(search.toLowerCase()));
@@ -73,7 +73,15 @@ export default function Patients() {
               </div>
             );
           })}
-          {filtered.length === 0 && <div style={{ padding: 40, textAlign: "center", color: "#8A8A86", fontSize: 14 }}>{search ? "Sem resultados para a procura." : "Sem pacientes. Use \"Novo paciente\"."}</div>}
+          {filtered.length === 0 && (!hydrated
+            ? <div style={{ padding: "8px 20px 16px", display: "flex", flexDirection: "column", gap: 14 }}>
+                {[0, 1, 2, 3, 4].map((i) => <Skeleton key={i} w={`${70 - i * 6}%`} h={18} />)}
+              </div>
+            : <EmptyState icon="clipboard"
+                title={search ? "Sem resultados" : "Ainda sem pacientes"}
+                message={search ? "Nenhum paciente corresponde à procura." : "Comece por criar o primeiro paciente."}
+                action={!search && <Btn icon={<Icon name="plus" size={15} />} onClick={() => { setForm({}); setModal("addPatient"); }}>Novo paciente</Btn>} />
+          )}
         </div>
       </Card>
     </div>

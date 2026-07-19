@@ -1,4 +1,4 @@
-import { useStore } from "../lib/store.jsx";
+import { useStore, useUi } from "../lib/store.jsx";
 import { Btn, Field, Inp, Sel, Modal, Eyebrow } from "../lib/ui.jsx";
 import { Icon } from "../lib/icons.jsx";
 import { DAYS, HOURS, MONTHS_2026, INSURANCES, INSURANCE_LABEL } from "../lib/constants.js";
@@ -23,7 +23,8 @@ const Ta = (props) => <textarea {...props} style={{ ...taStyle, ...(props.style 
 
 export default function ModalsHost() {
   const s = useStore();
-  const { modal, setModal, form, setForm, profs } = s;
+  const { profs } = s;
+  const { modal, setModal, form, setForm } = useUi();
   const set = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   return (
@@ -53,7 +54,7 @@ export default function ModalsHost() {
               <Eyebrow>PASSWORD TEMPORÁRIA</Eyebrow>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 4 }}>
                 <span style={{ fontFamily: "JetBrains Mono", fontSize: 14, color: "#152741" }}>{form.inviteResult.pw}</span>
-                <button onClick={() => navigator.clipboard?.writeText(form.inviteResult.pw)} className="ch" style={{ color: "#5A5A58", padding: 4, display: "flex" }}><Icon name="copy" size={16} /></button>
+                <button aria-label="Copiar password" title="Copiar password" onClick={() => navigator.clipboard?.writeText(form.inviteResult.pw)} className="ch" style={{ color: "#5A5A58", padding: 4, display: "flex" }}><Icon name="copy" size={16} /></button>
               </div>
             </div>
             <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>

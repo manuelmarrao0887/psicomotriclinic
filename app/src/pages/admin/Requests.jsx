@@ -1,16 +1,18 @@
 import { useStore } from "../../lib/store.jsx";
-import { Btn, Card, Section, Av, Tag } from "../../lib/ui.jsx";
+import { Btn, Card, Section, Av, Tag, SkeletonCard } from "../../lib/ui.jsx";
 import { Icon } from "../../lib/icons.jsx";
 
 export default function Requests() {
-  const { reqs, profs, pts, approveRequest, rejectRequest } = useStore();
+  const { reqs, profs, pts, hydrated, approveRequest, rejectRequest } = useStore();
   const pending = reqs.filter((r) => r.status === "pendente" || !r.status);
 
   return (
     <div className="page-pad" style={{ padding: "28px 40px 60px" }}>
       <Section eyebrow="— PEDIDOS" title={`Trocas de horário · ${pending.length}`} sub="Pedidos pendentes da equipa e responsáveis" />
 
-      {pending.length === 0 && (
+      {pending.length === 0 && !hydrated && <SkeletonCard lines={2} />}
+
+      {pending.length === 0 && hydrated && (
         <Card pad={40} style={{ textAlign: "center" }}>
           <div style={{ marginBottom: 12, display: "flex", justifyContent: "center", color: "#B9CDE0" }}><Icon name="check" size={32} /></div>
           <div className="serif-it" style={{ fontSize: 18, color: "#152741", marginBottom: 6 }}>Tudo em ordem</div>

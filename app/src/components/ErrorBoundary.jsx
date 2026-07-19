@@ -23,9 +23,13 @@ export default class ErrorBoundary extends Component {
 
   render() {
     if (this.state.error) {
-      const msg = this.state.error?.message || String(this.state.error);
-      const stack = this.state.error?.stack || "";
-      const compStack = this.state.info?.componentStack || "";
+      // Detalhes técnicos (mensagem/stack/component stack) só em desenvolvimento.
+      // Em produção, utilizadores clínicos veem apenas uma mensagem amigável;
+      // os detalhes ficam na consola (console.error acima) para diagnóstico.
+      const isDev = import.meta.env.DEV;
+      const msg = isDev ? (this.state.error?.message || String(this.state.error)) : "";
+      const stack = isDev ? (this.state.error?.stack || "") : "";
+      const compStack = isDev ? (this.state.info?.componentStack || "") : "";
       return (
         <div style={{
           maxWidth: 720, margin: "40px auto", padding: 24,
@@ -41,14 +45,16 @@ export default class ErrorBoundary extends Component {
             <h1 style={{ fontSize: 18, margin: 0, color: "#152741", fontWeight: 600 }}>Algo correu mal nesta página</h1>
           </div>
           <p style={{ marginBottom: 14, color: "#5A5A58" }}>
-            A página não conseguiu renderizar. O erro está abaixo — partilha isto para podermos corrigir.
+            {msg
+              ? "A página não conseguiu renderizar. O erro está abaixo — partilha isto para podermos corrigir."
+              : "A página não conseguiu carregar. Tenta outra vez; se continuar, avisa a direção."}
           </p>
-          <pre style={{
+          {msg && <pre style={{
             background: "#F5F2EC", border: "1px solid #EAE6DD", borderRadius: 10,
             padding: 14, overflow: "auto", maxHeight: 260,
             fontFamily: "JetBrains Mono, ui-monospace, monospace", fontSize: 12,
             color: "#B83A3A", whiteSpace: "pre-wrap", wordBreak: "break-word",
-          }}>{msg}</pre>
+          }}>{msg}</pre>}
           {stack && (
             <details style={{ marginTop: 12 }}>
               <summary style={{ cursor: "pointer", fontSize: 13, color: "#5A5A58" }}>Stack trace</summary>

@@ -1,36 +1,40 @@
 import { useState } from "react";
 import { useStore } from "../../lib/store.jsx";
-import { Btn, Card, Eyebrow, Section, Stat, Sel, Tag, Av } from "../../lib/ui.jsx";
+import { Btn, Card, Eyebrow, Section, Stat, Sel, Tag, Av, SkeletonCard } from "../../lib/ui.jsx";
 import { Icon } from "../../lib/icons.jsx";
 import { CLINIC_CUT, MONTHS_2026 } from "../../lib/constants.js";
+import { pnl } from "../../lib/finance.js";
 
 const hasProf = (pt, id) => pt.professional_id === id || (pt.professional_ids || []).includes(id);
 
 export default function Finance() {
-  const { pays, pts, profs, over, vcosts, togglePayment, setForm, setModal } = useStore();
+  const { pays, pts, profs, over, vcosts, hydrated, togglePayment, setForm, setModal } = useStore();
   const [filterMonth, setFilterMonth] = useState("todos");
 
   const months = Array.from(new Set(pays.map((p) => p.month))).sort();
   const filtered = filterMonth === "todos" ? pays : pays.filter((p) => p.month === filterMonth);
-  const tp = filtered.reduce((a, p) => a + Number(p.amount), 0);
-  const pp = filtered.filter((p) => p.status === "pago").reduce((a, p) => a + Number(p.amount), 0);
   const pend = filtered.filter((p) => p.status === "pendente");
-  const clinicCut = pp * CLINIC_CUT;
-  const profCut = pp - clinicCut;
 
   const eur = (n) => Number(n || 0).toLocaleString("pt-PT", { maximumFractionDigits: 0 });
-  const rent = Number(over.rent) || 0;
-  const gar = (Number(over.garage_spots) || 0) * (Number(over.garage_per_spot) || 0);
   const sortedV = [...vcosts].sort((a, b) => MONTHS_2026.indexOf(b.month) - MONTHS_2026.indexOf(a.month));
   const refMonth = filterMonth !== "todos" ? filterMonth : sortedV[0]?.month || null;
   const vc = vcosts.find((v) => v.month === refMonth) || {};
-  const varTot = (Number(vc.power) || 0) + (Number(vc.water) || 0) + (Number(vc.telecom) || 0);
-  const custos = rent + varTot;
-  const resEspaco = gar - custos;
+  // Cálculos centralizados e testados (lib/finance.js).
+  const P = pnl({ payments: filtered, over, vc });
+  const tp = P.total, pp = P.paid, clinicCut = P.clinicCut, profCut = P.profCut;
+  const rent = P.rent, gar = P.garage, varTot = P.varTot, custos = P.custos, resEspaco = P.spaceResult;
+
+  if (!hydrated) {
+    return (
+      <div style={{ padding: "28px 40px 60px", display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+        {[0, 1, 2, 3, 4, 5].map((i) => <SkeletonCard key={i} lines={2} />)}
+      </div>
+    );
+  }
 
   return (
     <div style={{ padding: "28px 40px 60px" }}>
-      <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginBottom: 14 }}>
+      <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
         <div style={{ minWidth: 200 }}>
           <Sel value={filterMonth} onChange={setFilterMonth} options={[{ v: "todos", l: "Todos os meses" }, ...months.map((m) => ({ v: m, l: m }))]} />
         </div>
@@ -45,9 +49,9 @@ export default function Finance() {
 
       {/* Custos & rendimentos */}
       <Card pad={22} style={{ marginBottom: 24 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, flexWrap: "wrap", gap: 10 }}>
           <Eyebrow>— CUSTOS & RENDIMENTOS DO ESPAÇO</Eyebrow>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <Btn size="sm" variant="secondary" icon={<Icon name="edit" size={13} />}
               onClick={() => { setForm({ rent: over.rent, garageSpots: over.garage_spots ?? 3, garagePerSpot: over.garage_per_spot }); setModal("overheads"); }}>
               Renda & garagem
@@ -210,8 +214,10 @@ export default function Finance() {
         </div>
       </Card>
 
-      {/* Tabela pagamentos */}
+      {/* Tabela pagamentos — scroll horizontal em ecrãs estreitos em vez de esmagar colunas */}
       <Card pad={0}>
+        <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+        <div style={{ minWidth: 560 }}>
         <div style={{ display: "grid", gridTemplateColumns: "2fr 1.2fr 1fr 1fr 1.2fr", padding: "14px 20px", background: "#F5F2EC", borderBottom: "1px solid #EAE6DD" }}>
           <Eyebrow>Paciente</Eyebrow><Eyebrow>Mês</Eyebrow><Eyebrow>Valor</Eyebrow><Eyebrow>Estado</Eyebrow><Eyebrow style={{ textAlign: "right" }}>Acções</Eyebrow>
         </div>
@@ -240,6 +246,8 @@ export default function Finance() {
           );
         })}
         {filtered.length === 0 && <div style={{ padding: 40, textAlign: "center", color: "#8A8A86", fontSize: 14 }}>Sem pagamentos {filterMonth !== "todos" ? `em ${filterMonth}` : ""}.</div>}
+        </div>
+        </div>
       </Card>
     </div>
   );

@@ -1,8 +1,12 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { Mark, Icon } from "../../lib/icons.jsx";
-import { Av, Btn, Card, Eyebrow, Tag, Field, Inp, Sel } from "../../lib/ui.jsx";
+import { Av, Btn, Card, Eyebrow, Tag, Field, Inp, Sel, Skeleton } from "../../lib/ui.jsx";
 import { APP_VERSION, formatBuildDate, DAYS, HOURS, MONTHS_2026, MES_PT, CLINIC_CUT } from "../../lib/constants.js";
 import { downloadCsv } from "../../lib/csv.js";
+import { sumAmounts, sumPaid, splitClinicProf, irsSummary } from "../../lib/finance.js";
+import { daysUntilBirthday, ageOnNext } from "../../lib/format.js";
+import { useTabParam } from "../../lib/useTabParam.js";
+import PortalSidebar from "../../components/PortalSidebar.jsx";
 import { useStore } from "../../lib/store.jsx";
 import ViewToggle from "../../components/ViewToggle.jsx";
 import { useViewMode } from "../../lib/useViewMode.js";
@@ -22,10 +26,10 @@ function findMyProfRecord(profs, userId, fullName) {
 }
 
 export default function ProfessionalPortal({ profile, onLogout, theme, setTheme }) {
-  const { pts, profs, notes, announcements, users = [], homeExercises = [], homeAssignments = [], assignHomeExercise, unassignHomeExercise, parentMessages = [], replyToParent, markMessageRead, setNotificationPrefs, setForm, setModal, quickMarkFalta, pays = [], createPayment, togglePayment, deletePayment, updatePayment } = useStore();
+  const { pts, profs, notes, announcements, users = [], homeExercises = [], homeAssignments = [], assignHomeExercise, unassignHomeExercise, parentMessages = [], replyToParent, markMessageRead, setNotificationPrefs, setForm, setModal, quickMarkFalta, pays = [], createPayment, togglePayment, deletePayment, updatePayment, hydrated } = useStore();
   const meDoc = users.find((u) => u.id === profile?.id);
   const myPhoto = meDoc?.photo_url || null;
-  const [tab, setTab] = useState("home"); // home | agenda | patients | finance | account
+  const [tab, setTab] = useTabParam("home", ["home", "agenda", "patients", "finance", "account"]); // sincroniza com ?tab=
 
   const myProfRecord = useMemo(() => findMyProfRecord(profs, profile?.id, profile?.full_name), [profs, profile?.id, profile?.full_name]);
   const myProfId = myProfRecord?.id;
@@ -69,6 +73,17 @@ export default function ProfessionalPortal({ profile, onLogout, theme, setTheme 
     setModal("sessionNote");
   };
 
+  // Dispatch dos separadores — uma vez, usado nos layouts desktop e mobile.
+  const tabContent = (
+    <>
+      {tab === "home"     && <ProHome myProfId={myProfId} myPatients={myPatients} todaysSessions={todaysSessions} todayLabel={todayLabel} notes={notes} announcements={announcements} onSessionNote={openSessionNote} onMarkFalta={(p) => quickMarkFalta(p.id, myProfId)} parentMessages={parentMessages} replyToParent={replyToParent} markMessageRead={markMessageRead} />}
+      {tab === "agenda"   && <ProAgenda myPatients={myPatients} profs={profs} />}
+      {tab === "patients" && <ProPatients myPatients={myPatients} hydrated={hydrated} notes={notes} onSessionNote={openSessionNote} homeExercises={homeExercises} homeAssignments={homeAssignments} assignHomeExercise={assignHomeExercise} unassignHomeExercise={unassignHomeExercise} />}
+      {tab === "finance"  && <ProFinance myPatients={myPatients} myPayments={myPayments} createPayment={createPayment} togglePayment={togglePayment} deletePayment={deletePayment} updatePayment={updatePayment} />}
+      {tab === "account"  && <ProAccount profile={profile} onLogout={onLogout} theme={theme} setTheme={setTheme} />}
+    </>
+  );
+
   // ─────────── DESKTOP: sidebar navy + main ───────────
   if (!isMobile) {
     const unrepliedCount = (parentMessages || []).filter((m) => {
@@ -87,63 +102,19 @@ export default function ProfessionalPortal({ profile, onLogout, theme, setTheme 
       <>
         <a href="#main" className="skip-link">Saltar para o conteúdo</a>
         <div style={{ display: "grid", gridTemplateColumns: "260px 1fr", minHeight: "100vh", background: "#F7F9FB" }}>
-          <aside aria-label="Navegação" style={{ background: "#152741", color: "#F7F4EE", display: "flex", flexDirection: "column", padding: "22px 16px 18px", position: "sticky", top: 0, height: "100vh", overflowY: "auto" }}>
-            <div style={{ padding: "4px 8px 22px", borderBottom: "1px solid rgba(247,244,238,.08)", marginBottom: 14, display: "flex", alignItems: "center", gap: 11 }}>
-              <Mark size={34} />
-              <div style={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
-                <span style={{ fontFamily: "DM Sans", fontWeight: 700, fontSize: 15, letterSpacing: "-0.01em" }}>PSICOMOTRI<span style={{ fontWeight: 400 }}>CLINIC</span></span>
-                <span className="mono" style={{ color: "rgba(247,244,238,.45)", fontSize: 9, marginTop: 4 }}>PORTAL PROFISSIONAL</span>
-              </div>
-            </div>
-
-            {todaysSessions.length > 0 && (
-              <div style={{ marginBottom: 12 }}>
-                <div style={{ padding: "6px 8px", fontSize: 9.5, letterSpacing: ".14em", fontWeight: 700, color: "rgba(247,244,238,.42)" }}>— HOJE · {todaysSessions.length}</div>
-                {todaysSessions.slice(0, 5).map((p) => {
-                  const ini = (p.name || "").split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase();
-                  return (
-                    <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 10px", borderRadius: 9, fontSize: 13, color: "rgba(247,244,238,.85)" }}>
-                      <Av t={ini} bg="#DCE7F0" sz={26} />
-                      <span style={{ flex: 1, minWidth: 0, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.name}</span>
-                      <span className="mono" style={{ fontSize: 9.5, color: "rgba(247,244,238,.5)" }}>{p.hour}</span>
-                    </div>
-                  );
-                })}
-                <div aria-hidden="true" style={{ height: 1, background: "rgba(247,244,238,.08)", margin: "10px 8px 4px" }} />
-              </div>
-            )}
-
-            <div style={{ padding: "6px 8px 6px", fontSize: 9.5, letterSpacing: ".14em", fontWeight: 700, color: "rgba(247,244,238,.42)" }}>— NAVEGAÇÃO</div>
-            <nav style={{ display: "flex", flexDirection: "column", gap: 1, flex: 1 }}>
-              {NAV.map((n) => {
-                const active = tab === n.id;
-                return (
-                  <button key={n.id} onClick={() => setTab(n.id)} className="ch" style={{ display: "flex", alignItems: "center", gap: 12, padding: "9px 12px", borderRadius: 9, background: active ? "rgba(247,244,238,.08)" : "transparent", color: active ? "#F7F4EE" : "rgba(247,244,238,.78)", fontSize: 14, fontWeight: active ? 500 : 400, border: "none", cursor: "pointer", textAlign: "left", fontFamily: "inherit", position: "relative" }}>
-                    {active && <span aria-hidden="true" style={{ position: "absolute", left: -16, top: 8, bottom: 8, width: 3, background: "#E8A13C", borderRadius: "0 3px 3px 0" }} />}
-                    <Icon name={n.icon} size={17} />
-                    <span style={{ flex: 1 }}>{n.label}</span>
-                    {n.badge > 0 && (
-                      <span aria-label={`${n.badge} novidades`} style={{ fontSize: 10.5, fontWeight: 700, padding: "1px 7px", borderRadius: 999, background: "#B83A3A", color: "#fff", minWidth: 18, textAlign: "center" }}>{n.badge}</span>
-                    )}
-                  </button>
-                );
-              })}
-            </nav>
-
-            <div style={{ marginTop: 12, borderTop: "1px solid rgba(247,244,238,.08)", paddingTop: 14, display: "flex", alignItems: "center", gap: 10, padding: "14px 8px 4px" }}>
-              <Av t={initials} bg="#8DBF94" sz={40} color="#152741" photoUrl={myPhoto} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 13, fontWeight: 600, color: "#F7F4EE", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{profile?.full_name || "Profissional"}</div>
-                <div style={{ fontSize: 11, color: "rgba(247,244,238,.6)" }}>Profissional</div>
-              </div>
-              <button onClick={() => setTheme(theme === "dark" ? "light" : "dark")} className="ch" aria-label={theme === "dark" ? "Modo claro" : "Modo escuro"} style={{ padding: 6, borderRadius: 8, color: "rgba(247,244,238,.72)", background: "transparent", border: "none", cursor: "pointer", display: "flex" }}><Icon name={theme === "dark" ? "sun" : "moon"} size={16} /></button>
-              <button onClick={onLogout} className="ch" aria-label="Terminar sessão" style={{ padding: 6, borderRadius: 8, color: "rgba(247,244,238,.72)", background: "transparent", border: "none", cursor: "pointer", display: "flex" }}><Icon name="logout" size={16} /></button>
-            </div>
-            <div style={{ padding: "6px 12px 0", fontSize: 10, color: "rgba(247,244,238,.55)" }}>
-              <div style={{ fontWeight: 600 }}>{APP_VERSION}</div>
-              <div style={{ marginTop: 2 }}>Atualizado: {formatBuildDate()}</div>
-            </div>
-          </aside>
+          <PortalSidebar
+            subtitle="PORTAL PROFISSIONAL"
+            extra={{ label: "HOJE", items: todaysSessions.slice(0, 5).map((p) => ({ name: p.name, meta: p.hour })) }}
+            nav={NAV}
+            activeTab={tab}
+            onNav={(id) => setTab(id)}
+            avatarBg="#8DBF94"
+            roleLabel="Profissional"
+            profileName={profile?.full_name}
+            initials={initials}
+            photoUrl={myPhoto}
+            theme={theme} setTheme={setTheme} onLogout={onLogout}
+          />
 
           <main id="main" style={{ padding: "28px 40px 60px", maxWidth: 1100, width: "100%", margin: "0 auto" }}>
             <div style={{ marginBottom: 22 }}>
@@ -158,11 +129,7 @@ export default function ProfessionalPortal({ profile, onLogout, theme, setTheme 
               </p>
             </div>
 
-            {tab === "home"     && <ProHome myProfId={myProfId} myPatients={myPatients} todaysSessions={todaysSessions} todayLabel={todayLabel} notes={notes} announcements={announcements} onSessionNote={openSessionNote} onMarkFalta={(p) => quickMarkFalta(p.id, myProfId)} parentMessages={parentMessages} replyToParent={replyToParent} markMessageRead={markMessageRead} />}
-            {tab === "agenda"   && <ProAgenda myPatients={myPatients} profs={profs} />}
-            {tab === "patients" && <ProPatients myPatients={myPatients} notes={notes} onSessionNote={openSessionNote} homeExercises={homeExercises} homeAssignments={homeAssignments} assignHomeExercise={assignHomeExercise} unassignHomeExercise={unassignHomeExercise} />}
-            {tab === "finance"  && <ProFinance myPatients={myPatients} myPayments={myPayments} createPayment={createPayment} togglePayment={togglePayment} deletePayment={deletePayment} updatePayment={updatePayment} />}
-            {tab === "account"  && <ProAccount profile={profile} onLogout={onLogout} theme={theme} setTheme={setTheme} />}
+            {tabContent}
           </main>
         </div>
         <ViewToggle position="br" />
@@ -212,11 +179,7 @@ export default function ProfessionalPortal({ profile, onLogout, theme, setTheme 
           </div>
         </div>
 
-        {tab === "home"     && <ProHome myProfId={myProfId} myPatients={myPatients} todaysSessions={todaysSessions} todayLabel={todayLabel} notes={notes} announcements={announcements} onSessionNote={openSessionNote} onMarkFalta={(p) => quickMarkFalta(p.id, myProfId)} parentMessages={parentMessages} replyToParent={replyToParent} markMessageRead={markMessageRead} />}
-        {tab === "agenda"   && <ProAgenda myPatients={myPatients} profs={profs} />}
-        {tab === "patients" && <ProPatients myPatients={myPatients} notes={notes} onSessionNote={openSessionNote} homeExercises={homeExercises} homeAssignments={homeAssignments} assignHomeExercise={assignHomeExercise} unassignHomeExercise={unassignHomeExercise} />}
-        {tab === "finance"  && <ProFinance myPatients={myPatients} myPayments={myPayments} createPayment={createPayment} togglePayment={togglePayment} deletePayment={deletePayment} updatePayment={updatePayment} />}
-        {tab === "account"  && <ProAccount profile={profile} onLogout={onLogout} theme={theme} setTheme={setTheme} />}
+        {tabContent}
       </main>
 
       <nav className="portal-tabbar" aria-label="Navegação" style={{
@@ -399,22 +362,6 @@ function ProHome({ myProfId, myPatients, todaysSessions, todayLabel, notes, anno
   );
 }
 
-function daysUntilBirthday(dateStr) {
-  if (!dateStr) return null;
-  const d = new Date(dateStr);
-  if (isNaN(d)) return null;
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  const next = new Date(today.getFullYear(), d.getMonth(), d.getDate());
-  if (next < today) next.setFullYear(next.getFullYear() + 1);
-  return Math.round((next - today) / 86400000);
-}
-function ageOnNext(dateStr) {
-  if (!dateStr) return null;
-  const d = new Date(dateStr);
-  if (isNaN(d)) return null;
-  const today = new Date(); today.setHours(0, 0, 0, 0);
-  return today.getFullYear() - d.getFullYear() + 1;
-}
 
 function AnnouncementsBanner({ items }) {
   return (
@@ -513,12 +460,14 @@ function ProAgenda({ myPatients, profs }) {
   );
 }
 
-function ProPatients({ myPatients, notes, onSessionNote, homeExercises, homeAssignments, assignHomeExercise, unassignHomeExercise }) {
+function ProPatients({ hydrated, myPatients, notes, onSessionNote, homeExercises, homeAssignments, assignHomeExercise, unassignHomeExercise }) {
   const [search, setSearch] = useState("");
   const [assignFor, setAssignFor] = useState(null);
   const [assignForm, setAssignForm] = useState({ exercise_id: "", custom_notes: "" });
   const filtered = myPatients.filter((p) => !search || p.name.toLowerCase().includes(search.toLowerCase()));
-  if (myPatients.length === 0) return <NoProfRecord />;
+  if (myPatients.length === 0) return hydrated
+    ? <NoProfRecord />
+    : <Card pad={22}><div style={{ display: "flex", flexDirection: "column", gap: 12 }}>{[0, 1, 2].map((i) => <Skeleton key={i} w={`${80 - i * 10}%`} h={18} />)}</div></Card>;
 
   const doAssign = async () => {
     if (!assignFor || !assignForm.exercise_id) return;
@@ -628,11 +577,10 @@ export function ProFinance({ myPatients, myPayments, createPayment, togglePaymen
     return [...list].sort((a, b) => (b.paid_date || "").localeCompare(a.paid_date || ""));
   }, [myPayments, month]);
 
-  const total = filtered.reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
-  const paid  = filtered.filter((p) => p.status === "pago").reduce((s, p) => s + (parseFloat(p.amount) || 0), 0);
-  const pend  = total - paid;
-  const clinicCut = paid * CLINIC_CUT;
-  const netCut = paid - clinicCut;
+  const total = sumAmounts(filtered);
+  const paid  = sumPaid(filtered);
+  const pend  = total - paid; // aqui "pendente" = tudo o que não está pago
+  const { clinic: clinicCut, professional: netCut } = splitClinicProf(paid);
 
   const submitAdd = async () => {
     if (!addForm.patient_id || !addForm.amount || !addForm.month) return;
@@ -671,8 +619,7 @@ export function ProFinance({ myPatients, myPayments, createPayment, togglePaymen
   }, [myPayments]);
 
   const yearTotal = byMonth.reduce((s, m) => s + m.paid, 0);
-  const yearClinic = yearTotal * CLINIC_CUT;
-  const yearNet = yearTotal - yearClinic;
+  const { comissao: yearClinic, liquido: yearNet } = irsSummary(yearTotal);
 
   const exportCsv = () => {
     const rows = filtered.map((p) => {

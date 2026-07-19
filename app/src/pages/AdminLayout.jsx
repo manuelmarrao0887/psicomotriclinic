@@ -49,18 +49,16 @@ const allItems = [
 const primary = allItems.filter((i) => i.primary);
 const secondary = allItems.filter((i) => !i.primary);
 
+// Nota: páginas que já têm o seu próprio <Section> como cabeçalho (com contagem
+// + botões de ação) NÃO aparecem aqui, para não duplicar o título. Só listamos
+// as que dependem deste cabeçalho da layout.
 const titles = {
   "/dashboard":    { e: "— GERAL",        t: "Dashboard",            s: "Visão de gestão da clínica" },
-  "/utilizadores": { e: "— ACESSOS",      t: "Utilizadores",         s: "" },
-  "/equipa":       { e: "— EQUIPA",       t: "Profissionais",        s: "" },
-  "/pacientes":    { e: "— CASOS",        t: "Pacientes",            s: "" },
   "/agenda":       { e: "— AGENDA",       t: "Sessões",              s: "" },
   "/financeiro":   { e: "— FINANCEIRO",   t: "Pagamentos & custos",  s: "Vista agregada da Casa" },
   "/meu-financeiro": { e: "— MEU CONSULTÓRIO", t: "Meu financeiro", s: "Pagamentos dos seus pacientes" },
   "/manual":       { e: "— MANUAL",         t: "Procedimentos",       s: "Guia passo-a-passo por perfil" },
   "/testes":       { e: "— QA",             t: "Plano de testes",     s: "Checklist smoke para promover release" },
-  "/pedidos":      { e: "— PEDIDOS",      t: "Trocas de horário",    s: "" },
-  "/comunicacoes": { e: "— ANÚNCIOS",     t: "Comunicações",         s: "Mensagens visíveis nos portais" },
   "/definicoes":   { e: "— PREFERÊNCIAS", t: "Definições",           s: "" },
 };
 
@@ -129,7 +127,7 @@ export default function AdminLayout({ profile, onLogout, theme, setTheme }) {
             </div>
           </aside>
 
-          <main id="main">
+          <main id="main" style={{ flex: 1, minWidth: 0, maxWidth: "100%" }}>
             {title.t && (
               <div style={{ padding: "32px 40px 24px", borderBottom: "1px solid #EAE6DD", background: "#FFFFFF" }}>
                 {title.e && <div style={{ marginBottom: 8 }}><Eyebrow>{title.e}</Eyebrow></div>}
@@ -183,7 +181,7 @@ export default function AdminLayout({ profile, onLogout, theme, setTheme }) {
             </div>
           )}
 
-          <main id="main" style={{ flex: 1, paddingBottom: 0 }}>
+          <main id="main" style={{ flex: 1, minWidth: 0, maxWidth: "100%", paddingBottom: 0 }}>
             <ErrorBoundary key={location.pathname}><Outlet /></ErrorBoundary>
           </main>
 
@@ -199,32 +197,43 @@ export default function AdminLayout({ profile, onLogout, theme, setTheme }) {
             <div style={{ height: "var(--tabbar-h)", display: "grid", gridTemplateColumns: `repeat(${primary.length + 1}, 1fr)` }}>
               {primary.map((it) => (
                 <NavLink key={it.id} to={it.to} className="ch tap-target" style={({ isActive }) => ({
+                  position: "relative",
                   display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
-                  color: isActive ? "#E8A13C" : "#5A5A58",
-                  textDecoration: "none", fontSize: 10.5, fontWeight: isActive ? 600 : 500,
+                  color: isActive ? "#152741" : "#55554F",
+                  textDecoration: "none", fontSize: 10.5, fontWeight: isActive ? 700 : 500,
                   letterSpacing: ".01em",
                 })}>
                   {({ isActive }) => (
                     <>
+                      {/* Indicador não-cromático (barra) + texto navy com contraste AA;
+                          o amber já não é o único sinal de estado ativo. */}
+                      {isActive && <span aria-hidden="true" style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: 26, height: 3, background: "#E8A13C", borderRadius: "0 0 3px 3px" }} />}
                       <Icon name={it.icon} size={22} />
-                      <span style={{ color: isActive ? "#E8A13C" : "#5A5A58" }}>{it.label}</span>
+                      <span style={{ color: isActive ? "#152741" : "#55554F" }}>{it.label}</span>
                     </>
                   )}
                 </NavLink>
               ))}
-              <button
-                onClick={() => setMoreOpen(true)}
-                className="ch tap-target"
-                aria-label="Mais opções"
-                style={{
-                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
-                  color: secondary.some((s) => location.pathname.startsWith(s.to)) ? "#E8A13C" : "#5A5A58",
-                  fontSize: 10.5, fontWeight: 500,
-                }}
-              >
-                <Icon name="more" size={22} />
-                <span>Mais</span>
-              </button>
+              {(() => {
+                const moreActive = secondary.some((s) => location.pathname.startsWith(s.to));
+                return (
+                  <button
+                    onClick={() => setMoreOpen(true)}
+                    className="ch tap-target"
+                    aria-label="Mais opções"
+                    style={{
+                      position: "relative",
+                      display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2,
+                      color: moreActive ? "#152741" : "#55554F",
+                      fontSize: 10.5, fontWeight: moreActive ? 700 : 500,
+                    }}
+                  >
+                    {moreActive && <span aria-hidden="true" style={{ position: "absolute", top: 0, left: "50%", transform: "translateX(-50%)", width: 26, height: 3, background: "#E8A13C", borderRadius: "0 0 3px 3px" }} />}
+                    <Icon name="more" size={22} />
+                    <span>Mais</span>
+                  </button>
+                );
+              })()}
             </div>
           </nav>
 
